@@ -1,0 +1,42 @@
+# Muhit va sirlar
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+*credentials*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+
+# Node / Mini App
+node_modules/
+dist/
+build/
+.vite/
+*.local
+
+# Ma'lumotlar bazasi va media (lokal)
+*.sqlite3
+*.db
+/media/
+/uploads/
+
+# IDE va OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Loglar
+*.log
+logs/
