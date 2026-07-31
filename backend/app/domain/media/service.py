@@ -8,15 +8,20 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
+import re
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import TASHKENT, settings
-from app.core.errors import FileTooLarge, Forbidden, NotFound
+from app.core.errors import FileTooLarge, Forbidden, NotFound, ValidationFailed
 from app.db.base import as_utc, utcnow
 from app.db.models import Employee, Media, MediaKind, MediaSource, Submission
 from app.domain.role import permissions
 from app.integrations.storage import get_storage
+
+#: Maydon kodi yo'l qurishda ishlatiladi — `../` bilan MEDIA_ROOT dan chiqib
+#: ketishning oldini olish uchun shakli qat'iy cheklanadi.
+FIELD_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
 ALLOWED_MIME = {
     "image/jpeg",
@@ -46,6 +51,31 @@ def sniff_mime(data: bytes, fallback: str = "image/jpeg") -> str:
     return fallback
 
 
+async def ensure_valid_field_code(
+    session: AsyncSession, submission: Submission, field_code: str
+) -> str:
+    """Maydon kodi shablondagi media maydoni bo'lishi shart.
+
+    ⚠️ Klient yuborgan qiymat storage kalitiga kiradi — ikki bosqichli
+    tekshiruv: shakl (regex) va shablon sxemasida mavjudligi.
+    """
+    code = (field_code or "").strip()
+    if not FIELD_CODE_RE.fullmatch(code):
+        raise ValidationFailed(
+            "Maydon kodi noto'g'ri", fields={"field_code": "invalid_field_code"}
+        )
+
+    from app.domain.template import engine
+
+    schema = await engine.schema_for_submission(session, submission)
+    spec = schema.get(code)
+    if spec is None or spec.type not in ("photo", "video", "audio", "file", "signature"):
+        raise ValidationFailed(
+            "Bunday media maydoni shablonda yo'q", fields={"field_code": "unknown_field"}
+        )
+    return code
+
+
 def storage_key(submission: Submission, field_code: str, sha256: str, mime: str) -> str:
     ext = {
         "image/jpeg": "jpg",
@@ -73,6 +103,8 @@ async def store_bytes(
     source: MediaSource = MediaSource.unknown,
     exif_taken_at: dt.datetime | None = None,
 ) -> Media:
+    field_code = await ensure_valid_field_code(session, submission, field_code)
+
     if len(data) > settings.max_photo_mb * 1024 * 1024:
         raise FileTooLarge(f"Fayl {settings.max_photo_mb} MB dan katta")
 
@@ -117,6 +149,9 @@ async def get_for_actor(session: AsyncSession, media_id: int, actor: Employee) -
 
 
 def view_url(media: Media) -> str:
+    """S3'da — signed URL; lokal omborda — API endpointi (`/media/{id}/raw`)."""
+    if settings.storage_backend == "local":
+        return f"{settings.base_url.rstrip('/')}/api/v1/media/{media.id}/raw"
     return get_storage().signed_url(media.storage_key, ttl_sec=settings.signed_url_ttl_sec)
 
 

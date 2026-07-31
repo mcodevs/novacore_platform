@@ -1,5 +1,7 @@
 # NovaCore Employee Platform
 
+[![CI](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml/badge.svg)](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml)
+
 > 📄 **Repo holati:** Faza 1 (MVP) to'liq yozilgan — **backend + Telegram bot**
 > (`backend/`) va **Mini App** (`miniapp/`). Hujjatlar — yagona haqiqat manbai
 > va texnik topshiriq.
@@ -161,7 +163,7 @@ Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
 | **Bosqich** | Backend + bot + Mini App yozilgan · deploy va pilot navbatda |
 | **Sana** | 2026-07-31 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 121 ta (pricing · approval · period · template · role · submission · bot e2e · API e2e · konfiguratsiya) |
+| **Testlar** | 121 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.

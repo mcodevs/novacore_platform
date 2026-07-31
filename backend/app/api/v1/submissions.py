@@ -8,7 +8,14 @@ from fastapi import APIRouter, Query
 from app.api.deps import EmployeeDep, SessionDep
 from app.api.v1 import schemas, serializers
 from app.core.errors import NotFound, ValidationFailed
-from app.db.models import Approval, LineKind, Submission, SubmissionStatus, Template
+from app.db.models import (
+    Approval,
+    LineKind,
+    Submission,
+    SubmissionStatus,
+    Template,
+    Vehicle,
+)
 from app.domain.approval import service as approval_service
 from app.domain.pricing import service as pricing_service
 from app.domain.submission import service as submission_service
@@ -81,11 +88,21 @@ async def patch_submission(
     submission = await submission_service.get_for_actor(session, submission_id, employee)
     submission_service.ensure_editable(submission, employee)
 
+    previous_vehicle_id = submission.subject_vehicle_id
     data = dict(submission.data or {})
     data.update(payload.data)
     submission.data = data
     schema = await engine.schema_for_submission(session, submission)
     engine.apply_field_mapping(schema, submission)
+
+    # Mashina shu qadamda tanlanadi (Mini App `vehicle_id`siz qoralama ochadi) —
+    # bot oqimidagi kabi mashina IN_SERVICE ga o'tishi kerak, aks holda u
+    # ta'mirda turib "liniyada" ko'rinadi.
+    if submission.subject_vehicle_id and submission.subject_vehicle_id != previous_vehicle_id:
+        vehicle = await session.get(Vehicle, submission.subject_vehicle_id)
+        if vehicle is not None:
+            await submission_service.attach_vehicle(session, submission, vehicle)
+
     await session.flush()
     return serializers.submission_out(submission)
 

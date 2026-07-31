@@ -4,10 +4,17 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
+
+if settings.is_sqlite:
+    # Toza klonda `var/` papkasi yo'q — SQLite uni o'zi yaratmaydi
+    _path = settings.database_url.split("///", 1)[-1]
+    if _path and _path != ":memory:":
+        Path(_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
 
 _connect_args: dict = {}
 if settings.is_sqlite:

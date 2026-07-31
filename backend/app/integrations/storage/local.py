@@ -15,7 +15,11 @@ class LocalStorage(Storage):
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _path(self, key: str) -> Path:
-        path = self.root / key
+        """Ikkinchi mudofaa: yo'l doim `MEDIA_ROOT` ichida qolishi shart."""
+        root = self.root.resolve()
+        path = (root / key).resolve()
+        if not path.is_relative_to(root):
+            raise ValueError(f"storage key MEDIA_ROOT dan chiqdi: {key!r}")
         path.parent.mkdir(parents=True, exist_ok=True)
         return path
 
@@ -31,5 +35,6 @@ class LocalStorage(Storage):
             await asyncio.to_thread(path.unlink)
 
     def signed_url(self, key: str, *, ttl_sec: int) -> str:
-        # Lokal rejimda imzo yo'q — API `/api/v1/media/{id}/raw` orqali beradi
-        return f"{settings.base_url.rstrip('/')}/api/v1/media/file/{key}"
+        """Lokal omborda imzolangan havola yo'q — `media_service.view_url()`
+        `/api/v1/media/{id}/raw` endpointini qaytaradi. Bu — zaxira qiymat."""
+        return f"{settings.base_url.rstrip('/')}/api/v1/media/raw?key={key}"

@@ -35,7 +35,7 @@ jobs:
         run: pytest -q
 
       - name: Migratsiya toza bazada ishlaydimi
-        run: alembic upgrade head
+        run: mkdir -p var && alembic upgrade head
         env:
           DATABASE_URL: sqlite+aiosqlite:///./var/ci.db
           BOT_TOKEN: "123456:CI"

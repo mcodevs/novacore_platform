@@ -436,3 +436,49 @@ async def test_wrapped_endpoints_use_data_envelope(api):
         payload = (await api.get(path, headers=headers)).json()
         assert set(payload) <= {"data", "meta"}, path
         assert "data" in payload, path
+
+
+async def test_patch_moves_vehicle_into_service(api):
+    """Mini App qoralamani `vehicle_id`siz ochadi — mashina PATCH'da tanlanadi."""
+    auth = await login(api, MECHANIC_TG)
+    headers = auth_header(auth["access_token"])
+
+    vehicle = (await api.get("/api/v1/vehicles/lookup?plate=01A123BC", headers=headers)).json()
+    assert vehicle["status"] == "active"
+
+    created = await api.post(
+        "/api/v1/submissions", headers=headers, json={"template_code": "car_repair"}
+    )
+    submission_id = created.json()["id"]
+
+    patched = await api.patch(
+        f"/api/v1/submissions/{submission_id}",
+        headers=headers,
+        json={"data": {"plate": {"vehicle_id": vehicle["id"], "plate": "01A123BC"}}},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["vehicle"]["status"] == "in_service"
+
+
+async def test_media_upload_rejects_path_traversal(api):
+    """`field_code` yo'lga kiradi — `../` bilan chiqib ketishga urinish rad etiladi."""
+    auth = await login(api, MECHANIC_TG)
+    headers = auth_header(auth["access_token"])
+    created = await api.post(
+        "/api/v1/submissions", headers=headers, json={"template_code": "car_repair"}
+    )
+    submission_id = created.json()["id"]
+
+    response = await api.post(
+        "/api/v1/media/upload",
+        headers=headers,
+        data={
+            "submission_id": str(submission_id),
+            "field_code": "../../../../tmp/evil",
+            "kind": "other",
+            "source": "camera",
+        },
+        files={"file": ("x.jpg", b"\xff\xd8\xff\xe0" + bytes(32), "image/jpeg")},
+    )
+    assert response.status_code == 400
+    assert response.json()["error"]["fields"]["field_code"] == "invalid_field_code"

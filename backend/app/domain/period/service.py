@@ -120,6 +120,10 @@ async def precheck(session: AsyncSession, period: Period) -> PrecheckResult:
     if disputed:
         result.blockers.append(("precheck_negotiation", {"n": disputed}))
 
+    # ⚠️ Ochiq kelishuv — TO'SIQ: davr yopilgach `accept_price` ham, 48 soatlik
+    # avtomatik rozilik ham `period_closed` bilan rad etiladi va hisobot
+    # to'lanmagan holda osilib qoladi
+    # (docs/04-flows/03-payroll-and-reports.md §3).
     negotiating = (
         await session.execute(
             sa.select(sa.func.count(Submission.id)).where(
@@ -130,7 +134,7 @@ async def precheck(session: AsyncSession, period: Period) -> PrecheckResult:
         )
     ).scalar_one()
     if negotiating:
-        result.warnings.append(("precheck_negotiation", {"n": negotiating}))
+        result.blockers.append(("precheck_negotiation", {"n": negotiating}))
 
     stale_days = settings.draft_alert_days
     threshold = utcnow() - dt.timedelta(days=stale_days)

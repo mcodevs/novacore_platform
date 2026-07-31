@@ -172,3 +172,41 @@ async def test_reopen_period_requires_reason(session):
         session, period, admin.id, "Buxgalteriya xatosi tuzatildi"
     )
     assert period.status == PeriodStatus.open
+
+
+async def test_open_negotiation_blocks_closing(session):
+    """Ochiq kelishuv — TO'SIQ.
+
+    Aks holda davr yopilgach na usta rozilik bera oladi, na 48 soatlik
+    avtomatik rozilik ishlaydi (ikkalasi ham `period_closed` beradi) —
+    hisobot to'lanmagan holda osilib qoladi.
+    """
+    mechanic = await make_employee(session, role_code="mechanic")
+    admin = await make_employee(session, role_code="admin")
+    vehicle = await make_vehicle(session)
+
+    submission = await create_ready_submission(
+        session, mechanic, vehicle, works=[("Ish", Decimal("250000"))]
+    )
+    await submission_service.submit(session, submission, mechanic)
+    await pricing_service.propose_price(
+        session,
+        submission,
+        admin,
+        changes=[(submission.lines[0].id, Decimal("180000"))],
+        comment="tarixga ko'ra kamaytirildi",
+    )
+    assert submission.status == SubmissionStatus.PRICE_NEGOTIATION
+
+    period = await period_service.current_period(session)
+    result = await period_service.precheck(session, period)
+    assert not result.can_close
+    assert ("precheck_negotiation", {"n": 1}) in result.blockers
+
+    with pytest.raises(BusinessRuleViolated):
+        await period_service.close_period(session, period, admin.id)
+
+    # kelishuv hal bo'lgach — yopish mumkin
+    await pricing_service.accept_price(session, submission, mechanic)
+    await period_service.close_period(session, period, admin.id)
+    assert period.status == PeriodStatus.closed
