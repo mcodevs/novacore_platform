@@ -1,9 +1,34 @@
-.PHONY: install test run seed demo migrate revision compose-up compose-down deploy \
+.PHONY: bootstrap install test run seed demo migrate revision compose-up compose-down deploy \
         miniapp-install miniapp-dev miniapp-build
 
 VENV ?= .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
+
+bootstrap:             ## ⭐ Lokal muhitni noldan tayyorlaydi (venv + .env + npm + seed)
+	@test -d $(VENV) || python3.12 -m venv $(VENV)
+	@$(PIP) install -q --upgrade pip
+	@$(PIP) install -q -r backend/requirements.txt
+	@if [ ! -f backend/.env ]; then \
+		sed -e "s|^JWT_SECRET=.*|JWT_SECRET=$$(openssl rand -hex 32)|" \
+		    -e "s|^WEBHOOK_SECRET=.*|WEBHOOK_SECRET=$$(openssl rand -hex 16)|" \
+		    backend/.env.example > backend/.env; \
+		echo "✅ backend/.env yaratildi (kalitlar tasodifiy generatsiya qilindi)"; \
+	else \
+		echo "ℹ️  backend/.env allaqachon bor — tegilmadi"; \
+	fi
+	@cd miniapp && npm install --no-audit --no-fund --silent
+	@$(MAKE) --no-print-directory demo
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "Qoldi bitta qadam: backend/.env ichida BOT_TOKEN ni yozing."
+	@echo "  ⚠️  LOKAL uchun ALOHIDA test bot oching (BotFather → /newbot),"
+	@echo "      prod bot tokeni bilan ishlatmang — webhook bilan to'qnashadi."
+	@echo ""
+	@echo "So'ng o'zingizni reyestrga qo'shing va ishga tushiring:"
+	@echo "  cd backend && ../$(PY) manage.py employee-add \"F.I.Sh.\" +998XXXXXXXXX admin"
+	@echo "  make run"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 install:               ## virtualenv va bog'liqliklar
 	python3.12 -m venv $(VENV)

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
 from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 TASHKENT = ZoneInfo("Asia/Tashkent")
 
@@ -42,7 +42,8 @@ class Settings(BaseSettings):
 
     # --- Mini App / API ---
     miniapp_url: str = ""
-    cors_origins: list[str] = Field(default_factory=list)
+    # NoDecode: `.env` dagi bo'sh yoki vergulli qiymat JSON deb o'qilmasin
+    cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
     jwt_secret: str = "change-me-at-least-32-bytes-long-secret!"
     access_token_ttl_min: int = 15
     refresh_token_ttl_days: int = 30
@@ -85,6 +86,14 @@ class Settings(BaseSettings):
     antifraud_enabled: bool = False
 
     default_lang: Literal["uz", "ru"] = "uz"
+
+    @field_validator("admin_group_id", "telegram_proxy", mode="before")
+    @classmethod
+    def _empty_to_none(cls, value: object) -> object:
+        """`.env` da `KEY=` (bo'sh) — bu «berilmagan» degani, xato emas."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @field_validator("database_url", mode="after")
     @classmethod
