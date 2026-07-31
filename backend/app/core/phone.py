@@ -30,9 +30,21 @@ def normalize_plate(raw: str | None) -> str | None:
     return cleaned or None
 
 
+#: O'zbekiston davlat raqamlarining ikkita keng tarqalgan ko'rinishi
+_PLATE_PATTERNS = (
+    re.compile(r"(\d{2})([A-Z])(\d{3})([A-Z]{2})"),  # 01 A 123 BC
+    re.compile(r"(\d{2})(\d{3})([A-Z]{3})"),  # 01 760 LMA
+)
+
+
 def display_plate(plate: str) -> str:
-    """`01A123BC` → `01 A 123 BC` (o'qish uchun)."""
-    match = re.fullmatch(r"(\d{2})([A-Z])(\d{3})([A-Z]{2})", plate)
-    if match:
-        return " ".join(match.groups())
+    """`01A123BC` → `01 A 123 BC`, `01760LMA` → `01 760 LMA`.
+
+    Tanilmagan ko'rinish o'zgarishsiz qaytariladi — qidiruv baribir
+    normalizatsiya qilingan `plate_number` bo'yicha ketadi.
+    """
+    for pattern in _PLATE_PATTERNS:
+        match = pattern.fullmatch(plate)
+        if match:
+            return " ".join(match.groups())
     return plate
