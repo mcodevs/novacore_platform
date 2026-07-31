@@ -42,10 +42,19 @@ def do_run_migrations(connection) -> None:  # noqa: ANN001
 
 
 async def run_async_migrations() -> None:
+    kwargs: dict = {}
+    if settings.uses_pgbouncer:
+        kwargs = {
+            "connect_args": {
+                "statement_cache_size": 0,
+                "prepared_statement_cache_size": 0,
+            }
+        }
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=NullPool,
+        **kwargs,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

@@ -12,13 +12,16 @@ from app.core.config import settings
 _connect_args: dict = {}
 if settings.is_sqlite:
     _connect_args = {"check_same_thread": False}
+elif settings.uses_pgbouncer:
+    # asyncpg + pgbouncer (transaction pooling): tayyorlangan so'rovlar keshi
+    # o'chiriladi. Ikkalasi ham **DBAPI** argumenti — `connect_args` ichida.
+    _connect_args = {"statement_cache_size": 0, "prepared_statement_cache_size": 0}
 
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.db_echo,
-    pool_pre_ping=not settings.is_sqlite,
-    connect_args=_connect_args,
-)
+_engine_kwargs: dict = {"echo": settings.db_echo, "connect_args": _connect_args}
+if not settings.is_sqlite:
+    # Bitta machine, RPS < 1 — kichik pool yetadi
+    _engine_kwargs |= {"pool_pre_ping": True, "pool_size": 5, "max_overflow": 5}
+engine = create_async_engine(settings.database_url, **_engine_kwargs)
 
 SessionFactory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 

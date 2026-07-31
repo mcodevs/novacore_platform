@@ -6,7 +6,7 @@ from functools import lru_cache
 from typing import Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 TASHKENT = ZoneInfo("Asia/Tashkent")
@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     # --- Ma'lumotlar bazasi ---
     # production: postgresql+asyncpg://...   lokal: sqlite+aiosqlite:///./var/novacore.db
+    # `fly mpg attach` oddiy `postgresql://` beradi — quyida drayver qo'shiladi.
     database_url: str = "sqlite+aiosqlite:///./var/novacore.db"
     db_echo: bool = False
 
@@ -50,11 +51,25 @@ class Settings(BaseSettings):
     # --- Media ---
     storage_backend: Literal["local", "s3"] = "local"
     media_root: str = "./var/media"
-    s3_endpoint_url: str = "https://fly.storage.tigris.dev"
-    s3_bucket: str = "novacore-media"
-    s3_access_key: str = ""
-    s3_secret_key: str = ""
-    s3_region: str = "auto"
+    # `fly storage create` sirlarni AWS_* nomlari bilan qo'yadi — ikkalasi ham ishlaydi
+    s3_endpoint_url: str = Field(
+        default="https://fly.storage.tigris.dev",
+        validation_alias=AliasChoices("S3_ENDPOINT_URL", "AWS_ENDPOINT_URL_S3"),
+    )
+    s3_bucket: str = Field(
+        default="novacore-media",
+        validation_alias=AliasChoices("S3_BUCKET", "BUCKET_NAME"),
+    )
+    s3_access_key: str = Field(
+        default="", validation_alias=AliasChoices("S3_ACCESS_KEY", "AWS_ACCESS_KEY_ID")
+    )
+    s3_secret_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("S3_SECRET_KEY", "AWS_SECRET_ACCESS_KEY"),
+    )
+    s3_region: str = Field(
+        default="auto", validation_alias=AliasChoices("S3_REGION", "AWS_REGION")
+    )
     signed_url_ttl_sec: int = 900  # 15 daqiqa
     max_photo_mb: int = 10
 
@@ -71,6 +86,16 @@ class Settings(BaseSettings):
 
     default_lang: Literal["uz", "ru"] = "uz"
 
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _ensure_async_driver(cls, value: str) -> str:
+        """`postgresql://` → `postgresql+asyncpg://` (Fly shu ko'rinishda beradi)."""
+        if value.startswith("postgres://"):
+            value = "postgresql://" + value[len("postgres://") :]
+        if value.startswith("postgresql://"):
+            value = "postgresql+asyncpg://" + value[len("postgresql://") :]
+        return value
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, v: object) -> object:
@@ -81,6 +106,11 @@ class Settings(BaseSettings):
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")
+
+    @property
+    def uses_pgbouncer(self) -> bool:
+        """pgbouncer (transaction pooling) tayyorlangan so'rovlar bilan ishlamaydi."""
+        return "pgbouncer" in self.database_url
 
     @property
     def webhook_url(self) -> str:
