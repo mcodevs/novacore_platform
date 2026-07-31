@@ -1,6 +1,7 @@
 /** API klient: initData → JWT, avtomatik refresh, qayta urinish (zaif internet). */
 
 import { tg } from './telegram';
+import { unwrap } from './unwrap';
 import type {
   AuthResponse,
   Dashboard,
@@ -52,7 +53,7 @@ async function parse<T>(response: Response): Promise<T> {
       response.status,
     );
   }
-  return (payload?.data ?? payload) as T;
+  return unwrap<T>(payload);
 }
 
 async function request<T>(

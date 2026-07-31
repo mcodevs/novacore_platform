@@ -403,3 +403,36 @@ async def test_openapi_is_served(api):
     assert response.status_code == 200
     spec = json.loads(response.text)
     assert "/api/v1/submissions/{submission_id}/propose-price" in spec["paths"]
+
+
+# --- Javob shakli (Mini App klienti shunga tayanadi) --------------------------
+
+
+async def test_submission_response_is_not_an_envelope(api):
+    """Regressiya: hisobot obyektida `data` maydoni bor — u konvert EMAS.
+
+    Mini App `{data, meta}` konvertini ochadi; agar hisobot ham konvert deb
+    o'qilsa, `id` yo'qoladi va klient `/submissions/undefined` so'raydi (422).
+    """
+    auth = await login(api, MECHANIC_TG)
+    response = await api.post(
+        "/api/v1/submissions",
+        headers=auth_header(auth["access_token"]),
+        json={"template_code": "car_repair"},
+    )
+    assert response.status_code == 201
+    payload = response.json()
+    assert set(payload) != {"data"}, "hisobot konvertga o'ralmasligi kerak"
+    assert isinstance(payload["id"], int)
+    assert isinstance(payload["data"], dict)  # forma qiymatlari — konvert emas
+
+
+async def test_wrapped_endpoints_use_data_envelope(api):
+    """Konvert ishlatadigan endpointlar: `{data: ...}` va boshqa kalitsiz."""
+    auth = await login(api, MECHANIC_TG)
+    headers = auth_header(auth["access_token"])
+
+    for path in ("/api/v1/templates/car_repair", "/api/v1/catalog-items?catalog=fault_categories"):
+        payload = (await api.get(path, headers=headers)).json()
+        assert set(payload) <= {"data", "meta"}, path
+        assert "data" in payload, path

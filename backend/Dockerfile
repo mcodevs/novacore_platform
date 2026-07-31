@@ -37,4 +37,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
     CMD curl -fsS http://localhost:8000/healthz || exit 1
 
 # Migratsiya → seed → ilova (bot ham shu process ichida)
-CMD ["sh", "-c", "alembic upgrade head && python -m app.startup && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# --proxy-headers: Fly proksisi ortida `X-Forwarded-Proto` hisobga olinadi,
+# aks holda `/app` → `/app/` yo'naltirishi `http://` ga ketadi (Telegram bloklaydi)
+CMD ["sh", "-c", "alembic upgrade head && python -m app.startup && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*"]
