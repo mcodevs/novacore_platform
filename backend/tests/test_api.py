@@ -482,3 +482,194 @@ async def test_media_upload_rejects_path_traversal(api):
     )
     assert response.status_code == 400
     assert response.json()["error"]["fields"]["field_code"] == "invalid_field_code"
+
+
+# --- Konstruktorlar (Faza 2) --------------------------------------------------
+
+
+def wash_payload(**overrides) -> dict:
+    payload = {
+        "code": "car_wash",
+        "name": {"uz": "Yuvish hisoboti", "ru": "Отчёт о мойке"},
+        "icon": "🧼",
+        "subject_type": "vehicle",
+        "field_mapping": {"vehicle": "plate"},
+        "sections": [{"code": "main", "title": {"uz": "Yuvish"}}],
+        "fields": [
+            {
+                "code": "plate",
+                "section": "main",
+                "label": {"uz": "Mashina raqami"},
+                "type": "vehicle_picker",
+                "required": True,
+            },
+            {
+                "code": "works",
+                "section": "main",
+                "label": {"uz": "Bajarilgan ishlar"},
+                "type": "lines",
+                "required": True,
+                "options": {"kind": "labor"},
+            },
+        ],
+    }
+    payload.update(overrides)
+    return payload
+
+
+async def test_template_constructor_is_admin_only(api):
+    auth = await login(api, MECHANIC_TG)
+    headers = auth_header(auth["access_token"])
+
+    assert (await api.get("/api/v1/admin/templates", headers=headers)).status_code == 403
+    response = await api.post("/api/v1/admin/templates", headers=headers, json=wash_payload())
+    assert response.status_code == 403
+
+
+async def test_template_draft_publish_edit_cycle(api):
+    """Yaratish → nashr → tahrir → qayta nashr. Har qadamda holat aniq."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+
+    created = await api.post("/api/v1/admin/templates", headers=admin, json=wash_payload())
+    assert created.status_code == 201, created.text
+    template = created.json()["data"]
+    assert template["is_draft"] is True and template["published_version"] is None
+
+    published = await api.post(
+        f"/api/v1/admin/templates/{template['id']}/publish", headers=admin
+    )
+    assert published.status_code == 200
+    assert published.json()["data"] == {**published.json()["data"], "is_draft": False}
+    assert published.json()["data"]["published_version"] == 1
+
+    # ikkinchi nashr — o'zgarishsiz mumkin emas
+    again = await api.post(f"/api/v1/admin/templates/{template['id']}/publish", headers=admin)
+    assert again.status_code == 422
+
+    edited = await api.patch(
+        f"/api/v1/admin/templates/{template['id']}",
+        headers=admin,
+        json=wash_payload(icon="🚿"),
+    )
+    assert edited.status_code == 200
+    assert edited.json()["data"]["version"] == 2
+    assert edited.json()["data"]["is_draft"] is True
+    assert edited.json()["data"]["published_version"] == 1
+
+
+async def test_template_validation_errors_are_reported_per_field(api):
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    broken = wash_payload()
+    broken["fields"][0]["type"] = "signature"
+
+    response = await api.post("/api/v1/admin/templates", headers=admin, json=broken)
+    assert response.status_code == 400
+    error = response.json()["error"]
+    assert error["code"] == "validation_failed"
+    assert error["fields"]["fields.0.type"] == "unsupported_type"
+
+
+async def test_new_role_sees_new_template_after_publish(api):
+    """Faza 2 chiqish mezoni: yangi rol + shablon → xodim menyusida paydo bo'ladi."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+
+    created = await api.post("/api/v1/admin/templates", headers=admin, json=wash_payload())
+    template_id = created.json()["data"]["id"]
+
+    role = await api.post(
+        "/api/v1/admin/roles",
+        headers=admin,
+        json={
+            "code": "washer",
+            "name_uz": "Yuvuvchi",
+            "name_ru": "Мойщик",
+            "icon": "🧼",
+            "kind": "reporter",
+            "template_ids": [template_id],
+        },
+    )
+    assert role.status_code == 201, role.text
+    role_id = role.json()["data"]["id"]
+
+    # ustani yangi rolga o'tkazamiz
+    employees = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+    mechanic_id = next(e["id"] for e in employees if e["phone"] == "+998901110001")
+    moved = await api.post(
+        f"/api/v1/admin/employees/{mechanic_id}/role", headers=admin, json={"role_id": role_id}
+    )
+    assert moved.status_code == 200
+
+    # nashr etilmagan — menyu bo'sh
+    mechanic = auth_header((await login(api, MECHANIC_TG))["access_token"])
+    assert (await api.get("/api/v1/templates", headers=mechanic)).json() == []
+
+    pub = await api.post(f"/api/v1/admin/templates/{template_id}/publish", headers=admin)
+    assert pub.status_code == 200, pub.text
+
+    after = await login(api, MECHANIC_TG)
+    assert [t["code"] for t in after["templates"]] == ["car_wash"]
+    assert after["employee"]["role"]["name"] == "Yuvuvchi"
+
+
+async def test_role_can_be_renamed_and_retemplated(api):
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    roles = (await api.get("/api/v1/admin/roles", headers=admin)).json()["data"]
+    mechanic = next(r for r in roles if r["code"] == "mechanic")
+
+    response = await api.patch(
+        f"/api/v1/admin/roles/{mechanic['id']}",
+        headers=admin,
+        json={"name_uz": "Bosh usta", "icon": "🛠", "template_ids": []},
+    )
+    assert response.status_code == 200
+
+    auth = await login(api, MECHANIC_TG)
+    assert auth["employee"]["role"]["name"] == "Bosh usta"
+    assert auth["templates"] == []
+
+
+async def test_system_role_kind_is_locked(api):
+    """Seed rollari (`is_system`) — turi o'zgarmaydi, nomi o'zgaradi."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    roles = (await api.get("/api/v1/admin/roles", headers=admin)).json()["data"]
+    admin_role = next(r for r in roles if r["code"] == "admin")
+
+    response = await api.patch(
+        f"/api/v1/admin/roles/{admin_role['id']}", headers=admin, json={"kind": "reporter"}
+    )
+    assert response.status_code == 422
+
+
+async def test_last_admin_role_kind_change_is_blocked(api):
+    """R8 — admin qolmasa, rolning turini o'zgartirib bo'lmaydi."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+
+    # adminni tizim bo'lmagan yangi admin rolga ko'chiramiz
+    created = await api.post(
+        "/api/v1/admin/roles",
+        headers=admin,
+        json={
+            "code": "director",
+            "name_uz": "Direktor",
+            "name_ru": "Директор",
+            "kind": "admin",
+            "template_ids": [],
+        },
+    )
+    director_id = created.json()["data"]["id"]
+
+    employees = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+    admin_id = next(e["id"] for e in employees if e["phone"] == "+998901110002")
+    moved = await api.post(
+        f"/api/v1/admin/employees/{admin_id}/role",
+        headers=admin,
+        json={"role_id": director_id},
+    )
+    assert moved.status_code == 200
+
+    # endi yagona faol admin — shu rol. Turini o'zgartirish R8 ni buzadi.
+    response = await api.patch(
+        f"/api/v1/admin/roles/{director_id}", headers=admin, json={"kind": "reporter"}
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "last_admin_required"

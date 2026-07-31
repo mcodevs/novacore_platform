@@ -33,6 +33,7 @@ SUPPORTED_TYPES = {
     "select",
     "photo",
     "vehicle_picker",
+    "submission_picker",  # bog'liq hisobot: qism xaridi ↔ ta'mir (Faza 2)
     "lines",
     "geo",
 }
@@ -388,6 +389,10 @@ def validate(
             if not isinstance(value, dict) or not value.get("vehicle_id"):
                 issues.append(ValidationIssue(spec.code, "field_required", {}))
 
+        elif spec.type == "submission_picker":
+            if not isinstance(value, dict) or not value.get("submission_id"):
+                issues.append(ValidationIssue(spec.code, "field_required", {}))
+
     return issues
 
 
@@ -450,6 +455,12 @@ def apply_field_mapping(
         value = data.get(employee_field)
         if isinstance(value, dict) and value.get("employee_id"):
             submission.subject_employee_id = int(value["employee_id"])
+
+    related_field = mapping.get("related_submission")
+    if related_field:
+        value = data.get(related_field)
+        if isinstance(value, dict) and value.get("submission_id"):
+            submission.related_submission_id = int(value["submission_id"])
 
     odometer_field = mapping.get("odometer")
     if odometer_field:

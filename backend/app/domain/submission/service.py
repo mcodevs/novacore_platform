@@ -35,7 +35,7 @@ from app.domain.approval import service as approval_service
 from app.domain.notify import service as notify
 from app.domain.period import service as period_service
 from app.domain.role import permissions
-from app.domain.template import engine
+from app.domain.template import builder, engine
 from app.domain import vehicle as vehicle_domain
 
 
@@ -92,7 +92,7 @@ async def create_draft(
     submission = Submission(
         number=await next_number(session),
         template_id=template.id,
-        template_version=template.version,
+        template_version=await builder.usable_version(session, template),  # nashr etilgani
         author_id=author.id,
         status=SubmissionStatus.DRAFT,
         data={},
@@ -403,6 +403,44 @@ async def awaiting_author_decision(
         .order_by(Submission.price_proposed_at.asc())
         .limit(limit)
     )
+    return list((await session.execute(stmt)).scalars().all())
+
+
+async def linkable(
+    session: AsyncSession,
+    employee: Employee,
+    *,
+    template_code: str | None = None,
+    vehicle_id: int | None = None,
+    exclude_id: int | None = None,
+    limit: int = 20,
+) -> list[Submission]:
+    """`submission_picker` uchun nomzodlar — bog'liq hisobotlar (Faza 2).
+
+    Ta'minotchining qism xaridi **ustaning** ta'mir hisobotiga biriktiriladi —
+    demak bu yerda muallif bo'yicha cheklov ishlamaydi. O'rniga:
+
+    • `reporter` uchun **mashina majburiy** — butun bazani varaqlay olmaydi
+    • javobda faqat identifikatsiya qaytariladi (raqam, mashina, muallif, sana);
+      summalar yo'q — R3 buzilmaydi (`api/v1/serializers.linkable_out`)
+    """
+    if vehicle_id is None and not permissions.can_see_all_submissions(employee):
+        raise BusinessRuleViolated("Avval mashinani tanlang")
+
+    stmt = sa.select(Submission).where(
+        Submission.deleted_at.is_(None),
+        Submission.status != SubmissionStatus.DRAFT,
+    )
+    if template_code:
+        stmt = stmt.join(Template, Template.id == Submission.template_id).where(
+            Template.code == template_code
+        )
+    if vehicle_id is not None:
+        stmt = stmt.where(Submission.subject_vehicle_id == vehicle_id)
+    if exclude_id is not None:
+        stmt = stmt.where(Submission.id != exclude_id)
+
+    stmt = stmt.order_by(Submission.created_at.desc()).limit(limit)
     return list((await session.execute(stmt)).scalars().all())
 
 

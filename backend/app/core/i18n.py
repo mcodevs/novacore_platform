@@ -269,6 +269,10 @@ T: dict[str, dict[str, str]] = {
     "ask_text": {"uz": "✍️ <b>{label}</b>\n{hint}", "ru": "✍️ <b>{label}</b>\n{hint}"},
     "ask_money": {"uz": "💰 <b>{label}</b>\n{hint}", "ru": "💰 <b>{label}</b>\n{hint}"},
     "ask_select": {"uz": "📋 <b>{label}</b>\n{hint}", "ru": "📋 <b>{label}</b>\n{hint}"},
+    "linkable_empty": {
+        "uz": "🔗 <b>{label}</b>\nBu mashina bo'yicha bog'lanadigan hisobot topilmadi.",
+        "ru": "🔗 <b>{label}</b>\nПо этой машине связанных отчётов не найдено.",
+    },
     "ask_bool": {"uz": "❔ <b>{label}</b>\n{hint}", "ru": "❔ <b>{label}</b>\n{hint}"},
     "invalid_number": {"uz": "Faqat son kiriting.", "ru": "Введите только число."},
     "invalid_money": {

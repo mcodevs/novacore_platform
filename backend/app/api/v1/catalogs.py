@@ -12,14 +12,13 @@ from app.core.phone import normalize_plate
 from app.db.models import (
     CatalogItem,
     PartsCatalog,
-    RoleTemplate,
     Submission,
     Template,
     TemplateVersion,
     Vehicle,
     WorkCatalog,
 )
-from app.domain.template import engine
+from app.domain.template import builder, engine
 
 router = APIRouter(tags=["catalogs"])
 
@@ -77,14 +76,8 @@ async def vehicle_history(
 
 @router.get("/templates", response_model=list[schemas.TemplateOut])
 async def my_templates(session: SessionDep, employee: EmployeeDep):
-    """**Menga tegishli** shablonlar — rolim bo'yicha."""
-    stmt = (
-        sa.select(Template)
-        .join(RoleTemplate, RoleTemplate.template_id == Template.id)
-        .where(RoleTemplate.role_id == employee.role_id, Template.is_active.is_(True))
-        .order_by(RoleTemplate.sort)
-    )
-    rows = (await session.execute(stmt)).scalars().all()
+    """**Menga tegishli** shablonlar — rolim bo'yicha, faqat nashr etilganlari."""
+    rows = await builder.visible_for(session, employee)
     return [serializers.template_out(row, employee.lang) for row in rows]
 
 
@@ -99,11 +92,13 @@ async def template_schema(
     if template is None:
         raise NotFound("Shablon topilmadi")
 
+    # Versiya ko'rsatilmasa — **nashr etilgan** oxirgisi (qoralama emas)
+    wanted = version or await builder.latest_published_version(session, template.id)
     snapshot = (
         await session.execute(
             sa.select(TemplateVersion).where(
                 TemplateVersion.template_id == template.id,
-                TemplateVersion.version == (version or template.version),
+                TemplateVersion.version == (wanted or template.version),
             )
         )
     ).scalar_one_or_none()

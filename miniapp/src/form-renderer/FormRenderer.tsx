@@ -10,6 +10,7 @@ import {
   NumberField,
   PhotoField,
   SelectField,
+  SubmissionPickerField,
   TextField,
   VehicleField,
   type FieldProps,
@@ -37,6 +38,7 @@ const RENDERERS: Record<string, (props: FieldProps) => JSX.Element> = {
   bool: BoolField,
   select: SelectField,
   vehicle_picker: VehicleField,
+  submission_picker: SubmissionPickerField,
   photo: PhotoField,
 };
 
@@ -91,7 +93,9 @@ export function validateSection(
       value === undefined ||
       (typeof value === 'string' && !value.trim()) ||
       (field.type === 'vehicle_picker' &&
-        !(value as { vehicle_id?: number } | null)?.vehicle_id);
+        !(value as { vehicle_id?: number } | null)?.vehicle_id) ||
+      (field.type === 'submission_picker' &&
+        !(value as { submission_id?: number } | null)?.submission_id);
     if (empty) {
       errors[field.code] = t('required');
       continue;
@@ -104,8 +108,22 @@ export function validateSection(
   return errors;
 }
 
+/** `submission_picker` nomzodlarini shu hisobotdagi mashina bo'yicha filtrlash. */
+function pickedVehicleId(schema: TemplateSchema, values: Record<string, unknown>): number | null {
+  const code = schema.field_mapping?.vehicle;
+  const candidates = code
+    ? [code]
+    : schema.fields.filter((f) => f.type === 'vehicle_picker').map((f) => f.code);
+  for (const key of candidates) {
+    const id = (values[key] as { vehicle_id?: number } | null)?.vehicle_id;
+    if (id) return id;
+  }
+  return null;
+}
+
 export function FormRenderer(props: Props) {
   const { schema, section, values, lines, media, errors, submissionId } = props;
+  const vehicleId = pickedVehicleId(schema, values);
   return (
     <>
       {fieldsOfSection(schema, section).map((field) => {
@@ -130,6 +148,7 @@ export function FormRenderer(props: Props) {
             error={errors[field.code]}
             submissionId={submissionId}
             media={media}
+            vehicleId={vehicleId}
             onChange={(value) => props.onChange(field.code, value)}
             onMediaChange={props.onMediaChange}
           />

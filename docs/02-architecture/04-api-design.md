@@ -46,8 +46,8 @@ Batafsil: [06-security.md](06-security.md)
 | `GET` | `/employees` | `?role_id=&status=` |
 | `GET` | `/work-catalog` | Ish turlari. ⚠️ `reference_price` `reporter` roliga **qaytarilmaydi** |
 | `GET` | `/parts-catalog` | `?q=` |
-| `GET` | `/templates` | **Menga tegishli** shablonlar (rolim bo'yicha) |
-| `GET` | `/templates/{code}` | To'liq sxema (forma chizish uchun) |
+| `GET` | `/templates` | **Menga tegishli** shablonlar (rolim bo'yicha, faqat **nashr etilganlari**) |
+| `GET` | `/templates/{code}` | To'liq sxema (forma chizish uchun). `?version=` — eski hisobot uchun |
 
 ## 4. Hisobotlar
 
@@ -64,6 +64,7 @@ Batafsil: [06-security.md](06-security.md)
 | `POST` | `/submissions/{id}/reject` | `{ comment }` — majburiy |
 | `POST` | `/submissions/{id}/reopen` | `{ comment }` — muallifga qaytarish |
 | `DELETE` | `/submissions/{id}` | Faqat `DRAFT`, faqat muallif |
+| `GET` | `/submissions/linkable` | `submission_picker` nomzodlari: `?template_code=&vehicle_id=&exclude_id=`. **Summasiz** javob; `reporter` uchun `vehicle_id` majburiy |
 
 ## 5. Narx kelishuvi ⭐
 
@@ -104,15 +105,24 @@ Batafsil: [03-integrations/03-media-and-storage.md](../03-integrations/03-media-
 | `GET/POST/PATCH` | `/admin/vehicles` | Mashina reyestri |
 | `GET/POST/PATCH` | `/admin/employees` | Xodimlar |
 | `POST` | `/admin/employees/{id}/role` | `{ role_id }` |
-| **`GET/POST/PATCH`** | **`/admin/roles`** | ⭐ Rol yaratish: `{ code, name_uz, name_ru, icon, kind, template_ids[] }` |
-| `GET/POST/PATCH` | `/admin/templates` | Shablonlar |
-| `POST` | `/admin/templates/{id}/publish` | Nashr (version++) |
+| **`GET/POST`** | **`/admin/roles`** | ⭐ Rol yaratish: `{ code, name_uz, name_ru, icon, kind, template_ids[] }` |
+| **`PATCH`** | **`/admin/roles/{id}`** | Nom, ikonka, `kind`, `template_ids`, `is_active`. `code` o'zgarmas |
+| `GET` | `/admin/templates` | Barcha shablonlar + qoralama holati (`is_draft`, `published_version`) |
+| `GET` | `/admin/templates/{id}` | Joriy sxema (`definition`) — konstruktor shuni ochadi |
+| `POST/PATCH` | `/admin/templates`, `/admin/templates/{id}` | Sxema seed JSON'i bilan bir xil ko'rinishda |
+| `POST` | `/admin/templates/{id}/publish` | Nashr — snapshot yoziladi va o'zgarmas bo'ladi |
 | `GET/POST/PATCH` | `/admin/work-catalog` | Ish turlari + tayanch narx |
 | `GET` | `/admin/audit` | `?actor_id=&entity=&from=&to=` |
 | `GET` | `/admin/flags` | Bayroqlar |
 | `POST` | `/admin/flags/{id}/resolve` | `{ resolution, comment }` |
 
 ⚠️ `POST /admin/roles` — `kind` faqat `reporter` / `admin` / `accountant`
+
+⚠️ `PATCH /admin/roles/{id}`:
+- `is_system` rol (seed: usta, ta'minotchi, admin, buxgalter) — turi
+  o'zgarmaydi va o'chirilmaydi (`business_rule_violated`)
+- `kind='admin'` rolni boshqa turga o'tkazish shu roldagi **barcha** xodimlarni
+  admin huquqidan mahrum qiladi → R8 tekshiriladi (`last_admin_required`)
 bo'lishi mumkin. Oxirgi `admin` rolli xodimni o'chirish `409` beradi (R8).
 
 ## 8. Davr va to'lovlar

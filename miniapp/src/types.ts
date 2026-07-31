@@ -175,3 +175,89 @@ export interface WorkCatalogItem {
 export interface ApiErrorBody {
   error: { code: string; message: string; fields?: Record<string, string> };
 }
+
+// --- Konstruktorlar (Faza 2) -------------------------------------------------
+
+/** Mini App va bot chiza oladigan maydon turlari (backend: `engine.SUPPORTED_TYPES`). */
+export const FIELD_TYPES = [
+  'text',
+  'textarea',
+  'number',
+  'money',
+  'bool',
+  'select',
+  'photo',
+  'vehicle_picker',
+  'submission_picker',
+  'lines',
+  'geo',
+] as const;
+
+export type FieldType = (typeof FIELD_TYPES)[number];
+
+export interface FieldDefinition {
+  code: string;
+  type: FieldType;
+  label: { uz: string; ru?: string };
+  hint?: { uz?: string; ru?: string } | null;
+  required?: boolean;
+  section?: string | null;
+  sort?: number;
+  options?: Record<string, unknown>;
+  validation?: Record<string, unknown>;
+  visible_if?: Record<string, unknown> | null;
+}
+
+export interface TemplateDefinition {
+  code: string;
+  name: { uz: string; ru?: string };
+  icon: string;
+  subject_type: 'vehicle' | 'employee' | 'none';
+  has_money: boolean;
+  negotiable: boolean;
+  version?: number;
+  field_mapping: Record<string, string>;
+  sections: { code: string; title: { uz: string; ru?: string } }[];
+  fields: FieldDefinition[];
+}
+
+export interface TemplateSummary {
+  id: number;
+  code: string;
+  name_uz: string;
+  name_ru: string;
+  icon: string;
+  version: number;
+  published_version: number | null;
+  is_draft: boolean;
+  is_active: boolean;
+  has_money: boolean;
+  negotiable: boolean;
+  fields_count: number;
+}
+
+export interface TemplateDetail extends TemplateSummary {
+  definition: TemplateDefinition;
+}
+
+export interface RoleSummary {
+  id: number;
+  code: string;
+  name_uz: string;
+  name_ru: string;
+  icon: string;
+  kind: RoleKind;
+  is_system: boolean;
+  template_ids: number[];
+}
+
+/** `submission_picker` nomzodi — summa yo'q (backend: `LinkableSubmissionOut`). */
+export interface LinkableSubmission {
+  id: number;
+  number: string;
+  status: SubmissionStatus;
+  template_code: string;
+  author_name: string;
+  vehicle_plate: string | null;
+  submitted_at: string | null;
+}

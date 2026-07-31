@@ -7,11 +7,17 @@ import type {
   Dashboard,
   Employee,
   Lang,
+  LinkableSubmission,
   MediaItem,
   PriceContext,
   PriceStats,
+  RoleKind,
+  RoleSummary,
   Submission,
+  TemplateDefinition,
+  TemplateDetail,
   TemplateSchema,
+  TemplateSummary,
   Vehicle,
   WorkCatalogItem,
 } from './types';
@@ -222,6 +228,20 @@ export const disputePrice = (id: number, comment: string) =>
 
 export const myPriceStats = () => request<PriceStats>('/me/price-stats');
 
+/** `submission_picker` nomzodlari — qism xaridini ta'mirga bog'lash uchun. */
+export const linkableSubmissions = (params: {
+  template_code?: string;
+  vehicle_id?: number;
+  exclude_id?: number;
+}) => {
+  const query = new URLSearchParams(
+    Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== '')
+      .map(([k, v]) => [k, String(v)]),
+  ).toString();
+  return request<LinkableSubmission[]>(`/submissions/linkable?${query}`);
+};
+
 // --- Media ---
 
 export async function uploadMedia(
@@ -243,3 +263,47 @@ export async function uploadMedia(
 // --- Analitika ---
 
 export const dashboard = () => request<Dashboard>('/reports/dashboard');
+
+// --- Konstruktorlar (Faza 2, faqat admin) ---
+
+export const adminTemplates = () => request<TemplateSummary[]>('/admin/templates');
+
+export const adminTemplate = (id: number) => request<TemplateDetail>(`/admin/templates/${id}`);
+
+export const createTemplate = (definition: TemplateDefinition) =>
+  request<TemplateSummary>('/admin/templates', {
+    method: 'POST',
+    body: JSON.stringify(definition),
+  });
+
+export const updateTemplate = (id: number, definition: TemplateDefinition) =>
+  request<TemplateSummary>(`/admin/templates/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(definition),
+  });
+
+export const publishTemplate = (id: number) =>
+  request<TemplateSummary>(`/admin/templates/${id}/publish`, { method: 'POST' });
+
+export const adminRoles = () => request<RoleSummary[]>('/admin/roles');
+
+export interface RoleInput {
+  code: string;
+  name_uz: string;
+  name_ru: string;
+  icon: string;
+  kind: RoleKind;
+  template_ids: number[];
+}
+
+export const createRole = (payload: RoleInput) =>
+  request<{ id: number; code: string }>('/admin/roles', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateRole = (id: number, payload: Partial<RoleInput>) =>
+  request<{ id: number; code: string }>(`/admin/roles/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });

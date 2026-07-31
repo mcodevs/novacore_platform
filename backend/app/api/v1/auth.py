@@ -18,20 +18,16 @@ from app.core.security import (
     validate_init_data,
 )
 from app.db.base import as_utc, utcnow
-from app.db.models import Employee, RefreshToken, RoleTemplate, Template
+from app.db.models import Employee, RefreshToken, Template
 from app.domain import audit
+from app.domain.template import builder
 
 router = APIRouter(tags=["auth"])
 
 
 async def _visible_templates(session, employee: Employee) -> list[Template]:
-    stmt = (
-        sa.select(Template)
-        .join(RoleTemplate, RoleTemplate.template_id == Template.id)
-        .where(RoleTemplate.role_id == employee.role_id, Template.is_active.is_(True))
-        .order_by(RoleTemplate.sort)
-    )
-    return list((await session.execute(stmt)).scalars().all())
+    """Rolga biriktirilgan va nashr etilgan shablonlar (qoralama ko'rinmaydi)."""
+    return await builder.visible_for(session, employee)
 
 
 async def _issue(session, employee: Employee) -> schemas.AuthResponse:

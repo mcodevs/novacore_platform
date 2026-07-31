@@ -56,6 +56,27 @@ async def list_submissions(
     return [serializers.submission_out(row) for row in rows]
 
 
+@router.get("/submissions/linkable", response_model=list[schemas.LinkableSubmissionOut])
+async def linkable_submissions(
+    session: SessionDep,
+    employee: EmployeeDep,
+    template_code: str | None = None,
+    vehicle_id: int | None = None,
+    exclude_id: int | None = None,
+    limit: int = Query(20, le=50),
+):
+    """`submission_picker` nomzodlari — qism xaridini ta'mirga bog'lash uchun."""
+    rows = await submission_service.linkable(
+        session,
+        employee,
+        template_code=template_code,
+        vehicle_id=vehicle_id,
+        exclude_id=exclude_id,
+        limit=limit,
+    )
+    return [serializers.linkable_out(row) for row in rows]
+
+
 @router.post("/submissions", response_model=schemas.SubmissionOut, status_code=201)
 async def create_submission(
     payload: schemas.CreateSubmissionRequest, session: SessionDep, employee: EmployeeDep

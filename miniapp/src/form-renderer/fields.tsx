@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as api from '../api';
 import { compressImage, money } from '../format';
 import { label as pickLabel, t } from '../i18n';
-import type { FieldSchema, MediaItem, Vehicle } from '../types';
+import type { FieldSchema, LinkableSubmission, MediaItem, Vehicle } from '../types';
 
 export interface FieldProps {
   field: FieldSchema;
@@ -13,6 +13,8 @@ export interface FieldProps {
   error?: string;
   submissionId: number;
   media: MediaItem[];
+  /** `submission_picker` uchun: nomzodlar shu mashina bo'yicha filtrlanadi. */
+  vehicleId?: number | null;
   onChange(value: unknown): void;
   onMediaChange(media: MediaItem[]): void;
 }
@@ -175,6 +177,68 @@ export function VehicleField({ field, value, error, onChange }: FieldProps) {
           {vehicle.current_driver_name ? ` · 👤 ${vehicle.current_driver_name}` : ''}
         </p>
       ) : null}
+      {error ? <p className="error">{error}</p> : null}
+    </div>
+  );
+}
+
+export function SubmissionPickerField({
+  field,
+  value,
+  error,
+  submissionId,
+  vehicleId,
+  onChange,
+}: FieldProps) {
+  const [options, setOptions] = useState<LinkableSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const current = (value as { submission_id?: number } | null)?.submission_id ?? null;
+
+  useEffect(() => {
+    if (!vehicleId) {
+      setOptions([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    api
+      .linkableSubmissions({
+        template_code: String(field.options?.template_code ?? ''),
+        vehicle_id: vehicleId,
+        exclude_id: submissionId,
+      })
+      .then(setOptions)
+      .catch(() => setOptions([]))
+      .finally(() => setLoading(false));
+  }, [field, vehicleId, submissionId]);
+
+  return (
+    <div className="card">
+      <Label field={field} />
+      {loading ? (
+        <p className="muted">{t('loading')}</p>
+      ) : options.length === 0 ? (
+        <p className="muted">{t('linkable_empty')}</p>
+      ) : (
+        options.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            className={`list-item${current === option.id ? ' active' : ''}`}
+            onClick={() =>
+              onChange(current === option.id ? null : { submission_id: option.id })
+            }
+          >
+            <div>
+              <strong>{option.number}</strong>
+              {current === option.id ? ' ✅' : ''}
+            </div>
+            <div className="badge">
+              {option.author_name} · {option.vehicle_plate ?? '—'}
+            </div>
+          </button>
+        ))
+      )}
       {error ? <p className="error">{error}</p> : null}
     </div>
   );

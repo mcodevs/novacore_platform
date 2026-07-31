@@ -5,10 +5,13 @@ import { useCallback, useEffect, useState } from 'react';
 import * as api from './api';
 import { ApiError } from './api';
 import { setLocale, t } from './i18n';
+import { BuilderScreen } from './screens/BuilderScreen';
 import { DetailScreen } from './screens/DetailScreen';
 import { FormScreen } from './screens/FormScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { RoleEditScreen } from './screens/RoleEditScreen';
+import { TemplateEditScreen } from './screens/TemplateEditScreen';
 import { isTelegram, tg } from './telegram';
 import type { AuthResponse, Lang } from './types';
 import { Skeleton, useToast } from './ui';
@@ -17,7 +20,10 @@ type Route =
   | { name: 'home' }
   | { name: 'form'; id: number }
   | { name: 'detail'; id: number }
-  | { name: 'profile' };
+  | { name: 'profile' }
+  | { name: 'builder' }
+  | { name: 'template'; id: number | null }
+  | { name: 'role'; id: number | null };
 
 export function App() {
   const [auth, setAuth] = useState<AuthResponse | null>(null);
@@ -117,6 +123,34 @@ export function App() {
           auth={auth}
           onOpen={(id) => push({ name: 'detail', id })}
           onCreate={(code) => void createReport(code)}
+          onBuilder={() => push({ name: 'builder' })}
+        />
+      ) : null}
+
+      {route.name === 'builder' ? (
+        <BuilderScreen
+          onEditTemplate={(id) => push({ name: 'template', id })}
+          onEditRole={(id) => push({ name: 'role', id })}
+        />
+      ) : null}
+
+      {route.name === 'template' ? (
+        <TemplateEditScreen
+          templateId={route.id}
+          onDone={(message) => {
+            showToast(message);
+            pop();
+          }}
+        />
+      ) : null}
+
+      {route.name === 'role' ? (
+        <RoleEditScreen
+          roleId={route.id}
+          onDone={(message) => {
+            showToast(message);
+            pop();
+          }}
         />
       ) : null}
 

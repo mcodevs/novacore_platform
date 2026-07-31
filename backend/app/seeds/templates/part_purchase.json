@@ -5,11 +5,12 @@
   "subject_type": "vehicle",
   "has_money": true,
   "negotiable": false,
-  "version": 1,
+  "version": 2,
 
   "field_mapping": {
     "vehicle": "plate",
-    "parts_amount": "@lines.part"
+    "parts_amount": "@lines.part",
+    "related_submission": "repair_link"
   },
 
   "sections": [
@@ -38,6 +39,18 @@
         "price_field": true,
         "price_source": "author"
       }
+    },
+    {
+      "code": "repair_link",
+      "section": "purchase",
+      "label": { "uz": "Qaysi ta'mir uchun?", "ru": "Для какого ремонта?" },
+      "hint": {
+        "uz": "Shu mashina bo'yicha ustaning hisoboti (ixtiyoriy)",
+        "ru": "Отчёт мастера по этой машине (необязательно)"
+      },
+      "type": "submission_picker",
+      "required": false,
+      "options": { "template_code": "car_repair", "same_vehicle": true }
     },
     {
       "code": "supplier",
