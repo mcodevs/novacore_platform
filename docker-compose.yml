@@ -1,0 +1,39 @@
+# Lokal muhit: Postgres + ilova (bot + API bitta process)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: novacore
+      POSTGRES_PASSWORD: novacore
+      POSTGRES_DB: novacore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U novacore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://novacore:novacore@db:5432/novacore
+      STORAGE_BACKEND: local
+      MEDIA_ROOT: /app/var/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media:/app/var/media
+
+volumes:
+  pgdata:
+  media:

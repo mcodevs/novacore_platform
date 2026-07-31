@@ -1,0 +1,12 @@
+{
+  "fault_categories": [
+    { "code": "brakes", "name_uz": "Tormoz", "name_ru": "Тормоза", "icon": "🛑", "sort": 10 },
+    { "code": "suspension", "name_uz": "Xodovoy / podveska", "name_ru": "Ходовая / подвеска", "icon": "🔩", "sort": 20 },
+    { "code": "electric", "name_uz": "Elektr", "name_ru": "Электрика", "icon": "⚡", "sort": 30 },
+    { "code": "body", "name_uz": "Kuzov", "name_ru": "Кузов", "icon": "🚙", "sort": 40 },
+    { "code": "interior", "name_uz": "Salon", "name_ru": "Салон", "icon": "🪑", "sort": 50 },
+    { "code": "tyres", "name_uz": "Shina / g'ildirak", "name_ru": "Шины / колёса", "icon": "🛞", "sort": 60 },
+    { "code": "battery", "name_uz": "Batareya / zaryad", "name_ru": "Батарея / зарядка", "icon": "🔋", "sort": 70 },
+    { "code": "other", "name_uz": "Boshqa", "name_ru": "Другое", "icon": "❓", "sort": 99 }
+  ]
+}

@@ -1,8 +1,12 @@
 # NovaCore Employee Platform
 
-> 📄 **Repo holati:** hozircha faqat hujjatlar — kod hali yozilmagan.
-> Hujjatlar to'plami **texnik topshiriq** sifatida ishlatiladi.
-> Boshlash tartibi: [docs/05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
+[![CI](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml/badge.svg)](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml)
+
+> 📄 **Repo holati:** Faza 1 (MVP) to'liq yozilgan — **backend + Telegram bot**
+> (`backend/`) va **Mini App** (`miniapp/`). Hujjatlar — yagona haqiqat manbai
+> va texnik topshiriq.
+> Ishga tushirish: [Tez boshlash](#tez-boshlash) · Reja:
+> [docs/05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
 
 **NovaCore** — Toshkent shahridagi yirik Yandex taksopark. Park o'z haydovchilariga
 Comfort / Comfort+ tarifida ishlash uchun **o'ziga qarashli elektromobillarni** beradi
@@ -97,7 +101,7 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 | **DB** | PostgreSQL (Fly Postgres) | JSONB — dinamik shablonlar |
 | **Media** | Tigris (fly.io S3-mos ombori) | Telegram `file_id` — faqat kesh |
 | **Fon vazifalari** | asyncio loop + Postgres outbox | **Redis kerak emas** |
-| **Mini App** | React + TS + Vite + `@telegram-apps/*` | 4 ta ekran, tayyor UI kit |
+| **Mini App** | React 18 + TS + Vite | 4 ekran, form-renderer, ~59 KB gzip |
 | **Deploy** | fly.io (Docker) | ~$10–25/oy |
 
 > Arxitektura **ataylab kichik**: 150 mashina, 4–5 usta, kuniga 3–5 hisobot,
@@ -105,24 +109,78 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 
 ---
 
+## Tez boshlash
+
+```bash
+make bootstrap               # ⭐ venv + .env (kalitlar avtomatik) + npm + seed
+#   → backend/.env ichiga BOT_TOKEN yozing (BotFather, LOKAL uchun alohida bot)
+cd backend && ../.venv/bin/python manage.py employee-add "Admin A." +998901234567 admin
+cd .. && make run            # bot (polling) + API bitta process'da
+make test                    # 121 ta test (domen, bot, API, konfiguratsiya)
+```
+
+Mini App ham kerak bo'lsa: `make miniapp-build` (backend uni `/app` da beradi)
+yoki `make miniapp-dev` (Vite dev-server, brauzerda).
+
+Repoda faqat `.env.example` bor — **hech qanday sir repoga tushmaydi**.
+`.venv/`, `node_modules/`, `backend/var/` va `backend/miniapp_dist/` esa
+buyruqlar orqali hosil bo'ladi, ularni ko'chirib yurish shart emas.
+
+Telegram'da botga `/start` → telefon raqamini yuborish → menyu ochiladi.
+
+**Postgres bilan (compose):** `make compose-up` · **Prod:** `fly deploy`
+(webhook rejimi, `fly secrets set BOT_TOKEN=… JWT_SECRET=… WEBHOOK_SECRET=…`).
+Mini App shu domendan beriladi: `https://<host>/app` — BotFather'da Menu Button
+uchun shu URL ko'rsatiladi.
+
+Batafsil: [backend/README.md](backend/README.md) · [miniapp/README.md](miniapp/README.md)
+
+### Bot nima qila oladi (Faza 1)
+
+| Rol | Imkoniyatlar |
+|---|---|
+| **Usta** (`reporter`) | 🚗 Mashina keldi → shablon bo'yicha ketma-ket forma (foto, probeg, muammo, **ishlar + o'z narxi**) → 🚙 Mashina ketdi → 📤 Yuborish · narx taklifiga ✅/❌ javob · `/mening`, `/hisob`, `/kelishuv` |
+| **Admin** | ⏳ Tasdiq navbati · kartochkada **tarixiy narx statistikasi** · ✅ tasdiqlash · ✏️ narxni kamaytirish (sabab majburiy) · ↩️ qaytarish · ❌ rad etish · `/kunlik`, `/davr`, `/eksport` · o'z hisoboti **avtomatik tasdiqlanadi** (R1a) |
+| **Buxgalter** | Davr precheck, oyni yopish, to'lov varaqalari, Excel eksport |
+
+Fon sikli: 48 soatlik avtomatik rozilik, 24 soatlik eslatmalar, bildirishnoma
+outbox'i, uzoq downtime signali.
+
+### Mini App (4 ekran, ~59 KB gzip)
+
+Ro'yxat/dashboard · ⭐ **form-renderer** (shablon JSON → forma) · ko'rib chiqish
+(admin uchun narx tarixi bilan) · profil (til + o'z narx statistikasi).
+Telegram temasi, BackButton, haptic, offline qoralama, foto siqish.
+Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
+
+---
+
 ## Loyiha holati
 
 | | |
 |---|---|
-| **Versiya** | 0.2 |
-| **Bosqich** | Loyihalash — kod hali yozilmagan |
+| **Versiya** | 1.0 (Faza 1 — MVP to'liq) |
+| **Bosqich** | Backend + bot + Mini App yozilgan · deploy va pilot navbatda |
 | **Sana** | 2026-07-31 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
+| **Testlar** | 121 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.
 > Har faza boshida tegishli hujjatlar to'liq beriladi.
 
-### Keyingi qadam — Faza 0
+### Keyingi qadamlar
 
-1. 🔬 **Kamera sinovi** — `capture="environment"` Telegram Mini App'da (Android + iOS)
-2. 🔬 **Fleet API sinovi** — `status=repairing` yozish ishlaydimi
-3. 📋 Mashina reyestri (Fleet'dan ~150 ta), xodimlar ro'yxati, ish turlari + tayanch narxlar
-4. ⚙️ fly.io app + Postgres + Tigris + 2 ta bot
+1. ⚙️ **Deploy** — fly.io app + Postgres + Tigris, webhook (`BOT_MODE=webhook`)
+2. 📋 **Real ma'lumot** — mashina reyestri (`manage.py vehicles-load fleet.csv`),
+   xodimlar, ish turlari uchun tayanch narxlar (faqat admin ko'radi)
+3. 🧪 **Pilot** — 2 usta + admin, 1–2 hafta (roadmap §6)
+4. 🔬 **Kamera sinovi** — `capture="environment"` real Android va iOS'da
+   (A-10 ochiq xavf); Mini App'da «Galereyadan» zaxira tugmasi va botdagi
+   foto oqimi allaqachon bor
+5. 🎨 **Faza 2** — rol va shablon konstruktori UI (dvigatel tayyor),
+   ta'minotchi oqimi
+6. 🔌 **Faza 3** — Yandex Fleet sinxroni, anti-fraud bayroqlari
+   (`ANTIFRAUD_ENABLED=true` bilan yoqiladi)
 
 Batafsil: [05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)

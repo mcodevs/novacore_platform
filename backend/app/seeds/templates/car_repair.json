@@ -1,0 +1,150 @@
+{
+  "code": "car_repair",
+  "name": { "uz": "Ta'mir hisoboti", "ru": "Отчёт о ремонте" },
+  "icon": "🔧",
+  "subject_type": "vehicle",
+  "has_money": true,
+  "negotiable": true,
+  "version": 1,
+
+  "field_mapping": {
+    "vehicle": "plate",
+    "proposed_labor_amount": "@lines.labor.proposed",
+    "labor_amount": "@lines.labor.approved",
+    "parts_amount": "@lines.part",
+    "odometer": "odometer_value"
+  },
+
+  "sections": [
+    { "code": "identify", "title": { "uz": "Mashina", "ru": "Автомобиль" } },
+    { "code": "before", "title": { "uz": "Ta'mirgacha", "ru": "До ремонта" } },
+    { "code": "work", "title": { "uz": "Bajarilgan ish", "ru": "Выполненная работа" } },
+    { "code": "after", "title": { "uz": "Ta'mirdan keyin", "ru": "После ремонта" } }
+  ],
+
+  "fields": [
+    {
+      "code": "plate",
+      "section": "identify",
+      "label": { "uz": "Mashina raqami", "ru": "Гос. номер" },
+      "type": "vehicle_picker",
+      "required": true,
+      "options": { "only_active": false }
+    },
+    {
+      "code": "photo_car_before",
+      "section": "before",
+      "label": { "uz": "Mashina (raqam ko'rinsin)", "ru": "Автомобиль (номер виден)" },
+      "hint": {
+        "uz": "Raqam aniq ko'rinadigan umumiy ko'rinish",
+        "ru": "Общий вид, номер должен быть читаем"
+      },
+      "type": "photo",
+      "required": true,
+      "options": { "min": 1, "max": 2, "camera_only": true, "kind": "before" }
+    },
+    {
+      "code": "odometer_photo",
+      "section": "before",
+      "label": { "uz": "Panel (probeg)", "ru": "Панель (пробег)" },
+      "type": "photo",
+      "required": true,
+      "options": { "min": 1, "max": 1, "camera_only": true, "kind": "odometer" }
+    },
+    {
+      "code": "odometer_value",
+      "section": "before",
+      "label": { "uz": "Probeg (km)", "ru": "Пробег (км)" },
+      "type": "number",
+      "required": true,
+      "validation": { "min": 0, "max": 999999, "monotonic_for_vehicle": true }
+    },
+    {
+      "code": "category",
+      "section": "before",
+      "label": { "uz": "Nosozlik turi", "ru": "Тип неисправности" },
+      "type": "select",
+      "required": true,
+      "options": { "source": "catalog:fault_categories" }
+    },
+    {
+      "code": "photo_problem",
+      "section": "before",
+      "label": { "uz": "Muammo fotosi", "ru": "Фото проблемы" },
+      "hint": { "uz": "Nosozlik joyi yaqindan", "ru": "Место неисправности крупным планом" },
+      "type": "photo",
+      "required": true,
+      "options": { "min": 1, "max": 5, "camera_only": true, "kind": "problem" }
+    },
+    {
+      "code": "problem_description",
+      "section": "before",
+      "label": { "uz": "Muammo tavsifi", "ru": "Описание проблемы" },
+      "type": "textarea",
+      "required": true,
+      "validation": { "min_length": 10, "max_length": 1000 }
+    },
+    {
+      "code": "works",
+      "section": "work",
+      "label": { "uz": "Bajarilgan ishlar", "ru": "Выполненные работы" },
+      "type": "lines",
+      "required": true,
+      "options": {
+        "kind": "labor",
+        "catalog": "work_catalog",
+        "allow_custom": true,
+        "price_source": "author",
+        "price_field": true,
+        "hide_reference_price_from_author": true,
+        "negotiable": true,
+        "history_flag_threshold_pct": 30
+      }
+    },
+    {
+      "code": "parts",
+      "section": "work",
+      "label": { "uz": "Ishlatilgan qismlar", "ru": "Использованные запчасти" },
+      "type": "lines",
+      "required": false,
+      "options": {
+        "kind": "part",
+        "catalog": "parts_catalog",
+        "allow_custom": true,
+        "price_field": false
+      }
+    },
+    {
+      "code": "photo_after",
+      "section": "after",
+      "label": { "uz": "Tuzatilgandan keyin", "ru": "После устранения" },
+      "type": "photo",
+      "required": true,
+      "options": { "min": 1, "max": 5, "camera_only": true, "kind": "after" }
+    },
+    {
+      "code": "photo_car_after",
+      "section": "after",
+      "label": { "uz": "Mashina (keyin)", "ru": "Автомобиль (после)" },
+      "type": "photo",
+      "required": true,
+      "options": { "min": 1, "max": 2, "camera_only": true, "kind": "after" }
+    },
+    {
+      "code": "comment",
+      "section": "after",
+      "label": { "uz": "Usta izohi", "ru": "Комментарий мастера" },
+      "type": "textarea",
+      "required": true,
+      "validation": { "min_length": 10, "max_length": 2000 }
+    },
+    {
+      "code": "recommendation",
+      "section": "after",
+      "label": { "uz": "Tavsiya (keyingi ish)", "ru": "Рекомендация (следующая работа)" },
+      "type": "textarea",
+      "required": false,
+      "validation": { "max_length": 1000 }
+    }
+  ]
+}

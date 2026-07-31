@@ -1,0 +1,42 @@
+[
+  {
+    "code": "mechanic",
+    "name_uz": "Usta",
+    "name_ru": "Мастер",
+    "icon": "🔧",
+    "kind": "reporter",
+    "is_system": true,
+    "sort": 10,
+    "templates": ["car_repair"]
+  },
+  {
+    "code": "supplier",
+    "name_uz": "Ta'minotchi",
+    "name_ru": "Снабженец",
+    "icon": "📦",
+    "kind": "reporter",
+    "is_system": true,
+    "sort": 20,
+    "templates": ["part_purchase"]
+  },
+  {
+    "code": "admin",
+    "name_uz": "Admin",
+    "name_ru": "Администратор",
+    "icon": "⚙️",
+    "kind": "admin",
+    "is_system": true,
+    "sort": 1,
+    "templates": ["car_repair", "part_purchase"]
+  },
+  {
+    "code": "accountant",
+    "name_uz": "Buxgalter",
+    "name_ru": "Бухгалтер",
+    "icon": "📊",
+    "kind": "accountant",
+    "is_system": true,
+    "sort": 30,
+    "templates": []
+  }
+]

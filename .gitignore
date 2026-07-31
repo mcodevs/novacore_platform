@@ -22,6 +22,8 @@ htmlcov/
 node_modules/
 dist/
 build/
+backend/miniapp_dist/
+*.tsbuildinfo
 .vite/
 *.local
 
@@ -30,6 +32,7 @@ build/
 *.db
 /media/
 /uploads/
+var/
 
 # IDE va OS
 .DS_Store

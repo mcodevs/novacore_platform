@@ -33,11 +33,11 @@ qolishi mumkin. Agar ish 31-iyulda bajarilib, 2-avgustda yuborilsa — u
    ❌ To'sqinlik qiluvchi (blocking)
       • 3 ta hisobot SUBMITTED (tasdiqlanmagan)
       • 1 ta hisobot REOPENED (usta tuzatmagan)
+      • 2 ta hisobot PRICE_NEGOTIATION / PRICE_DISPUTED (kelishuv ochiq)
       • 2 ta kritik bayroq hal qilinmagan
 
    ⚠️ Ogohlantirish (non-blocking)
       • 5 ta qoralama 10 kundan beri turibdi
-      • 2 ta hisobot narx kelishuvida
         ↓
 3. Har biri uchun tanlov:
    [Hal qilish] yoki [Keyingi oyga ko'chirish]
@@ -77,7 +77,10 @@ qolishi mumkin. Agar ish 31-iyulda bajarilib, 2-avgustda yuborilsa — u
 Qoidalar:
 - Faqat **APPROVED** hisobotlar kiradi
 - To'lov **faqat `approved_amount`** bo'yicha — usta so'ragan summa emas
-- `PRICE_NEGOTIATION` holatidagilar kirmaydi (davr yopilishida to'siq bo'ladi)
+- `PRICE_NEGOTIATION` holatidagilar kirmaydi — **davr yopilishida to'siq**:
+  yopilgandan keyin na usta rozilik bera oladi, na 48 soatlik avtomatik rozilik
+  ishlaydi (ikkalasi ham R4 bo'yicha rad etiladi), ya'ni hisobot to'lanmagan
+  holda osilib qolardi
 - `REJECTED` — kirmaydi
 - Bonus/jarima **qo'lda**, sabab majburiy, audit log'ga yoziladi
 - To'lov varaqasi Excel'ga eksport qilinadi (buxgalteriyaga)

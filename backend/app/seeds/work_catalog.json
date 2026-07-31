@@ -1,0 +1,46 @@
+[
+  { "code": "brake_pad_front_replace", "name_uz": "Old tormoz kolodkasini almashtirish", "name_ru": "Замена передних тормозных колодок", "category": "brakes", "reference_price": 180000, "standard_minutes": 60, "warranty_days": 90 },
+  { "code": "brake_pad_rear_replace", "name_uz": "Orqa tormoz kolodkasini almashtirish", "name_ru": "Замена задних тормозных колодок", "category": "brakes", "reference_price": 170000, "standard_minutes": 60, "warranty_days": 90 },
+  { "code": "brake_disc_replace", "name_uz": "Tormoz diskini almashtirish", "name_ru": "Замена тормозного диска", "category": "brakes", "reference_price": 250000, "standard_minutes": 90, "warranty_days": 180 },
+  { "code": "brake_fluid_change", "name_uz": "Tormoz suyuqligini almashtirish", "name_ru": "Замена тормозной жидкости", "category": "brakes", "reference_price": 120000, "standard_minutes": 45, "warranty_days": 180 },
+  { "code": "brake_caliper_service", "name_uz": "Support (kaliper) profilaktikasi", "name_ru": "Обслуживание суппорта", "category": "brakes", "reference_price": 200000, "standard_minutes": 90, "warranty_days": 90 },
+
+  { "code": "shock_absorber_replace", "name_uz": "Amortizatorni almashtirish (1 dona)", "name_ru": "Замена амортизатора (1 шт)", "category": "suspension", "reference_price": 200000, "standard_minutes": 75, "warranty_days": 180 },
+  { "code": "ball_joint_replace", "name_uz": "Sharovoy oporani almashtirish", "name_ru": "Замена шаровой опоры", "category": "suspension", "reference_price": 180000, "standard_minutes": 70, "warranty_days": 180 },
+  { "code": "stabilizer_link_replace", "name_uz": "Stabilizator tyagasini almashtirish", "name_ru": "Замена стойки стабилизатора", "category": "suspension", "reference_price": 120000, "standard_minutes": 45, "warranty_days": 90 },
+  { "code": "silent_block_replace", "name_uz": "Saylentblok almashtirish", "name_ru": "Замена сайлентблока", "category": "suspension", "reference_price": 220000, "standard_minutes": 90, "warranty_days": 180 },
+  { "code": "wheel_bearing_replace", "name_uz": "G'ildirak podshipnigini almashtirish", "name_ru": "Замена ступичного подшипника", "category": "suspension", "reference_price": 280000, "standard_minutes": 120, "warranty_days": 180 },
+  { "code": "steering_rack_service", "name_uz": "Rulevoy reyka ta'miri", "name_ru": "Ремонт рулевой рейки", "category": "suspension", "reference_price": 600000, "standard_minutes": 240, "warranty_days": 180 },
+  { "code": "wheel_alignment", "name_uz": "Razval-sxojdeniye", "name_ru": "Развал-схождение", "category": "suspension", "reference_price": 150000, "standard_minutes": 60, "warranty_days": 30 },
+
+  { "code": "tyre_replace", "name_uz": "Shinani almashtirish (1 dona)", "name_ru": "Замена шины (1 шт)", "category": "tyres", "reference_price": 60000, "standard_minutes": 30, "warranty_days": 30 },
+  { "code": "tyre_repair", "name_uz": "Shina ta'miri (yamoq)", "name_ru": "Ремонт шины (латка)", "category": "tyres", "reference_price": 45000, "standard_minutes": 30, "warranty_days": 30 },
+  { "code": "wheel_balance", "name_uz": "G'ildirak balansirovkasi", "name_ru": "Балансировка колеса", "category": "tyres", "reference_price": 40000, "standard_minutes": 20, "warranty_days": 30 },
+  { "code": "wheel_swap_seasonal", "name_uz": "Mavsumiy g'ildirak almashtirish (4 dona)", "name_ru": "Сезонная переобувка (4 колеса)", "category": "tyres", "reference_price": 180000, "standard_minutes": 60, "warranty_days": 30 },
+
+  { "code": "hv_battery_diagnostics", "name_uz": "Yuqori voltli batareya diagnostikasi", "name_ru": "Диагностика ВВБ", "category": "battery", "reference_price": 300000, "standard_minutes": 90, "warranty_days": 30 },
+  { "code": "lv_battery_replace", "name_uz": "12V akkumulyatorni almashtirish", "name_ru": "Замена АКБ 12В", "category": "battery", "reference_price": 80000, "standard_minutes": 30, "warranty_days": 90 },
+  { "code": "charge_port_repair", "name_uz": "Zaryad portini ta'mirlash", "name_ru": "Ремонт зарядного порта", "category": "battery", "reference_price": 350000, "standard_minutes": 120, "warranty_days": 180 },
+  { "code": "battery_cooling_service", "name_uz": "Batareya sovutish tizimini tozalash", "name_ru": "Обслуживание системы охлаждения ВВБ", "category": "battery", "reference_price": 400000, "standard_minutes": 150, "warranty_days": 180 },
+
+  { "code": "electrical_diagnostics", "name_uz": "Elektr diagnostikasi (skaner)", "name_ru": "Электродиагностика (сканер)", "category": "electric", "reference_price": 100000, "standard_minutes": 45, "warranty_days": 0 },
+  { "code": "headlight_replace", "name_uz": "Fara almashtirish / ta'mirlash", "name_ru": "Замена / ремонт фары", "category": "electric", "reference_price": 150000, "standard_minutes": 60, "warranty_days": 90 },
+  { "code": "wiring_repair", "name_uz": "Simlarni ta'mirlash", "name_ru": "Ремонт проводки", "category": "electric", "reference_price": 200000, "standard_minutes": 90, "warranty_days": 90 },
+  { "code": "window_lifter_repair", "name_uz": "Oyna ko'targichni ta'mirlash", "name_ru": "Ремонт стеклоподъёмника", "category": "electric", "reference_price": 180000, "standard_minutes": 75, "warranty_days": 90 },
+  { "code": "ac_service", "name_uz": "Konditsionerni to'ldirish / ta'mirlash", "name_ru": "Заправка / ремонт кондиционера", "category": "electric", "reference_price": 250000, "standard_minutes": 90, "warranty_days": 90 },
+  { "code": "cabin_filter_replace", "name_uz": "Salon filtrini almashtirish", "name_ru": "Замена салонного фильтра", "category": "electric", "reference_price": 60000, "standard_minutes": 20, "warranty_days": 90 },
+
+  { "code": "body_dent_repair", "name_uz": "Kuzov chetini to'g'rilash (1 element)", "name_ru": "Рихтовка элемента кузова", "category": "body", "reference_price": 400000, "standard_minutes": 180, "warranty_days": 90 },
+  { "code": "body_paint_element", "name_uz": "Bo'yash (1 element)", "name_ru": "Покраска (1 элемент)", "category": "body", "reference_price": 500000, "standard_minutes": 240, "warranty_days": 180 },
+  { "code": "bumper_repair", "name_uz": "Bamperni ta'mirlash", "name_ru": "Ремонт бампера", "category": "body", "reference_price": 300000, "standard_minutes": 150, "warranty_days": 90 },
+  { "code": "mirror_replace", "name_uz": "Ko'zguni almashtirish", "name_ru": "Замена зеркала", "category": "body", "reference_price": 120000, "standard_minutes": 40, "warranty_days": 90 },
+  { "code": "windshield_replace", "name_uz": "Old oynani almashtirish", "name_ru": "Замена лобового стекла", "category": "body", "reference_price": 350000, "standard_minutes": 120, "warranty_days": 90 },
+
+  { "code": "seat_repair", "name_uz": "O'rindiqni ta'mirlash", "name_ru": "Ремонт сиденья", "category": "interior", "reference_price": 200000, "standard_minutes": 90, "warranty_days": 90 },
+  { "code": "interior_trim_repair", "name_uz": "Salon qoplamasini ta'mirlash", "name_ru": "Ремонт обшивки салона", "category": "interior", "reference_price": 180000, "standard_minutes": 90, "warranty_days": 90 },
+  { "code": "deep_cleaning", "name_uz": "Salonni chuqur tozalash (ximchistka)", "name_ru": "Химчистка салона", "category": "interior", "reference_price": 250000, "standard_minutes": 180, "warranty_days": 0 },
+
+  { "code": "general_diagnostics", "name_uz": "Umumiy diagnostika", "name_ru": "Общая диагностика", "category": "other", "reference_price": 80000, "standard_minutes": 40, "warranty_days": 0 },
+  { "code": "towing_assist", "name_uz": "Evakuatsiya / yordam", "name_ru": "Эвакуация / помощь", "category": "other", "reference_price": 150000, "standard_minutes": 60, "warranty_days": 0 },
+  { "code": "other_work", "name_uz": "Boshqa ish (izohda tavsiflanadi)", "name_ru": "Другая работа (описать в комментарии)", "category": "other", "reference_price": null, "standard_minutes": null, "warranty_days": 0 }
+]

@@ -1,0 +1,23 @@
+[
+  { "code": "brake_pad_front", "name_uz": "Tormoz kolodka (old)", "name_ru": "Колодки тормозные (перед)", "category": "brakes", "last_price": 420000 },
+  { "code": "brake_pad_rear", "name_uz": "Tormoz kolodka (orqa)", "name_ru": "Колодки тормозные (зад)", "category": "brakes", "last_price": 380000 },
+  { "code": "brake_disc", "name_uz": "Tormoz diski", "name_ru": "Тормозной диск", "category": "brakes", "last_price": 650000 },
+  { "code": "brake_fluid", "name_uz": "Tormoz suyuqligi (1 l)", "name_ru": "Тормозная жидкость (1 л)", "category": "brakes", "last_price": 90000 },
+  { "code": "shock_absorber", "name_uz": "Amortizator", "name_ru": "Амортизатор", "category": "suspension", "last_price": 650000 },
+  { "code": "ball_joint", "name_uz": "Sharovoy opora", "name_ru": "Шаровая опора", "category": "suspension", "last_price": 220000 },
+  { "code": "stabilizer_link", "name_uz": "Stabilizator tyagasi", "name_ru": "Стойка стабилизатора", "category": "suspension", "last_price": 150000 },
+  { "code": "silent_block", "name_uz": "Saylentblok", "name_ru": "Сайлентблок", "category": "suspension", "last_price": 180000 },
+  { "code": "wheel_bearing", "name_uz": "G'ildirak podshipnigi", "name_ru": "Ступичный подшипник", "category": "suspension", "last_price": 320000 },
+  { "code": "tyre_215_55_r17", "name_uz": "Shina 215/55 R17", "name_ru": "Шина 215/55 R17", "category": "tyres", "last_price": 800000 },
+  { "code": "tyre_205_60_r16", "name_uz": "Shina 205/60 R16", "name_ru": "Шина 205/60 R16", "category": "tyres", "last_price": 700000 },
+  { "code": "wheel_weight", "name_uz": "Balansirovka gruzi (to'plam)", "name_ru": "Балансировочные грузики (компл.)", "category": "tyres", "last_price": 30000 },
+  { "code": "battery_12v", "name_uz": "Akkumulyator 12V", "name_ru": "АКБ 12В", "category": "battery", "last_price": 900000 },
+  { "code": "cabin_filter", "name_uz": "Salon filtri", "name_ru": "Салонный фильтр", "category": "electric", "last_price": 120000 },
+  { "code": "headlight", "name_uz": "Fara", "name_ru": "Фара", "category": "electric", "last_price": 1500000 },
+  { "code": "wiper_blade", "name_uz": "Tozalagich (dvornik)", "name_ru": "Щётка стеклоочистителя", "category": "electric", "last_price": 90000 },
+  { "code": "ac_refrigerant", "name_uz": "Konditsioner gazi (R134a)", "name_ru": "Хладагент кондиционера (R134a)", "category": "electric", "last_price": 200000 },
+  { "code": "mirror_assy", "name_uz": "Yon ko'zgu (to'liq)", "name_ru": "Зеркало боковое (в сборе)", "category": "body", "last_price": 850000 },
+  { "code": "bumper_front", "name_uz": "Old bamper", "name_ru": "Бампер передний", "category": "body", "last_price": 1800000 },
+  { "code": "windshield", "name_uz": "Old oyna", "name_ru": "Лобовое стекло", "category": "body", "last_price": 2200000 },
+  { "code": "other_part", "name_uz": "Boshqa qism (nomini yozing)", "name_ru": "Другая запчасть (укажите название)", "category": "other", "last_price": null }
+]

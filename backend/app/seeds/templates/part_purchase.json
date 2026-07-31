@@ -1,0 +1,82 @@
+{
+  "code": "part_purchase",
+  "name": { "uz": "Ehtiyot qism xaridi", "ru": "Закупка запчастей" },
+  "icon": "📦",
+  "subject_type": "vehicle",
+  "has_money": true,
+  "negotiable": false,
+  "version": 1,
+
+  "field_mapping": {
+    "vehicle": "plate",
+    "parts_amount": "@lines.part"
+  },
+
+  "sections": [
+    { "code": "identify", "title": { "uz": "Mashina", "ru": "Автомобиль" } },
+    { "code": "purchase", "title": { "uz": "Xarid", "ru": "Закупка" } }
+  ],
+
+  "fields": [
+    {
+      "code": "plate",
+      "section": "identify",
+      "label": { "uz": "Mashina raqami", "ru": "Гос. номер" },
+      "type": "vehicle_picker",
+      "required": true
+    },
+    {
+      "code": "parts",
+      "section": "purchase",
+      "label": { "uz": "Sotib olingan qismlar", "ru": "Купленные запчасти" },
+      "type": "lines",
+      "required": true,
+      "options": {
+        "kind": "part",
+        "catalog": "parts_catalog",
+        "allow_custom": true,
+        "price_field": true,
+        "price_source": "author"
+      }
+    },
+    {
+      "code": "supplier",
+      "section": "purchase",
+      "label": { "uz": "Yetkazib beruvchi", "ru": "Поставщик" },
+      "type": "text",
+      "required": true,
+      "validation": { "max_length": 120 }
+    },
+    {
+      "code": "photo_receipt",
+      "section": "purchase",
+      "label": { "uz": "Chek / nakladnoy fotosi", "ru": "Фото чека / накладной" },
+      "type": "photo",
+      "required": true,
+      "options": { "min": 1, "max": 3, "camera_only": true, "kind": "receipt" }
+    },
+    {
+      "code": "is_original",
+      "section": "purchase",
+      "label": { "uz": "Original qismmi?", "ru": "Оригинальная запчасть?" },
+      "type": "bool",
+      "required": true
+    },
+    {
+      "code": "warranty_days",
+      "section": "purchase",
+      "label": { "uz": "Kafolat (kun)", "ru": "Гарантия (дней)" },
+      "type": "number",
+      "required": false,
+      "validation": { "min": 0, "max": 3650 }
+    },
+    {
+      "code": "comment",
+      "section": "purchase",
+      "label": { "uz": "Izoh", "ru": "Комментарий" },
+      "type": "textarea",
+      "required": false,
+      "validation": { "max_length": 1000 }
+    }
+  ]
+}
