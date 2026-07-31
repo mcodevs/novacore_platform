@@ -18,6 +18,7 @@ from app.bot.texts import render_card, render_history
 from app.core.i18n import fmt_dt, fmt_money, status_label, t
 from app.db.models import (
     Approval,
+    ApprovalDecision,
     Employee,
     LineKind,
     Submission,
@@ -95,7 +96,7 @@ async def show_review_card(
                 sa.select(Approval)
                 .where(
                     Approval.submission_id == submission.id,
-                    Approval.decision == "price_disputed",
+                    Approval.decision == ApprovalDecision.price_disputed,
                 )
                 .order_by(Approval.created_at.desc())
                 .limit(1)

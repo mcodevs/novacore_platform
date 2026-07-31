@@ -761,14 +761,22 @@ async def line_name_typed(
         return
     lang = employee.lang
 
+    allow_custom = bool(spec.options.get("allow_custom", True))
     matches = await _catalog_items(session, spec, lang, query=text)
     if matches:
+        # katalogdan tanlash yoki o'z nomi bilan davom etish
         await state.update_data(custom_name=text)
         await message.answer(
-            t("catalog_search_hint", lang), reply_markup=kb.catalog_choice(matches, lang)
+            t("catalog_search_hint", lang),
+            reply_markup=kb.catalog_choice(
+                matches, lang, custom_name=text if allow_custom else None
+            ),
         )
-        if not spec.options.get("allow_custom", True):
-            return
+        return
+
+    if not allow_custom:
+        await message.answer(t("nothing_found", lang))
+        return
 
     await _line_after_name(message, state, session, employee, submission, spec, text, None)
 
@@ -793,6 +801,18 @@ async def line_name_from_catalog(
         return
 
     lang = employee.lang
+    if callback_data.id == 0:  # «O'z nomim»
+        data = await state.get_data()
+        custom = (data.get("custom_name") or "").strip()
+        if not custom:
+            await callback.answer(t("not_found", lang), show_alert=True)
+            return
+        await callback.answer()
+        await _line_after_name(
+            callback.message, state, session, employee, submission, spec, custom, None
+        )
+        return
+
     if spec.options.get("catalog") == "work_catalog":
         row = await session.get(WorkCatalog, callback_data.id)
     else:

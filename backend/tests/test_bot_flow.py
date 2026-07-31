@@ -158,7 +158,7 @@ async def _register_mechanic(dispatcher, bot) -> None:
     await feed(dispatcher, bot, ft.contact_update(MECHANIC_TG, MECHANIC_PHONE))
 
 
-async def _fill_report(dispatcher, bot) -> Submission:
+async def _fill_report(dispatcher, bot, *, work_name: str = "Old tormoz kolodka") -> Submission:
     """Bot orqali ta'mir hisobotini to'liq to'ldiradi."""
     await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "🚗 Mashina keldi"))
     if "Qaysi hisobot" in bot.session.last_text(MECHANIC_TG):
@@ -200,7 +200,12 @@ async def _fill_report(dispatcher, bot) -> Submission:
     add = bot.session.callback_data("line_add", MECHANIC_TG)
     assert add is not None
     await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, add))
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "Old tormoz kolodkasini almashtirish"))
+    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, work_name))
+    cat = bot.session.callback_data("cat", MECHANIC_TG)
+    if cat is not None:
+        # katalogdan mos ishni tanlaymiz (narx tarixi shu bo'yicha yig'iladi)
+        await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, cat))
+    # katalogda mos kelmasa — o'z nomi bilan to'g'ridan-to'g'ri narx so'raladi
     await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "250000"))
     done = bot.session.callback_data("lines_done", MECHANIC_TG)
     assert done is not None
@@ -374,3 +379,15 @@ async def test_language_switch(db, bot, dispatcher):
             await session.execute(sa.select(Employee).where(Employee.phone == MECHANIC_PHONE))
         ).scalar_one()
         assert employee.lang == "ru"
+
+
+async def test_custom_work_name_without_catalog(db, bot, dispatcher):
+    """Katalogda yo'q ish — o'z nomi bilan kiritiladi (allow_custom)."""
+    await _register_mechanic(dispatcher, bot)
+    submission = await _fill_report(dispatcher, bot, work_name="Maxsus payvandlash ishi")
+
+    assert len(submission.lines) == 1
+    line = submission.lines[0]
+    assert line.name == "Maxsus payvandlash ishi"
+    assert line.catalog_id is None
+    assert line.proposed_amount == Decimal("250000.00")

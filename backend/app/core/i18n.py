@@ -337,6 +337,10 @@ T: dict[str, dict[str, str]] = {
         "uz": "Kamida bitta ish qo'shing.",
         "ru": "Добавьте хотя бы одну работу.",
     },
+    "line_use_custom": {
+        "uz": "✍️ O'z nomim: {name}",
+        "ru": "✍️ Своё название: {name}",
+    },
     "catalog_search_hint": {
         "uz": "Ro'yxatdan tanlang yoki o'z nomingizni yozing:",
         "ru": "Выберите из списка или напишите своё название:",

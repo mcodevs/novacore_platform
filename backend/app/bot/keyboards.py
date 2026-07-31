@@ -178,7 +178,10 @@ def lines_menu(lang: str, *, items: list[tuple[int, str]], can_finish: bool) -> 
 
 
 def catalog_choice(
-    items: list[tuple[int, str]], lang: str, *, allow_custom: bool = True
+    items: list[tuple[int, str]],
+    lang: str,
+    *,
+    custom_name: str | None = None,
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for catalog_id, title in items:
@@ -187,7 +190,19 @@ def catalog_choice(
                 text=title, callback_data=Act(name="cat", id=catalog_id).pack()
             )
         )
+    if custom_name:
+        # katalogda yo'q ishni o'z nomi bilan kiritish
+        builder.row(
+            InlineKeyboardButton(
+                text=t("line_use_custom", lang, name=submission_title(custom_name)),
+                callback_data=Act(name="cat", id=0).pack(),
+            )
+        )
     return builder.as_markup()
+
+
+def submission_title(name: str, limit: int = 28) -> str:
+    return name if len(name) <= limit else name[: limit - 1] + "…"
 
 
 def form_actions(lang: str, submission_id: int, *, has_left: bool) -> InlineKeyboardMarkup:
