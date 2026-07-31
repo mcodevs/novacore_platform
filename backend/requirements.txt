@@ -10,8 +10,8 @@ asyncpg==0.31.0
 aiosqlite==0.22.1          # faqat lokal ishga tushirish va testlar uchun
 pydantic==2.13.4
 pydantic-settings==2.14.2
-python-multipart==0.0.20
-PyJWT==2.10.1
+python-multipart==0.0.31   # PYSEC-2026-3036…3040
+PyJWT==2.13.0              # PYSEC-2026-175…179
 structlog==26.1.0
 openpyxl==3.1.5            # Excel eksport
 boto3==1.40.49             # Tigris (S3-mos) — ixtiyoriy, LOCAL rejimda kerak emas
