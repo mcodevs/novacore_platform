@@ -23,6 +23,7 @@ from app.db.models import (
     WorkCatalog,
 )
 from app.domain import audit
+from app.domain.fleet import service as fleet_service
 from app.domain.role import permissions
 from app.domain.template import builder
 
@@ -443,6 +444,31 @@ async def update_work_item(
         after={"reference_price": str(row.reference_price), "is_active": row.is_active},
     )
     return {"data": {"id": row.id}}
+
+
+# --- Fleet sinxroni (Faza 3, faqat o'qish) -------------------------------------
+
+
+@router.post("/fleet/sync")
+async def fleet_sync(session: SessionDep, actor: AdminDep):
+    """Qo'lda sinxron: Fleet → mashina va haydovchi reyestri.
+
+    Platforma Fleet'ga hech narsa yozmaydi. Xato bo'lsa 200 bilan `error`
+    qaytadi — bu buzilish emas, platforma Fleet'siz ham ishlaydi.
+    """
+    report = await fleet_service.sync(session, actor_id=actor.id)
+    return {
+        "data": {
+            "ok": report.ok,
+            "created": report.created,
+            "updated": report.updated,
+            "missing": report.missing,
+            "drivers_linked": report.drivers_linked,
+            "skipped": report.skipped,
+            "error": report.error,
+            "summary": report.summary(),
+        }
+    }
 
 
 # --- Audit va bayroqlar --------------------------------------------------------

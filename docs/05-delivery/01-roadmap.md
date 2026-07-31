@@ -49,7 +49,7 @@ Tayyorgarlik  Yadro + ta'mir +     Rol konstruktori  Fleet + analitika
 | # | Vazifa | Kim | Nima uchun kritik |
 |---|---|---|---|
 | 0.1 | 🔬 **Kamera sinovi** — `capture="environment"` Android va iOS Telegram'da | AI + egasi | ⚠️ Butun foto-dalil g'oyasi shunga bog'liq |
-| 0.2 | 🔬 **Fleet API sinovi** — `status=repairing` yozish ishlaydimi | AI | Kalitlar `driver_status_reporter`da bor |
+| 0.2 | ~~🔬 **Fleet API sinovi** — `status=repairing` yozish~~ — ❌ **kerak emas**: Fleet faqat o'qish uchun (2026-08-01) | — | — |
 | 0.3 | **Mashina reyestri** — Fleet'dan 150 ta mashinani eksport qilish | AI + egasi | Boshlang'ich ma'lumot |
 | 0.4 | **Xodimlar ro'yxati** — FIO, telefon, rol (4–5 usta + admin + buxgalter) | Egasi | Kirish shunga bog'liq |
 | 0.5 | **Ish turlari ro'yxati** (30–60 ta) + tayanch narxlar | Egasi | Narx kelishuvi shunga tayanadi |
@@ -131,7 +131,7 @@ tizimda kelishilsin.
 
 | Blok | Tafsilot |
 |---|---|
-| **Fleet sinxron** | Mashina reyestri + joriy haydovchi + `repairing` statusi |
+| **Fleet sinxron** ✅ | Mashina reyestri + joriy haydovchi — **faqat o'qish**, orqaga yozish yo'q |
 | **Anti-fraud bayroqlari** | pHash, EXIF, rework, narx tarixi — **bloklamaydi** |
 | **Bayroqlarni hal qilish** | Admin ekrani |
 | **Analitika dashboard** | Mashina xarajati, xodim samaradorligi, downtime, kelishuv tejamkorligi |

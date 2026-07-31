@@ -253,6 +253,13 @@ class Vehicle(Base, TimestampMixin, SoftDeleteMixin):
     current_driver_fleet_id: Mapped[str | None] = mapped_column(sa.Text, default=None)
     notes: Mapped[str | None] = mapped_column(sa.Text, default=None)
 
+    # --- Fleet sinxroni (Faza 3) — ⚠️ FAQAT O'QISH ---
+    #: Fleet'dagi status (ma'lumot uchun; platforma uni **yozmaydi**)
+    fleet_status: Mapped[str | None] = mapped_column(sa.Text, default=None)
+    fleet_synced_at: Mapped[dt.datetime | None] = mapped_column(default=None)
+    #: Fleet'da yo'q, platformada bor — o'chirilmaydi, faqat belgilanadi (§5)
+    fleet_missing: Mapped[bool] = mapped_column(default=False)
+
     __table_args__ = (sa.Index("ix_vehicles_status", "status"),)
 
     @property

@@ -85,6 +85,21 @@ class Settings(BaseSettings):
     # Faza 1'da bayroqlar o'chirilgan (docs/04-flows/02-antifraud.md §9 — v1)
     antifraud_enabled: bool = False
 
+    # --- Yandex Fleet (Faza 3) ---
+    # Kalitlar `driver_status_reporter` loyihasidagi bilan bir xil park uchun.
+    # O'chirilgan bo'lsa platforma Fleet'siz to'liq ishlaydi.
+    fleet_enabled: bool = False
+    fleet_base_url: str = "https://fleet-api.taxi.yandex.net"
+    fleet_api_key: str = ""
+    fleet_park_id: str = ""
+    fleet_client_id: str = ""  # bo'sh bo'lsa — `taxi/park/<park_id>`
+    fleet_page_size: int = 1000  # API maksimumi
+    fleet_page_pause_sec: float = 1.5  # sahifalar orasida — 429 dan qochish
+    fleet_timeout_sec: float = 6.0  # «Mashina keldi» tugmasi kutib qolmasin
+    fleet_max_retries: int = 5  # 429/5xx uchun eksponensial backoff
+    fleet_backoff_base_sec: float = 2.0  # 2 → 4 → 8 … (maks 30); testlarda 0
+    fleet_sync_hour: int = 4  # kunlik reyestr sinxroni (Asia/Tashkent)
+
     default_lang: Literal["uz", "ru"] = "uz"
 
     @field_validator("admin_group_id", "telegram_proxy", mode="before")
@@ -124,6 +139,15 @@ class Settings(BaseSettings):
     @property
     def webhook_url(self) -> str:
         return f"{self.base_url.rstrip('/')}{self.webhook_path}"
+
+    @property
+    def fleet_client_header(self) -> str:
+        """`X-Client-ID` — odatda `taxi/park/<park_id>`."""
+        return self.fleet_client_id or f"taxi/park/{self.fleet_park_id}"
+
+    @property
+    def fleet_ready(self) -> bool:
+        return bool(self.fleet_enabled and self.fleet_api_key and self.fleet_park_id)
 
 
 @lru_cache

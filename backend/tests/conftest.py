@@ -20,6 +20,12 @@ os.environ.setdefault("MEDIA_ROOT", str(TMP / "media"))
 os.environ.setdefault("BOT_TOKEN", "123456:TEST")
 os.environ.setdefault("JWT_SECRET", "test-secret-key-at-least-32-bytes-long!!")
 os.environ.setdefault("ANTIFRAUD_ENABLED", "false")
+# Testlar germetik: ishlab chiquvchining `.env` dagi haqiqiy Fleet kalitlari
+# test paytida ishlatilmasin (env o'zgaruvchisi `.env` dan ustun turadi).
+os.environ.setdefault("FLEET_ENABLED", "false")
+os.environ.setdefault("FLEET_API_KEY", "")
+os.environ.setdefault("FLEET_PARK_ID", "")
+os.environ.setdefault("FLEET_CLIENT_ID", "")
 
 import sqlalchemy as sa  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402

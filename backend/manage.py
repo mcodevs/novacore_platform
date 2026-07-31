@@ -175,6 +175,42 @@ async def cmd_bot_info() -> None:
         await bot.session.close()
 
 
+async def cmd_fleet_sync() -> None:
+    """Fleet → platforma reyestri (faqat o'qish). Kalitlar `.env` da."""
+    from app.core.config import settings
+    from app.db.session import session_scope
+    from app.domain.fleet import service as fleet_service
+
+    if not settings.fleet_ready:
+        print("⚠️  Fleet o'chirilgan. `.env` da FLEET_ENABLED=true, "
+              "FLEET_API_KEY va FLEET_PARK_ID ni to'ldiring.")
+        return
+
+    async with session_scope() as session:
+        report = await fleet_service.sync(session)
+    print(report.summary())
+    if report.skipped:
+        print(f"   ⏭  o'tkazib yuborildi ({len(report.skipped)}): "
+              f"{', '.join(report.skipped[:10])}")
+
+
+async def cmd_fleet_lookup(plate: str) -> None:
+    """Bitta raqamni tekshirish — mashina va joriy haydovchi."""
+    from app.db.session import session_scope
+    from app.domain.fleet import service as fleet_service
+
+    async with session_scope() as session:
+        vehicle = await fleet_service.lookup_plate(session, plate)
+    if vehicle is None:
+        print(f"❌ {plate} — topilmadi (reyestrda ham, Fleet'da ham)")
+        return
+    print(f"🚗 {vehicle.plate_display} · {vehicle.brand} {vehicle.model} "
+          f"{vehicle.year or ''}".rstrip())
+    print(f"   fleet_car_id: {vehicle.fleet_car_id or '—'} · "
+          f"Fleet status: {vehicle.fleet_status or '—'}")
+    print(f"   haydovchi: {vehicle.current_driver_name or '—'}")
+
+
 async def cmd_demo() -> None:
     """Lokal sinov uchun: 3 ta mashina + namunaviy xodimlar."""
     await cmd_seed()
@@ -201,6 +237,10 @@ def main() -> None:
     sub.add_parser("delete-webhook")
     sub.add_parser("bot-info")
     sub.add_parser("demo")
+    sub.add_parser("fleet-sync")
+
+    p = sub.add_parser("fleet-lookup")
+    p.add_argument("plate")
 
     p = sub.add_parser("employee-add")
     p.add_argument("name")
@@ -228,6 +268,8 @@ def main() -> None:
         "delete-webhook": lambda: cmd_delete_webhook(),
         "bot-info": lambda: cmd_bot_info(),
         "demo": lambda: cmd_demo(),
+        "fleet-sync": lambda: cmd_fleet_sync(),
+        "fleet-lookup": lambda: cmd_fleet_lookup(args.plate),
     }
     asyncio.run(handlers[args.command]())
 

@@ -96,17 +96,26 @@ Kodni AI yozgani uchun domen testlarisiz ishonch yo'q. Eng kam qamrov:
 
 ## Yandex Fleet API (Faza 3) — tasdiqlangan cheklovlar
 
+⚠️ **Fleet FAQAT O'QISH uchun** (egasining qarori, 2026-08-01): *raqam bo'yicha
+mashina va haydovchi ma'lumotini olish*. Platforma Fleet'ga **hech narsa
+yozmaydi** — status ham. Boshqa maqsadda ishlatilmaydi.
+
 `driver_status_reporter` loyihasida 31 endpoint spec skanerlangan, **qayta
 tekshirish shart emas**:
 
 - Partner API'da **GPS / real-vaqt joylashuv YO'Q**
 - **Фотоконтроль (ДКК) natijasi YO'Q**, reyting / "Приоритет" / brending ham yo'q
 - **Rate-limit (429) real** — backoff + sahifalar orasida pauza majburiy
-- Mashina statusi: `working` / `not_working` / `repairing` / `no_driver` / `pending`
-- ⚠️ ДКК o'tgan mashinada ba'zi maydonlar qulflanadi → **faqat `status`
-  maydonini yuborish**; xato bo'lsa platforma to'xtamaydi (`fleet_sync_failed`)
-- Sinxron **bir tomonlama**: Fleet → platforma (mashina ma'lumoti), platforma →
-  Fleet (faqat `status`)
+- Mashina statusi (`working` / `not_working` / `repairing` / `no_driver` /
+  `pending`) — faqat **o'qiladi**, ma'lumot uchun
+- Ishlatiladigan endpointlar: `POST /v1/parks/cars/list` va
+  `POST /v1/parks/driver-profiles/list` (haydovchi ↔ mashina bog'lanishi shu
+  javobdagi `car` maydonidan olinadi)
+- Fleet o'chirilgan yoki javob bermasa — platforma **to'liq ishlaydi**
+- ⚠️ Real parkda (2026-08-01): bitta raqamga **bir nechta** Fleet yozuvi bor
+  (292 yozuv ↔ 164 raqam) → deterministik tanlov; «joriy haydovchi» esa
+  API'dan **aniqlanmaydi** (bitta mashinada 71 ta faol profil) → noaniq bo'lsa
+  **yozilmaydi**. Batafsil: `docs/03-integrations/01-yandex-fleet-api.md` §6a
 
 ## Ish uslubi
 

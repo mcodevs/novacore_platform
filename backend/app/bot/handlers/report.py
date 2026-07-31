@@ -37,6 +37,7 @@ from app.db.models import (
     Vehicle,
     WorkCatalog,
 )
+from app.domain.fleet import service as fleet_service
 from app.domain.media import service as media_service
 from app.domain.submission import service as submission_service
 from app.domain.template import builder, engine
@@ -533,6 +534,9 @@ async def _handle_plate(
         await session.execute(sa.select(Vehicle).where(Vehicle.plate_number == plate))
     ).scalar_one_or_none()
     if vehicle is None or vehicle.deleted_at is not None:
+        # reyestrda yo'q — Fleet'dan tortib ko'ramiz (Faza 3, faqat o'qish)
+        vehicle = await fleet_service.lookup_plate(session, text)
+    if vehicle is None:
         await message.answer(t("vehicle_not_found", lang, plate=plate or text))
         return
 

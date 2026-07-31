@@ -73,7 +73,7 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 ### 🔌 03. Integratsiyalar
 | Hujjat | Nima haqida |
 |---|---|
-| [01. Yandex Fleet API](docs/03-integrations/01-yandex-fleet-api.md) | Mashina sinxroni, `repairing` statusi |
+| [01. Yandex Fleet API](docs/03-integrations/01-yandex-fleet-api.md) | Raqam → mashina + haydovchi (**faqat o'qish**) |
 | [02. Telegram bot + Mini App](docs/03-integrations/02-telegram-bot-miniapp.md) | Bitta bot, ekranlar, texnik cheklovlar |
 | [03. Media va saqlash](docs/03-integrations/03-media-and-storage.md) | Foto yuklash, siqish, Tigris |
 
@@ -102,6 +102,7 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 | **DB** | PostgreSQL (Fly Postgres) | JSONB — dinamik shablonlar |
 | **Media** | Tigris (fly.io S3-mos ombori) | Telegram `file_id` — faqat kesh |
 | **Fon vazifalari** | asyncio loop + Postgres outbox | **Redis kerak emas** |
+| **Fleet** | Yandex Fleet partner API (httpx) | ⚠️ **faqat o'qish** — orqaga yozilmaydi |
 | **Mini App** | React 18 + TS + Vite | 4 ekran, form-renderer, ~59 KB gzip |
 | **Deploy** | fly.io (Docker) | ~$10–25/oy |
 
@@ -169,7 +170,7 @@ ko'rinmaydi; nashr etilgan versiya **o'zgarmas** — eski hisobotlar buzilmaydi.
 | **Bosqich** | Deploy qilingan (fly.io, webhook) · real ma'lumot va pilot navbatda |
 | **Sana** | 2026-08-01 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 174 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · **builder** · role · submission · bot e2e · API e2e · konfiguratsiya) |
+| **Testlar** | 194 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · builder · **fleet** · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.
@@ -185,7 +186,9 @@ ko'rinmaydi; nashr etilgan versiya **o'zgarmas** — eski hisobotlar buzilmaydi.
    (A-10 ochiq xavf); Mini App'da «Galereyadan» zaxira tugmasi va botdagi
    foto oqimi allaqachon bor
 5. ✅ ~~**Faza 2** — rol va shablon konstruktori UI, ta'minotchi oqimi~~ — bajarildi
-6. 🔌 **Faza 3** — Yandex Fleet sinxroni, anti-fraud bayroqlari
-   (`ANTIFRAUD_ENABLED=true` bilan yoqiladi)
+6. ✅ ~~**Fleet sinxroni**~~ — yozilgan (faqat o'qish: raqam → mashina +
+   haydovchi). Yoqish: `.env` da `FLEET_ENABLED=true`, `FLEET_API_KEY`,
+   `FLEET_PARK_ID` · tekshirish: `manage.py fleet-lookup 01A123BC`
+7. 🔌 **Anti-fraud bayroqlari** — kod tayyor, `ANTIFRAUD_ENABLED=true` bilan yoqiladi
 
 Batafsil: [05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
