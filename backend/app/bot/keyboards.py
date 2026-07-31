@@ -97,7 +97,8 @@ def lang_choice() -> InlineKeyboardMarkup:
 
 
 def open_app(lang: str) -> InlineKeyboardMarkup | None:
-    if not settings.miniapp_url:
+    # Telegram `web_app` tugmasi faqat HTTPS URL bilan ishlaydi
+    if not settings.miniapp_url or not settings.miniapp_url.startswith("https://"):
         return None
     builder = InlineKeyboardBuilder()
     builder.add(

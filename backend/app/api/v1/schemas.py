@@ -49,6 +49,10 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class MeUpdate(BaseModel):
+    lang: str | None = None
+
+
 class VehicleOut(BaseModel):
     id: int
     plate_number: str

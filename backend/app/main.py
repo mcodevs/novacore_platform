@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import structlog
 from aiogram.types import Update
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import api_router
 from app.bot.bot import get_bot, get_dispatcher
@@ -92,6 +94,14 @@ if settings.cors_origins:
     )
 
 app.include_router(api_router, prefix="/api/v1")
+
+# Mini App shu domendan beriladi (HTTPS — Telegram talabi): https://<host>/app
+MINIAPP_DIST = Path(__file__).resolve().parent.parent / "miniapp_dist"
+if MINIAPP_DIST.is_dir():
+    app.mount("/app", StaticFiles(directory=MINIAPP_DIST, html=True), name="miniapp")
+    if not settings.miniapp_url:
+        settings.miniapp_url = f"{settings.base_url.rstrip('/')}/app"
+    log.info("miniapp_mounted", url=settings.miniapp_url)
 
 
 @app.exception_handler(DomainError)

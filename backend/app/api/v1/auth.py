@@ -111,6 +111,17 @@ async def logout(payload: schemas.RefreshRequest, session: SessionDep):
     return {"data": {"ok": True}}
 
 
+@router.patch("/me", response_model=schemas.EmployeeOut)
+async def update_me(
+    payload: schemas.MeUpdate, session: SessionDep, employee: EmployeeDep
+):
+    """Hozircha faqat til — qolgan profil ma'lumotini admin boshqaradi."""
+    if payload.lang in ("uz", "ru"):
+        employee.lang = payload.lang
+        await session.flush()
+    return serializers.employee_out(employee)
+
+
 @router.get("/me", response_model=schemas.AuthResponse)
 async def me(session: SessionDep, employee: EmployeeDep):
     templates = await _visible_templates(session, employee)

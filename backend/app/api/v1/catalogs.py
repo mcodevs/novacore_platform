@@ -10,6 +10,7 @@ from app.api.v1 import schemas, serializers
 from app.core.errors import NotFound
 from app.core.phone import normalize_plate
 from app.db.models import (
+    CatalogItem,
     PartsCatalog,
     RoleTemplate,
     Submission,
@@ -130,6 +131,24 @@ async def template_schema(
                 for f in schema.fields
             ],
         }
+    }
+
+
+@router.get("/catalog-items")
+async def catalog_items(session: SessionDep, employee: EmployeeDep, catalog: str):
+    """Kichik spravochniklar (`select` maydonlari): nosozlik kategoriyalari…"""
+    rows = (
+        await session.execute(
+            sa.select(CatalogItem)
+            .where(CatalogItem.catalog == catalog, CatalogItem.is_active.is_(True))
+            .order_by(CatalogItem.sort)
+        )
+    ).scalars().all()
+    return {
+        "data": [
+            {"code": row.code, "name": row.name(employee.lang), "icon": row.icon}
+            for row in rows
+        ]
     }
 
 

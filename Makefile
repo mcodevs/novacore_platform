@@ -1,4 +1,5 @@
-.PHONY: install test run seed demo migrate revision lint compose-up compose-down deploy
+.PHONY: install test run seed demo migrate revision compose-up compose-down deploy \
+        miniapp-install miniapp-dev miniapp-build
 
 VENV ?= .venv
 PY   := $(VENV)/bin/python
@@ -29,6 +30,16 @@ revision:              ## yangi migratsiya: make revision M="izoh"
 
 bot-info:              ## bot holati (getMe + webhook)
 	cd backend && ../$(PY) manage.py bot-info
+
+miniapp-install:       ## Mini App bog'liqliklari
+	cd miniapp && npm install --no-audit --no-fund
+
+miniapp-dev:           ## Mini App dev-server (API → localhost:8000 ga proxy)
+	cd miniapp && npm run dev
+
+miniapp-build:         ## Mini App'ni yig'ib backend'ga qo'yish (/app yo'lida beriladi)
+	cd miniapp && npm run build
+	rm -rf backend/miniapp_dist && cp -r miniapp/dist backend/miniapp_dist
 
 compose-up:
 	docker compose up --build

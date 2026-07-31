@@ -1,7 +1,8 @@
 # NovaCore Employee Platform
 
-> 📄 **Repo holati:** Faza 1 (MVP) backend + **to'liq ishlaydigan Telegram bot**
-> yozilgan (`backend/`). Hujjatlar — yagona haqiqat manbai va texnik topshiriq.
+> 📄 **Repo holati:** Faza 1 (MVP) to'liq yozilgan — **backend + Telegram bot**
+> (`backend/`) va **Mini App** (`miniapp/`). Hujjatlar — yagona haqiqat manbai
+> va texnik topshiriq.
 > Ishga tushirish: [Tez boshlash](#tez-boshlash) · Reja:
 > [docs/05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
 
@@ -98,7 +99,7 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 | **DB** | PostgreSQL (Fly Postgres) | JSONB — dinamik shablonlar |
 | **Media** | Tigris (fly.io S3-mos ombori) | Telegram `file_id` — faqat kesh |
 | **Fon vazifalari** | asyncio loop + Postgres outbox | **Redis kerak emas** |
-| **Mini App** | React + TS + Vite + `@telegram-apps/*` | 4 ta ekran, tayyor UI kit |
+| **Mini App** | React 18 + TS + Vite | 4 ekran, form-renderer, ~59 KB gzip |
 | **Deploy** | fly.io (Docker) | ~$10–25/oy |
 
 > Arxitektura **ataylab kichik**: 150 mashina, 4–5 usta, kuniga 3–5 hisobot,
@@ -113,16 +114,20 @@ make install                 # python3.12 venv + bog'liqliklar
 cp backend/.env.example backend/.env   # BOT_TOKEN ni yozing (BotFather)
 make demo                    # seed: rollar, shablonlar, ish turlari + 3 mashina
 cd backend && python manage.py employee-add "Admin A." +998901234567 admin
-make run                     # bot (polling) + API bitta process'da
-make test                    # 74 ta domen va bot testi
+make miniapp-install         # Mini App bog'liqliklari (bir marta)
+make miniapp-build           # Mini App → backend/miniapp_dist (/app yo'lida)
+make run                     # bot (polling) + API + Mini App bitta process'da
+make test                    # 87 ta test (domen, bot, API)
 ```
 
 Telegram'da botga `/start` → telefon raqamini yuborish → menyu ochiladi.
 
 **Postgres bilan (compose):** `make compose-up` · **Prod:** `fly deploy`
 (webhook rejimi, `fly secrets set BOT_TOKEN=… JWT_SECRET=… WEBHOOK_SECRET=…`).
+Mini App shu domendan beriladi: `https://<host>/app` — BotFather'da Menu Button
+uchun shu URL ko'rsatiladi.
 
-Batafsil: [backend/README.md](backend/README.md)
+Batafsil: [backend/README.md](backend/README.md) · [miniapp/README.md](miniapp/README.md)
 
 ### Bot nima qila oladi (Faza 1)
 
@@ -135,17 +140,24 @@ Batafsil: [backend/README.md](backend/README.md)
 Fon sikli: 48 soatlik avtomatik rozilik, 24 soatlik eslatmalar, bildirishnoma
 outbox'i, uzoq downtime signali.
 
+### Mini App (4 ekran, ~59 KB gzip)
+
+Ro'yxat/dashboard · ⭐ **form-renderer** (shablon JSON → forma) · ko'rib chiqish
+(admin uchun narx tarixi bilan) · profil (til + o'z narx statistikasi).
+Telegram temasi, BackButton, haptic, offline qoralama, foto siqish.
+Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
+
 ---
 
 ## Loyiha holati
 
 | | |
 |---|---|
-| **Versiya** | 1.0 (Faza 1 — MVP) |
-| **Bosqich** | Backend + bot yozilgan · Mini App (React) — keyingi qadam |
+| **Versiya** | 1.0 (Faza 1 — MVP to'liq) |
+| **Bosqich** | Backend + bot + Mini App yozilgan · deploy va pilot navbatda |
 | **Sana** | 2026-07-31 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 74 ta (pricing · approval · period · template · role · submission · bot e2e) |
+| **Testlar** | 87 ta (pricing · approval · period · template · role · submission · bot e2e · API e2e) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.
@@ -157,10 +169,11 @@ outbox'i, uzoq downtime signali.
 2. 📋 **Real ma'lumot** — mashina reyestri (`manage.py vehicles-load fleet.csv`),
    xodimlar, ish turlari uchun tayanch narxlar (faqat admin ko'radi)
 3. 🧪 **Pilot** — 2 usta + admin, 1–2 hafta (roadmap §6)
-4. 🧩 **Mini App** (React + TS) — bot to'liq ishlaydi, Mini App uni tezlashtiradi;
-   backend API (`/api/v1`, initData auth) allaqachon tayyor
-5. 🔬 **Kamera sinovi** — `capture="environment"` Mini App'da (A-10 ochiq xavf);
-   botda foto oqimi zaxira sifatida allaqachon ishlaydi
+4. 🔬 **Kamera sinovi** — `capture="environment"` real Android va iOS'da
+   (A-10 ochiq xavf); Mini App'da «Galereyadan» zaxira tugmasi va botdagi
+   foto oqimi allaqachon bor
+5. 🎨 **Faza 2** — rol va shablon konstruktori UI (dvigatel tayyor),
+   ta'minotchi oqimi
 6. 🔌 **Faza 3** — Yandex Fleet sinxroni, anti-fraud bayroqlari
    (`ANTIFRAUD_ENABLED=true` bilan yoqiladi)
 
