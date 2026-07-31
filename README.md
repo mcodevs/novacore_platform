@@ -110,15 +110,19 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 ## Tez boshlash
 
 ```bash
-make install                 # python3.12 venv + bog'liqliklar
-cp backend/.env.example backend/.env   # BOT_TOKEN ni yozing (BotFather)
-make demo                    # seed: rollar, shablonlar, ish turlari + 3 mashina
-cd backend && python manage.py employee-add "Admin A." +998901234567 admin
-make miniapp-install         # Mini App bog'liqliklari (bir marta)
-make miniapp-build           # Mini App → backend/miniapp_dist (/app yo'lida)
-make run                     # bot (polling) + API + Mini App bitta process'da
-make test                    # 87 ta test (domen, bot, API)
+make bootstrap               # ⭐ venv + .env (kalitlar avtomatik) + npm + seed
+#   → backend/.env ichiga BOT_TOKEN yozing (BotFather, LOKAL uchun alohida bot)
+cd backend && ../.venv/bin/python manage.py employee-add "Admin A." +998901234567 admin
+cd .. && make run            # bot (polling) + API bitta process'da
+make test                    # 121 ta test (domen, bot, API, konfiguratsiya)
 ```
+
+Mini App ham kerak bo'lsa: `make miniapp-build` (backend uni `/app` da beradi)
+yoki `make miniapp-dev` (Vite dev-server, brauzerda).
+
+Repoda faqat `.env.example` bor — **hech qanday sir repoga tushmaydi**.
+`.venv/`, `node_modules/`, `backend/var/` va `backend/miniapp_dist/` esa
+buyruqlar orqali hosil bo'ladi, ularni ko'chirib yurish shart emas.
 
 Telegram'da botga `/start` → telefon raqamini yuborish → menyu ochiladi.
 
@@ -157,7 +161,7 @@ Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
 | **Bosqich** | Backend + bot + Mini App yozilgan · deploy va pilot navbatda |
 | **Sana** | 2026-07-31 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 87 ta (pricing · approval · period · template · role · submission · bot e2e · API e2e) |
+| **Testlar** | 121 ta (pricing · approval · period · template · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.
