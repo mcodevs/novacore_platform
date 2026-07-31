@@ -30,6 +30,7 @@ build/
 *.db
 /media/
 /uploads/
+var/
 
 # IDE va OS
 .DS_Store

@@ -1,0 +1,23 @@
+# NovaCore Employee Platform — backend
+# Python 3.12. Redis / Celery YO'Q (ADR-0004) — asyncio sikli + Postgres outbox.
+
+fastapi==0.141.1
+uvicorn[standard]==0.52.0
+aiogram==3.30.0
+SQLAlchemy[asyncio]==2.0.51
+alembic==1.18.5
+asyncpg==0.31.0
+aiosqlite==0.22.1          # faqat lokal ishga tushirish va testlar uchun
+pydantic==2.13.4
+pydantic-settings==2.14.2
+python-multipart==0.0.20
+PyJWT==2.10.1
+structlog==26.1.0
+openpyxl==3.1.5            # Excel eksport
+boto3==1.40.49             # Tigris (S3-mos) — ixtiyoriy, LOCAL rejimda kerak emas
+# aiohttp-socks          # faqat TELEGRAM_PROXY ishlatilsa kerak
+
+# testlar
+pytest==9.1.1
+pytest-asyncio==1.4.0
+httpx==0.28.1

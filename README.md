@@ -1,8 +1,9 @@
 # NovaCore Employee Platform
 
-> 📄 **Repo holati:** hozircha faqat hujjatlar — kod hali yozilmagan.
-> Hujjatlar to'plami **texnik topshiriq** sifatida ishlatiladi.
-> Boshlash tartibi: [docs/05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
+> 📄 **Repo holati:** Faza 1 (MVP) backend + **to'liq ishlaydigan Telegram bot**
+> yozilgan (`backend/`). Hujjatlar — yagona haqiqat manbai va texnik topshiriq.
+> Ishga tushirish: [Tez boshlash](#tez-boshlash) · Reja:
+> [docs/05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
 
 **NovaCore** — Toshkent shahridagi yirik Yandex taksopark. Park o'z haydovchilariga
 Comfort / Comfort+ tarifida ishlash uchun **o'ziga qarashli elektromobillarni** beradi
@@ -105,24 +106,62 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 
 ---
 
+## Tez boshlash
+
+```bash
+make install                 # python3.12 venv + bog'liqliklar
+cp backend/.env.example backend/.env   # BOT_TOKEN ni yozing (BotFather)
+make demo                    # seed: rollar, shablonlar, ish turlari + 3 mashina
+cd backend && python manage.py employee-add "Admin A." +998901234567 admin
+make run                     # bot (polling) + API bitta process'da
+make test                    # 74 ta domen va bot testi
+```
+
+Telegram'da botga `/start` → telefon raqamini yuborish → menyu ochiladi.
+
+**Postgres bilan (compose):** `make compose-up` · **Prod:** `fly deploy`
+(webhook rejimi, `fly secrets set BOT_TOKEN=… JWT_SECRET=… WEBHOOK_SECRET=…`).
+
+Batafsil: [backend/README.md](backend/README.md)
+
+### Bot nima qila oladi (Faza 1)
+
+| Rol | Imkoniyatlar |
+|---|---|
+| **Usta** (`reporter`) | 🚗 Mashina keldi → shablon bo'yicha ketma-ket forma (foto, probeg, muammo, **ishlar + o'z narxi**) → 🚙 Mashina ketdi → 📤 Yuborish · narx taklifiga ✅/❌ javob · `/mening`, `/hisob`, `/kelishuv` |
+| **Admin** | ⏳ Tasdiq navbati · kartochkada **tarixiy narx statistikasi** · ✅ tasdiqlash · ✏️ narxni kamaytirish (sabab majburiy) · ↩️ qaytarish · ❌ rad etish · `/kunlik`, `/davr`, `/eksport` · o'z hisoboti **avtomatik tasdiqlanadi** (R1a) |
+| **Buxgalter** | Davr precheck, oyni yopish, to'lov varaqalari, Excel eksport |
+
+Fon sikli: 48 soatlik avtomatik rozilik, 24 soatlik eslatmalar, bildirishnoma
+outbox'i, uzoq downtime signali.
+
+---
+
 ## Loyiha holati
 
 | | |
 |---|---|
-| **Versiya** | 0.2 |
-| **Bosqich** | Loyihalash — kod hali yozilmagan |
+| **Versiya** | 1.0 (Faza 1 — MVP) |
+| **Bosqich** | Backend + bot yozilgan · Mini App (React) — keyingi qadam |
 | **Sana** | 2026-07-31 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
+| **Testlar** | 74 ta (pricing · approval · period · template · role · submission · bot e2e) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.
 > Har faza boshida tegishli hujjatlar to'liq beriladi.
 
-### Keyingi qadam — Faza 0
+### Keyingi qadamlar
 
-1. 🔬 **Kamera sinovi** — `capture="environment"` Telegram Mini App'da (Android + iOS)
-2. 🔬 **Fleet API sinovi** — `status=repairing` yozish ishlaydimi
-3. 📋 Mashina reyestri (Fleet'dan ~150 ta), xodimlar ro'yxati, ish turlari + tayanch narxlar
-4. ⚙️ fly.io app + Postgres + Tigris + 2 ta bot
+1. ⚙️ **Deploy** — fly.io app + Postgres + Tigris, webhook (`BOT_MODE=webhook`)
+2. 📋 **Real ma'lumot** — mashina reyestri (`manage.py vehicles-load fleet.csv`),
+   xodimlar, ish turlari uchun tayanch narxlar (faqat admin ko'radi)
+3. 🧪 **Pilot** — 2 usta + admin, 1–2 hafta (roadmap §6)
+4. 🧩 **Mini App** (React + TS) — bot to'liq ishlaydi, Mini App uni tezlashtiradi;
+   backend API (`/api/v1`, initData auth) allaqachon tayyor
+5. 🔬 **Kamera sinovi** — `capture="environment"` Mini App'da (A-10 ochiq xavf);
+   botda foto oqimi zaxira sifatida allaqachon ishlaydi
+6. 🔌 **Faza 3** — Yandex Fleet sinxroni, anti-fraud bayroqlari
+   (`ANTIFRAUD_ENABLED=true` bilan yoqiladi)
 
 Batafsil: [05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
