@@ -658,6 +658,10 @@ T: dict[str, dict[str, str]] = {
         "uz": "📅 <b>{period}</b> davri {days} kundan keyin yopiladi. Tekshiring: /davr",
         "ru": "📅 Период <b>{period}</b> закрывается через {days} дн. Проверьте: /davr",
     },
+    "notify_fleet_sync": {
+        "uz": "{summary}",
+        "ru": "{summary}",
+    },
     # --- Statistika ---
     "my_month": {
         "uz": (

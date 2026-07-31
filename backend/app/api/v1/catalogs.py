@@ -18,6 +18,7 @@ from app.db.models import (
     Vehicle,
     WorkCatalog,
 )
+from app.domain.fleet import service as fleet_service
 from app.domain.template import builder, engine
 
 router = APIRouter(tags=["catalogs"])
@@ -43,11 +44,16 @@ async def list_vehicles(
 
 @router.get("/vehicles/lookup", response_model=schemas.VehicleOut)
 async def lookup_vehicle(session: SessionDep, employee: EmployeeDep, plate: str):
+    """Raqam bo'yicha mashina. Reyestrda bo'lmasa — Fleet'dan tortiladi (Faza 3)."""
     normalized = normalize_plate(plate)
     vehicle = (
         await session.execute(sa.select(Vehicle).where(Vehicle.plate_number == normalized))
     ).scalar_one_or_none()
-    if vehicle is None or vehicle.deleted_at is not None:
+    if vehicle is not None and vehicle.deleted_at is None:
+        return serializers.vehicle_out(vehicle)
+
+    vehicle = await fleet_service.lookup_plate(session, plate)
+    if vehicle is None:
         raise NotFound("Mashina reyestrda yo'q")
     return serializers.vehicle_out(vehicle)
 

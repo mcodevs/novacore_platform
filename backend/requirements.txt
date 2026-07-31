@@ -15,9 +15,9 @@ PyJWT==2.13.0              # PYSEC-2026-175…179
 structlog==26.1.0
 openpyxl==3.1.5            # Excel eksport
 boto3==1.40.49             # Tigris (S3-mos) — ixtiyoriy, LOCAL rejimda kerak emas
+httpx==0.28.1              # Yandex Fleet klienti (Faza 3) va testlardagi ASGI klient
 # aiohttp-socks          # faqat TELEGRAM_PROXY ishlatilsa kerak
 
 # testlar
 pytest==9.1.1
 pytest-asyncio==1.4.0
-httpx==0.28.1

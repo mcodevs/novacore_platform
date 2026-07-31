@@ -110,7 +110,9 @@ stateDiagram-v2
 | `IN_SERVICE` / `WAITING_PARTS` | `repairing` |
 | `INACTIVE` | `not_working` |
 
-> Ta'mir boshlanganda mashinani Fleet'da `repairing` qilish zakaz kelmasligini
+> ⚠️ **2026-08-01 dan bu jadval faqat ma'lumot uchun** — platforma Fleet'ga
+> status yozmaydi ([Fleet §6](../03-integrations/01-yandex-fleet-api.md)).
+> Avvalgi g'oya: ta'mir boshlanganda mashinani Fleet'da `repairing` qilish zakaz kelmasligini
 > ta'minlaydi — [Fleet integratsiyasi](../03-integrations/01-yandex-fleet-api.md).
 
 ## 3. Davr (`periods`)

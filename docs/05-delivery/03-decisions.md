@@ -212,7 +212,8 @@ konfliktga olib keladi.
 ### Qaror
 Har maydonning bitta egasi:
 - **Fleet** → raqam, VIN, marka, model, FIO, telefon (platformada faqat o'qish)
-- **Platforma** → mashina statusi (`repairing`), batareya, TO, rollar, hisobotlar
+- **Platforma** → batareya, TO, rollar, hisobotlar
+  (⚠️ 2026-08-01: mashina statusini Fleet'ga yozish **bekor qilindi** — Fleet faqat o'qish uchun)
 
 Faqat **status** platformadan Fleet'ga yoziladi.
 

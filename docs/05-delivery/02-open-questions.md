@@ -8,7 +8,7 @@ Javob kelgach tegishli hujjatlar yangilanadi va bu yerda belgilanadi.
 | | |
 |---|---|
 | ✅ Javob berilgan | **A-01 … A-25** (barchasi) |
-| 🔬 Texnik sinov kutmoqda | A-09, A-10 (Faza 0) |
+| 🔬 Texnik sinov kutmoqda | **A-10** (Faza 0). ~~A-09~~ — Fleet yozuvi bekor qilingani uchun tushib qoldi |
 | 🟡 Ochiq savol | — yo'q |
 
 ---
@@ -226,11 +226,18 @@ Muddat: "qancha tez bo'lsa shuncha yaxshi".
 
 ## 🔬 Texnik sinovlar (Faza 0)
 
-### 🔬 A-09. Fleet'da `status=repairing` yozish ishlaydimi?
+### ✅ A-09. Fleet'da `status=repairing` yozish ishlaydimi? — **savol tushib qoldi**
 
-`PUT /v2/parks/vehicles/car` orqali faqat `status` maydonini yuborish.
-⚠️ ДКК o'tgan mashinalarda cheklov bo'lishi mumkin. Xato bo'lsa platforma
-baribir ishlaydi (`fleet_sync_failed` belgisi).
+**Javob (2026-08-01):** sinov **kerak emas** — egasining qaroriga ko'ra Fleet
+platformada faqat *raqam bo'yicha mashina va haydovchi ma'lumotini olish* uchun
+ishlatiladi, orqaga hech narsa yozilmaydi.
+
+Yo'l-yo'lakay aniqlangan (spec'dan): `PUT /v2/parks/vehicles/car` — **to'liq
+almashtirish**, `park_profile` (callsign, fuel_type, status), `vehicle_licenses`
+(licence_plate_number) va `vehicle_specifications` (brand, color, model,
+transmission, year) majburiy. Ya'ni «faqat status yuborish» texnik jihatdan ham
+mumkin emas edi — GET→PUT kerak bo'lardi va ДКК qulfiga urilish ehtimoli
+yuqori. Batafsil: [Fleet integratsiyasi §6](../03-integrations/01-yandex-fleet-api.md).
 
 ### 🔬 A-10. Mini App'da kamerani majburlash ishlaydimi?
 

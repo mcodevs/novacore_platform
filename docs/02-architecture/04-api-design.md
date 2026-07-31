@@ -42,7 +42,7 @@ Batafsil: [06-security.md](06-security.md)
 | `GET` | `/vehicles` | `?q=01A123&status=` |
 | `GET` | `/vehicles/{id}` | Kartochka + oxirgi hisobotlar + shu oydagi xarajat |
 | `GET` | `/vehicles/{id}/history` | To'liq ta'mir tarixi |
-| `GET` | `/vehicles/lookup?plate=01A123BC` | Raqam bo'yicha tez qidiruv |
+| `GET` | `/vehicles/lookup?plate=01A123BC` | Raqam bo'yicha tez qidiruv. Reyestrda bo'lmasa — **Fleet'dan** tortiladi (Faza 3, faqat o'qish) |
 | `GET` | `/employees` | `?role_id=&status=` |
 | `GET` | `/work-catalog` | Ish turlari. ⚠️ `reference_price` `reporter` roliga **qaytarilmaydi** |
 | `GET` | `/parts-catalog` | `?q=` |
@@ -115,6 +115,7 @@ Batafsil: [03-integrations/03-media-and-storage.md](../03-integrations/03-media-
 | `GET` | `/admin/audit` | `?actor_id=&entity=&from=&to=` |
 | `GET` | `/admin/flags` | Bayroqlar |
 | `POST` | `/admin/flags/{id}/resolve` | `{ resolution, comment }` |
+| `POST` | `/admin/fleet/sync` | Qo'lda Fleet sinxroni. Xato bo'lsa ham **200** + `error` — platforma Fleet'siz ishlaydi |
 
 ⚠️ `POST /admin/roles` — `kind` faqat `reporter` / `admin` / `accountant`
 

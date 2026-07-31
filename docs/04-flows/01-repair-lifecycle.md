@@ -10,14 +10,13 @@ sequenceDiagram
     participant P as Platforma
     participant T as Ta'minotchi
     participant A as Admin
-    participant F as Yandex Fleet
 
     Note over U: Mashina ustaxonaga keldi
     U->>P: 1. [🚗 Mashina keldi]
     Note over P: arrived_at = server vaqti<br/>mashina → IN_SERVICE<br/>downtime taymeri boshlandi
-    P->>F: car.status = repairing (Faza 3)
 
     U->>P: 2. Mashina raqami
+    Note over P: Fleet'dan marka/model/haydovchi<br/>o'zi to'ladi (Faza 3, faqat o'qish)
     U->>P: 3. Foto (oldin), probeg, muammo
 
     opt Ehtiyot qism kerak
@@ -29,7 +28,6 @@ sequenceDiagram
     U->>P: 5. Foto (keyin), izoh
     U->>P: 6. [🚙 Mashina ketdi]
     Note over P: left_at = server vaqti<br/>mashina → ACTIVE<br/>downtime = left_at − arrived_at
-    P->>F: car.status = working (Faza 3)
 
     U->>P: 7. Hisobotni yuborish
     P->>P: validatsiya + bayroqlar

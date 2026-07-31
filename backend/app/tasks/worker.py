@@ -28,6 +28,7 @@ from app.db.models import (
     SubmissionStatus,
 )
 from app.db.session import session_scope
+from app.domain.fleet import service as fleet_service
 from app.domain.notify import service as notify
 from app.domain.period import service as period_service
 from app.domain.pricing import service as pricing_service
@@ -221,6 +222,48 @@ async def remind_period_closing() -> int:
     return 1
 
 
+async def sync_fleet_daily() -> int:
+    """Kuniga 1× mashina va haydovchi reyestri (Fleet → platforma, faqat o'qish).
+
+    Fleet o'chirilgan bo'lsa yoki javob bermasa — platforma ishlashda davom
+    etadi, keyingi urinishda davom etiladi (hujjat §8).
+    """
+    if not settings.fleet_ready:
+        return 0
+
+    now_local = utcnow().astimezone(TASHKENT)
+    if now_local.hour != settings.fleet_sync_hour:
+        return 0
+
+    async with session_scope() as session:
+        marker = f"fleet_sync:{now_local:%Y-%m-%d}"
+        exists = (
+            await session.execute(
+                sa.select(Notification.id).where(Notification.template_code == marker)
+            )
+        ).first()
+        if exists:
+            return 0
+
+        report = await fleet_service.sync(session)
+        session.add(  # takroriy sinxron bo'lmasligi uchun marker
+            Notification(
+                template_code=marker,
+                payload={"summary": report.summary()},
+                status=NotificationStatus.sent,
+                sent_at=utcnow(),
+            )
+        )
+        if not report.ok or report.created or report.missing:
+            await notify.notify_admins(
+                session,
+                template_code="notify_fleet_sync",
+                payload={"summary": report.summary()},
+            )
+        log.info("fleet_sync_done", summary=report.summary())
+    return 1
+
+
 async def tick(bot: Bot) -> None:
     """Bitta sikl — xatolar butun siklni to'xtatmasin."""
     for step in (
@@ -229,6 +272,7 @@ async def tick(bot: Bot) -> None:
         remind_stale_drafts,
         alert_long_service,
         remind_period_closing,
+        sync_fleet_daily,
     ):
         try:
             await step()
