@@ -2,9 +2,10 @@
 
 [![CI](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml/badge.svg)](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml)
 
-> 📄 **Repo holati:** Faza 1 (MVP) to'liq yozilgan — **backend + Telegram bot**
-> (`backend/`) va **Mini App** (`miniapp/`). Hujjatlar — yagona haqiqat manbai
-> va texnik topshiriq.
+> 📄 **Repo holati:** Faza 1 (MVP) va **Faza 2 (rol/shablon konstruktori)**
+> yozilgan — **backend + Telegram bot** (`backend/`) va **Mini App**
+> (`miniapp/`). Prod ishlayapti: https://novacore-platform.fly.dev
+> Hujjatlar — yagona haqiqat manbai va texnik topshiriq.
 > Ishga tushirish: [Tez boshlash](#tez-boshlash) · Reja:
 > [docs/05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
 
@@ -146,12 +147,17 @@ Batafsil: [backend/README.md](backend/README.md) · [miniapp/README.md](miniapp/
 Fon sikli: 48 soatlik avtomatik rozilik, 24 soatlik eslatmalar, bildirishnoma
 outbox'i, uzoq downtime signali.
 
-### Mini App (4 ekran, ~59 KB gzip)
+### Mini App (7 ekran, ~63 KB gzip)
 
 Ro'yxat/dashboard · ⭐ **form-renderer** (shablon JSON → forma) · ko'rib chiqish
 (admin uchun narx tarixi bilan) · profil (til + o'z narx statistikasi).
 Telegram temasi, BackButton, haptic, offline qoralama, foto siqish.
 Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
+
+⭐ **Konstruktor (Faza 2, faqat admin):** shablon muharriri (maydon qo'shish,
+↑/↓ bilan tartiblash, sozlash, **nashr**) va rol muharriri (nom, ikonka, turi,
+shablonlar). Nashr etilmagan shablon qoralama bo'lib turadi va hech kimga
+ko'rinmaydi; nashr etilgan versiya **o'zgarmas** — eski hisobotlar buzilmaydi.
 
 ---
 
@@ -159,11 +165,11 @@ Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
 
 | | |
 |---|---|
-| **Versiya** | 1.0 (Faza 1 — MVP to'liq) |
-| **Bosqich** | Backend + bot + Mini App yozilgan · deploy va pilot navbatda |
-| **Sana** | 2026-07-31 |
+| **Versiya** | 1.1 (Faza 1 MVP + Faza 2 konstruktorlar) |
+| **Bosqich** | Deploy qilingan (fly.io, webhook) · real ma'lumot va pilot navbatda |
+| **Sana** | 2026-08-01 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 121 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · role · submission · bot e2e · API e2e · konfiguratsiya) |
+| **Testlar** | 174 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · **builder** · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.
@@ -171,15 +177,14 @@ Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
 
 ### Keyingi qadamlar
 
-1. ⚙️ **Deploy** — fly.io app + Postgres + Tigris, webhook (`BOT_MODE=webhook`)
+1. ✅ ~~**Deploy** — fly.io + Postgres + Tigris, webhook~~ — bajarildi
 2. 📋 **Real ma'lumot** — mashina reyestri (`manage.py vehicles-load fleet.csv`),
    xodimlar, ish turlari uchun tayanch narxlar (faqat admin ko'radi)
 3. 🧪 **Pilot** — 2 usta + admin, 1–2 hafta (roadmap §6)
 4. 🔬 **Kamera sinovi** — `capture="environment"` real Android va iOS'da
    (A-10 ochiq xavf); Mini App'da «Galereyadan» zaxira tugmasi va botdagi
    foto oqimi allaqachon bor
-5. 🎨 **Faza 2** — rol va shablon konstruktori UI (dvigatel tayyor),
-   ta'minotchi oqimi
+5. ✅ ~~**Faza 2** — rol va shablon konstruktori UI, ta'minotchi oqimi~~ — bajarildi
 6. 🔌 **Faza 3** — Yandex Fleet sinxroni, anti-fraud bayroqlari
    (`ANTIFRAUD_ENABLED=true` bilan yoqiladi)
 

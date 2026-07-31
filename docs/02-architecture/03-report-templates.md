@@ -180,6 +180,14 @@ Yangi rol = yangi JSON, yangi kod emas.
 | `submission_picker` | `template_code`, `same_vehicle` | `{ "submission_id": 1247 }` |
 | `computed` | `formula` | Serverda hisoblanadi |
 
+> ⚠️ **Konstruktorda faqat renderer chiza oladigan turlar tanlanadi**
+> (`engine.SUPPORTED_TYPES`): `text` · `textarea` · `number` · `money` · `bool` ·
+> `select` · `photo` · `vehicle_picker` · `submission_picker` · `lines` · `geo`.
+> Qolganlari (`video`, `audio`, `file`, `signature`, `multiselect`,
+> `date`/`datetime`, `employee_picker`, `catalog_picker`, `computed`) — hali
+> yozilmagan; ularni tanlash `unsupported_type` xatosi bilan rad etiladi, aks
+> holda admin hech kim to'ldira olmaydigan forma yasab qo'yardi.
+
 ## 4. `field_mapping` — dinamik va tipli o'rtasidagi ko'prik
 
 Muammo: hisobot to'liq JSONB bo'lsa, "shu mashinaga bu oyda qancha sarflandi"
@@ -228,6 +236,20 @@ Qoidalar:
 - Nashr etilgach o'sha versiya **o'zgarmas** (immutable)
 - Eski hisobot ko'rsatilganda **o'z versiyasidagi** yorliqlar va maydonlar chiziladi
 - Maydon o'chirilsa — eski hisobotda u baribir ko'rinadi (arxiv sifatida)
+
+**Amalga oshirish (`domain/template/builder.py`)** — alohida `status` ustuni yo'q:
+
+| Holat | Qanday aniqlanadi |
+|---|---|
+| **Qoralama** | Joriy `templates.version` uchun `template_versions` snapshot'i **yo'q** |
+| **Nashr etilgan** | Snapshot bor |
+
+- Nashr etilgan shablon tahrirlansa — `version` darhol **1 ga oshadi** va yangi
+  qoralama ochiladi; eski snapshot tegilmaydi
+- Yangi hisobot doim **oxirgi nashr etilgan** versiyada ochiladi, qoralamada emas
+- Nashr etilmagan shablon `GET /templates` da **ko'rinmaydi** va undan hisobot
+  ochib bo'lmaydi (`business_rule_violated`)
+- Shablon `code`i o'zgarmas — rollar va seedlar unga tayanadi
 
 ## 6. Validatsiya — server oxirgi hakam
 

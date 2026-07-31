@@ -110,6 +110,23 @@ def media_out(item: Media) -> schemas.MediaOut:
     )
 
 
+def linkable_out(submission: Submission) -> schemas.LinkableSubmissionOut:
+    """`submission_picker` ro'yxati — **faqat identifikatsiya**, summasiz.
+
+    Ta'minotchi ustaning ta'mir hisobotini tanlashi kerak, lekin uning narxini
+    ko'rishi shart emas (R3 ruhi: narx ma'lumoti reporterga berilmaydi).
+    """
+    return schemas.LinkableSubmissionOut(
+        id=submission.id,
+        number=submission.number,
+        status=submission.status.value,
+        template_code=submission.template.code,
+        author_name=submission.author.full_name if submission.author else "",
+        vehicle_plate=submission.vehicle.plate_display if submission.vehicle else None,
+        submitted_at=submission.submitted_at,
+    )
+
+
 def submission_out(submission: Submission) -> schemas.SubmissionOut:
     return schemas.SubmissionOut(
         id=submission.id,

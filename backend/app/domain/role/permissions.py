@@ -91,6 +91,29 @@ def ensure_not_self_approval(actor: Employee, submission: Submission) -> None:
         raise SelfApprovalForbidden("O'z hisobotingizni qo'lda tasdiqlay olmaysiz")
 
 
+async def ensure_admin_remains_without_role(session: AsyncSession, role: Role) -> None:
+    """R8 — rolning turi o'zgarsa yoki u o'chirilsa, boshqa admin qoladimi.
+
+    Rol konstruktori (Faza 2): `kind='admin'` rolni `reporter`ga aylantirish shu
+    roldagi **barcha** xodimlarni bir vaqtda admin huquqidan mahrum qiladi.
+    """
+    if role.kind != RoleKind.admin:
+        return
+
+    stmt = (
+        sa.select(sa.func.count(Employee.id))
+        .join(Role, Role.id == Employee.role_id)
+        .where(
+            Role.kind == RoleKind.admin,
+            Role.id != role.id,
+            Employee.status == EmployeeStatus.active,
+            Employee.deleted_at.is_(None),
+        )
+    )
+    if (await session.execute(stmt)).scalar_one() < 1:
+        raise LastAdminRequired("Bu yagona admin rol — turini o'zgartirib bo'lmaydi")
+
+
 async def ensure_admin_remains(
     session: AsyncSession, *, changing_employee_id: int, new_role_id: int | None = None
 ) -> None:

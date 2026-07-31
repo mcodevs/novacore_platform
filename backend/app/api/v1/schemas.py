@@ -270,6 +270,18 @@ class EmployeeIn(BaseModel):
     lang: str = "uz"
 
 
+class LinkableSubmissionOut(BaseModel):
+    """`submission_picker` nomzodi — summa YO'Q (R3 ruhi)."""
+
+    id: int
+    number: str
+    status: str
+    template_code: str
+    author_name: str
+    vehicle_plate: str | None
+    submitted_at: dt.datetime | None
+
+
 class RoleIn(BaseModel):
     code: str
     name_uz: str
@@ -277,6 +289,37 @@ class RoleIn(BaseModel):
     icon: str = "👤"
     kind: str
     template_ids: list[int] = Field(default_factory=list)
+
+
+class RoleUpdate(BaseModel):
+    """Rol konstruktori (Faza 2) — `code` o'zgarmas, qolgani tahrirlanadi."""
+
+    name_uz: str | None = None
+    name_ru: str | None = None
+    icon: str | None = None
+    kind: str | None = None
+    template_ids: list[int] | None = None
+    is_active: bool | None = None
+    sort: int | None = None
+
+
+class TemplateIn(BaseModel):
+    """Shablon konstruktori (Faza 2) — seed JSON'i bilan bir xil ko'rinish.
+
+    Chuqur tekshiruv `domain/template/builder.validate_definition` da: maydon
+    turlari, kodlar, `field_mapping` va `visible_if` havolalari.
+    """
+
+    code: str = ""
+    name: dict[str, str]
+    icon: str = "📝"
+    subject_type: str = "vehicle"
+    has_money: bool = True
+    negotiable: bool = True
+    is_active: bool | None = None
+    field_mapping: dict[str, str] = Field(default_factory=dict)
+    sections: list[dict] = Field(default_factory=list)
+    fields: list[dict] = Field(default_factory=list)
 
 
 class SetRoleRequest(BaseModel):

@@ -12,9 +12,10 @@ interface Props {
   auth: AuthResponse;
   onOpen(id: number): void;
   onCreate(templateCode: string): void;
+  onBuilder(): void;
 }
 
-export function HomeScreen({ auth, onOpen, onCreate }: Props) {
+export function HomeScreen({ auth, onOpen, onCreate, onBuilder }: Props) {
   const kind = auth.employee.role.kind;
   const isReporter = kind === 'reporter' || kind === 'admin';
   const seesAll = kind === 'admin' || kind === 'accountant';
@@ -108,6 +109,17 @@ export function HomeScreen({ auth, onOpen, onCreate }: Props) {
               ))
             )}
           </Card>
+
+          {kind === 'admin' ? (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onBuilder}
+              style={{ marginBottom: 12 }}
+            >
+              {t('builder')}
+            </button>
+          ) : null}
         </>
       ) : null}
 

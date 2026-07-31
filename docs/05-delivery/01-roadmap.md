@@ -106,18 +106,24 @@ tizimda kelishilsin.
 
 **Maqsad:** admin **kod yozmasdan** yangi rol va shablon yarata olsin.
 
-| Blok | Tafsilot |
-|---|---|
-| **Rol konstruktori UI** ⭐ | Nom (uz/ru), ikonka, turi, shablonlar |
-| **Shablon konstruktori** ⭐ | Maydonlarni qo'shish/tartiblash, sozlash, nashr |
-| **Shablon versiyalash** | Eski hisobotlar buzilmasin |
-| **Ta'minotchi shabloni** | Qism nomi, narx, chek fotosi, yetkazib beruvchi, original/analog |
-| **Bog'liq hisobotlar** | Qism xaridi ↔ ta'mir hisoboti |
-| **Xodim narx statistikasi** | "Narxim 10% kamaytirilgan" ekrani |
+| Blok | Tafsilot | Holat |
+|---|---|---|
+| **Rol konstruktori UI** ⭐ | Nom (uz/ru), ikonka, turi, shablonlar | ✅ `PATCH /admin/roles/{id}` + `RoleEditScreen` |
+| **Shablon konstruktori** ⭐ | Maydonlarni qo'shish/tartiblash, sozlash, nashr | ✅ `domain/template/builder.py` + `TemplateEditScreen` |
+| **Shablon versiyalash** | Eski hisobotlar buzilmasin | ✅ Nashr = snapshot; tahrir = `version++` |
+| **Ta'minotchi shabloni** | Qism nomi, narx, chek fotosi, yetkazib beruvchi, original/analog | ✅ `seeds/templates/part_purchase.json` (Faza 1'da) |
+| **Bog'liq hisobotlar** | Qism xaridi ↔ ta'mir hisoboti | ✅ `submission_picker` + `related_submission` |
+| **Xodim narx statistikasi** | "Narxim 10% kamaytirilgan" ekrani | ✅ `ProfileScreen` (Faza 1'da) |
+
+> 📌 **Drag&drop o'rniga ↑/↓ tugmalari:** telefonda sudrash noqulay va DnD
+> kutubxonasi bundle'ni ~40 KB oshirardi. Natija bir xil.
 
 ### Chiqish mezoni
 - ✅ Admin **30 daqiqada** yangi rol + shablon yaratadi va u ishlaydi
+  (`test_new_role_with_new_template_works_end_to_end`,
+  `test_new_role_sees_new_template_after_publish`)
 - ✅ Qism xarajatlari chek bilan tizimda
+  (`test_part_purchase_links_to_repair_report`)
 
 ---
 

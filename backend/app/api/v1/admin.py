@@ -18,11 +18,13 @@ from app.db.models import (
     Role,
     RoleKind,
     RoleTemplate,
+    Template,
     Vehicle,
     WorkCatalog,
 )
 from app.domain import audit
 from app.domain.role import permissions
+from app.domain.template import builder
 
 router = APIRouter(tags=["admin"], prefix="/admin")
 
@@ -235,9 +237,17 @@ async def create_role(payload: schemas.RoleIn, session: SessionDep, actor: Admin
     """Yangi rol = nom + kind + shablonlar. Kod yozilmaydi, deploy qilinmaydi."""
     if payload.kind not in {k.value for k in RoleKind}:
         raise BusinessRuleViolated("kind faqat reporter/admin/accountant bo'lishi mumkin")
+    if not builder.CODE_RE.match(payload.code.strip()):
+        raise BusinessRuleViolated("Rol kodi: a-z, 0-9 va _ (3–40 belgi)")
+
+    exists = (
+        await session.execute(sa.select(Role.id).where(Role.code == payload.code.strip()))
+    ).first()
+    if exists:
+        raise BusinessRuleViolated(f"«{payload.code}» kodli rol allaqachon bor")
 
     role = Role(
-        code=payload.code,
+        code=payload.code.strip(),
         name_uz=payload.name_uz,
         name_ru=payload.name_ru,
         icon=payload.icon,
@@ -245,9 +255,7 @@ async def create_role(payload: schemas.RoleIn, session: SessionDep, actor: Admin
     )
     session.add(role)
     await session.flush()
-    for idx, template_id in enumerate(payload.template_ids, start=1):
-        session.add(RoleTemplate(role_id=role.id, template_id=template_id, sort=idx * 10))
-    await session.flush()
+    await _set_role_templates(session, role, payload.template_ids)
 
     await audit.log(
         session,
@@ -258,6 +266,151 @@ async def create_role(payload: schemas.RoleIn, session: SessionDep, actor: Admin
         after={"code": role.code, "kind": role.kind.value},
     )
     return {"data": {"id": role.id, "code": role.code}}
+
+
+async def _set_role_templates(
+    session: SessionDep, role: Role, template_ids: list[int]
+) -> None:
+    """Rol ko'radigan shablonlar ro'yxatini to'liq almashtiradi."""
+    await session.execute(sa.delete(RoleTemplate).where(RoleTemplate.role_id == role.id))
+    for idx, template_id in enumerate(template_ids, start=1):
+        if await session.get(Template, template_id) is None:
+            raise NotFound(f"Shablon topilmadi: {template_id}")
+        session.add(RoleTemplate(role_id=role.id, template_id=template_id, sort=idx * 10))
+    await session.flush()
+
+
+@router.patch("/roles/{role_id}")
+async def update_role(
+    role_id: int, payload: schemas.RoleUpdate, session: SessionDep, actor: AdminDep
+):
+    """Rolni tahrirlash: nom, ikonka, shablonlar, tur. `code` o'zgarmaydi."""
+    role = await session.get(Role, role_id)
+    if role is None:
+        raise NotFound("Rol topilmadi")
+
+    before = {
+        "name_uz": role.name_uz,
+        "kind": role.kind.value,
+        "is_active": role.is_active,
+        "template_ids": [rt.template_id for rt in role.templates],
+    }
+
+    if payload.kind is not None and payload.kind != role.kind.value:
+        if payload.kind not in {k.value for k in RoleKind}:
+            raise BusinessRuleViolated("kind faqat reporter/admin/accountant bo'lishi mumkin")
+        if role.is_system:
+            raise BusinessRuleViolated("Tizim rolining turini o'zgartirib bo'lmaydi")
+        # R8 — bu roldagi xodimlar admin huquqidan ayrilsa, boshqa admin qolsinmi
+        await permissions.ensure_admin_remains_without_role(session, role)
+        role.kind = RoleKind(payload.kind)
+
+    if payload.is_active is not None and payload.is_active is False:
+        if role.is_system:
+            raise BusinessRuleViolated("Tizim rolini o'chirib bo'lmaydi")
+        await permissions.ensure_admin_remains_without_role(session, role)
+        role.is_active = False
+    elif payload.is_active:
+        role.is_active = True
+
+    if payload.name_uz is not None:
+        role.name_uz = payload.name_uz.strip()
+    if payload.name_ru is not None:
+        role.name_ru = payload.name_ru.strip()
+    if payload.icon is not None:
+        role.icon = payload.icon
+    if payload.sort is not None:
+        role.sort = payload.sort
+    if payload.template_ids is not None:
+        await _set_role_templates(session, role, payload.template_ids)
+
+    await session.flush()
+    await session.refresh(role)
+    await audit.log(
+        session,
+        action="role.update",
+        entity_type="role",
+        entity_id=role.id,
+        actor_id=actor.id,
+        before=before,
+        after={
+            "name_uz": role.name_uz,
+            "kind": role.kind.value,
+            "is_active": role.is_active,
+            "template_ids": [rt.template_id for rt in role.templates],
+        },
+    )
+    return {"data": {"id": role.id, "code": role.code}}
+
+
+# --- Shablon konstruktori (⭐ Faza 2) -------------------------------------------
+
+
+def _template_row(template: Template, *, published: int | None) -> dict:
+    return {
+        "id": template.id,
+        "code": template.code,
+        "name_uz": template.name_uz,
+        "name_ru": template.name_ru,
+        "icon": template.icon,
+        "version": template.version,
+        "published_version": published,
+        "is_draft": published != template.version,
+        "is_active": template.is_active,
+        "has_money": template.has_money,
+        "negotiable": template.negotiable,
+        "fields_count": len(template.fields),
+    }
+
+
+@router.get("/templates")
+async def list_templates(session: SessionDep, actor: AdminDep):
+    """Barcha shablonlar — qoralama holati bilan."""
+    rows = (await session.execute(sa.select(Template).order_by(Template.id))).scalars().all()
+    data = []
+    for template in rows:
+        published = await builder.latest_published_version(session, template.id)
+        data.append(_template_row(template, published=published))
+    return {"data": data}
+
+
+@router.get("/templates/{template_id}")
+async def get_template(template_id: int, session: SessionDep, actor: AdminDep):
+    """Joriy (tahrirlanayotgan) sxema — konstruktor shuni ochadi."""
+    template = await builder.get_or_404(session, template_id)
+    published = await builder.latest_published_version(session, template.id)
+    return {
+        "data": {
+            **_template_row(template, published=published),
+            "definition": builder.to_definition(template),
+        }
+    }
+
+
+@router.post("/templates", status_code=201)
+async def create_template(payload: schemas.TemplateIn, session: SessionDep, actor: AdminDep):
+    """Yangi shablon — qoralama. Nashr etilmaguncha hech kimga ko'rinmaydi."""
+    template = await builder.create(session, actor, payload.model_dump())
+    return {"data": _template_row(template, published=None)}
+
+
+@router.patch("/templates/{template_id}")
+async def update_template(
+    template_id: int, payload: schemas.TemplateIn, session: SessionDep, actor: AdminDep
+):
+    """Tahrirlash. Nashr etilgan versiya tegilmaydi — yangi qoralama ochiladi."""
+    template = await builder.get_or_404(session, template_id)
+    template = await builder.update(session, actor, template, payload.model_dump())
+    published = await builder.latest_published_version(session, template.id)
+    return {"data": _template_row(template, published=published)}
+
+
+@router.post("/templates/{template_id}/publish")
+async def publish_template(template_id: int, session: SessionDep, actor: AdminDep):
+    """Nashr — shu versiya snapshot'i **o'zgarmas** bo'lib qoladi."""
+    template = await builder.get_or_404(session, template_id)
+    template = await builder.publish(session, actor, template)
+    return {"data": _template_row(template, published=template.version)}
 
 
 # --- Ish turlari (tayanch narx — faqat admin) ----------------------------------

@@ -31,7 +31,6 @@ from app.db.models import (
     MediaKind,
     MediaSource,
     PartsCatalog,
-    RoleTemplate,
     Submission,
     SubmissionStatus,
     Template,
@@ -40,7 +39,7 @@ from app.db.models import (
 )
 from app.domain.media import service as media_service
 from app.domain.submission import service as submission_service
-from app.domain.template import engine
+from app.domain.template import builder, engine
 from app.domain.template.engine import FieldSpec, TemplateSchema
 
 router = Router(name="report")
@@ -57,13 +56,8 @@ CATALOG_PAGE = 8
 
 
 async def visible_templates(session: AsyncSession, employee: Employee) -> list[Template]:
-    stmt = (
-        sa.select(Template)
-        .join(RoleTemplate, RoleTemplate.template_id == Template.id)
-        .where(RoleTemplate.role_id == employee.role_id, Template.is_active.is_(True))
-        .order_by(RoleTemplate.sort)
-    )
-    return list((await session.execute(stmt)).scalars().all())
+    """Rolga biriktirilgan va nashr etilgan shablonlar (qoralama ko'rinmaydi)."""
+    return await builder.visible_for(session, employee)
 
 
 async def load_draft(session: AsyncSession, submission_id: int, employee: Employee) -> Submission:
@@ -149,6 +143,21 @@ async def _ask_field(
         )
         return
 
+    if spec.type == "submission_picker":
+        options = await _linkable_options(session, employee, submission, spec, lang)
+        await state.set_state(Form.waiting_value)
+        if not options:
+            await message.answer(
+                t("linkable_empty", lang, label=label),
+                reply_markup=kb.skip_or_cancel(lang, can_skip=not spec.required),
+            )
+            return
+        await message.answer(
+            t("ask_select", lang, label=label, hint=hint),
+            reply_markup=kb.select_options(options, lang),
+        )
+        return
+
     if spec.type == "bool":
         await state.set_state(Form.waiting_value)
         await message.answer(
@@ -199,6 +208,34 @@ async def _select_options(
         else:
             result.append((str(choice), str(choice)))
     return result
+
+
+async def _linkable_options(
+    session: AsyncSession,
+    employee: Employee,
+    submission: Submission,
+    spec: FieldSpec,
+    lang: str,
+) -> list[tuple[str, str]]:
+    """Bog'liq hisobot nomzodlari — «WO-2026-000042 · 01 A 123 BC · Usta»."""
+    if submission.subject_vehicle_id is None:
+        return []
+    rows = await submission_service.linkable(
+        session,
+        employee,
+        template_code=spec.options.get("template_code"),
+        vehicle_id=submission.subject_vehicle_id,
+        exclude_id=submission.id,
+        limit=8,
+    )
+    return [
+        (
+            str(row.id),
+            f"{row.number} · {fmt_dt(row.submitted_at, lang) if row.submitted_at else '—'}"
+            f" · {row.author.full_name if row.author else ''}",
+        )
+        for row in rows
+    ]
 
 
 async def _show_lines(
@@ -563,6 +600,8 @@ async def handle_option(
     value: object = callback_data.arg
     if spec.type == "bool":
         value = callback_data.arg == "1"
+    elif spec.type == "submission_picker":
+        value = {"submission_id": int(callback_data.arg)}
     engine.set_value(submission, spec.code, value)
     await session.flush()
     await callback.answer()

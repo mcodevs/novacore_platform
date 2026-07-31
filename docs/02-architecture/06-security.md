@@ -100,6 +100,21 @@ async def approve(id: int, actor = Depends(require_kind("admin"))):
 > ❗ Mini App'dagi tugmalarni yashirish — **UX**, xavfsizlik emas.
 > API baribir hamma narsani qayta tekshiradi.
 
+### Ataylab qilingan yagona ochiqlik: `GET /submissions/linkable`
+
+Ta'minotchi qism xaridini **ustaning** ta'mir hisobotiga biriktiradi
+(`submission_picker`, Faza 2) — demak u o'zi muallif bo'lmagan hisobotni
+ko'rishi kerak. Ochiqlik quyidagicha cheklangan:
+
+| Cheklov | Nima uchun |
+|---|---|
+| `reporter` uchun `vehicle_id` **majburiy** | Butun bazani varaqlab chiqa olmaydi |
+| `DRAFT` hisobotlar chiqmaydi | Tugallanmagan ish ko'rinmaydi |
+| Javobda **summa yo'q** — faqat raqam, mashina, muallif, sana | R3 ruhi saqlanadi: narx ma'lumoti `reporter`ga berilmaydi |
+
+To'liq kartochkani (`GET /submissions/{id}`) ochish huquqi o'zgarmagan —
+u yerda `ensure_can_view_submission` ishlaydi.
+
 ## 5. Media xavfsizligi
 
 | Chora | Tafsilot |
