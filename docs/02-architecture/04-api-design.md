@@ -104,7 +104,8 @@ Batafsil: [03-integrations/03-media-and-storage.md](../03-integrations/03-media-
 |---|---|---|
 | `GET/POST/PATCH` | `/admin/vehicles` | Mashina reyestri |
 | `GET/POST/PATCH` | `/admin/employees` | Xodimlar |
-| `POST` | `/admin/employees/{id}/role` | `{ role_id }` |
+| `POST` | `/admin/employees/{id}/role` | `{ role_id }` — R8 tekshiriladi |
+| `POST` | `/admin/employees/{id}/status` | `{ status }`: `active` / `blocked` / `fired`. R5 — kirish yopiladi, ma'lumot qoladi |
 | **`GET/POST`** | **`/admin/roles`** | ⭐ Rol yaratish: `{ code, name_uz, name_ru, icon, kind, template_ids[] }` |
 | **`PATCH`** | **`/admin/roles/{id}`** | Nom, ikonka, `kind`, `template_ids`, `is_active`. `code` o'zgarmas |
 | `GET` | `/admin/templates` | Barcha shablonlar + qoralama holati (`is_draft`, `published_version`) |

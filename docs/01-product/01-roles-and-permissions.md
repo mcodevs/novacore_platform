@@ -154,6 +154,11 @@ Raqam `employees` reyestrida bormi?
 
 - **Xodim avval admin tomonidan reyestrga kiritiladi**, keyin o'zi bog'lanadi.
   O'z-o'zidan ro'yxatdan o'tish yo'q.
+- Reyestrga kiritish — Mini App'dagi **«👥 Xodimlar»** ekrani (admin) yoki
+  `manage.py employee-add`. Ekranda kim bog'langani (`🔗`), kim kutayotgani
+  (`⏳`) ko'rinadi; shu yerdan rol beriladi va bloklash/bo'shatish qilinadi.
+- ⚠️ Ikkinchi qadam **faqat botda** bo'ladi: Mini App telefon raqamini
+  ko'rmaydi, shuning uchun bog'lanish `/start` → `request_contact` orqali.
 - Telefon `+998XXXXXXXXX` ko'rinishida normalizatsiya qilinadi.
 - `tg_user_id` almashtirish — faqat admin, sabab bilan, audit log'ga yozilib.
 

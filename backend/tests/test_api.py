@@ -673,3 +673,146 @@ async def test_last_admin_role_kind_change_is_blocked(api):
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "last_admin_required"
+
+
+# --- Xodim boshqaruvi (admin) -------------------------------------------------
+
+
+async def test_employee_list_shows_link_status(api):
+    """Admin ro'yxatda kim botga bog'langanini ko'radi."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    rows = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+
+    by_phone = {row["phone"]: row for row in rows}
+    assert by_phone["+998901110001"]["tg_linked"] is True  # login qilgan
+    assert by_phone["+998901110001"]["status"] == "active"
+    assert by_phone["+998901110001"]["role"]["code"] == "mechanic"
+    assert by_phone["+998901110001"]["role_id"] > 0
+
+
+async def test_admin_adds_employee_to_registry(api):
+    """⭐ 1-qadam: admin reyestrga kiritadi. Telefon normalizatsiya qilinadi."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    roles = (await api.get("/api/v1/admin/roles", headers=admin)).json()["data"]
+    mechanic_role = next(r for r in roles if r["code"] == "mechanic")
+
+    created = await api.post(
+        "/api/v1/admin/employees",
+        headers=admin,
+        json={
+            "full_name": "Yangi Usta",
+            "phone": "901119999",  # normalizatsiya sinovi
+            "role_id": mechanic_role["id"],
+            "workshop_name": "Chilonzor ustaxonasi",
+        },
+    )
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert body["phone"] == "+998901119999"
+    assert body["tg_linked"] is False  # hali botga kirmagan
+    assert body["status"] == "active"
+
+    rows = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+    added = next(e for e in rows if e["phone"] == "+998901119999")
+    assert added["workshop_name"] == "Chilonzor ustaxonasi"
+
+
+async def test_new_employee_cannot_enter_miniapp_before_bot_binding(api):
+    """⭐ 2-qadam **botda** bo'ladi: Mini App faqat `tg_user_id` bo'yicha kiritadi.
+
+    Telefon raqamini Mini App ko'rmaydi — bog'lanish `/start` → `request_contact`
+    orqali botda amalga oshadi (`test_bot_flow` da qoplangan). Shuning uchun
+    reyestrga kiritilgan, lekin hali botga kirmagan xodim uchun Mini App
+    `not_in_registry` qaytaradi — bu xato emas, model shunday.
+    """
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    roles = (await api.get("/api/v1/admin/roles", headers=admin)).json()["data"]
+    role_id = next(r for r in roles if r["code"] == "mechanic")["id"]
+
+    await api.post(
+        "/api/v1/admin/employees",
+        headers=admin,
+        json={"full_name": "Yangi Usta", "phone": "+998901119999", "role_id": role_id},
+    )
+
+    denied = await api.post(
+        "/api/v1/auth/telegram", json={"init_data": init_data_for(7199)}
+    )
+    assert denied.status_code == 403
+    assert denied.json()["error"]["code"] == "not_in_registry"
+
+
+async def test_duplicate_phone_is_rejected(api):
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    roles = (await api.get("/api/v1/admin/roles", headers=admin)).json()["data"]
+    role_id = next(r for r in roles if r["code"] == "mechanic")["id"]
+
+    response = await api.post(
+        "/api/v1/admin/employees",
+        headers=admin,
+        json={"full_name": "Takror", "phone": "+998901110001", "role_id": role_id},
+    )
+    assert response.status_code == 422
+
+
+async def test_employee_add_is_admin_only(api):
+    mechanic = auth_header((await login(api, MECHANIC_TG))["access_token"])
+    assert (await api.get("/api/v1/admin/employees", headers=mechanic)).status_code == 403
+    response = await api.post(
+        "/api/v1/admin/employees",
+        headers=mechanic,
+        json={"full_name": "X", "phone": "+998900000000", "role_id": 1},
+    )
+    assert response.status_code == 403
+
+
+async def test_fired_employee_cannot_log_in_but_data_stays(api):
+    """R5 — kirish bloklanadi, ma'lumot qoladi."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    employees = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+    mechanic_id = next(e["id"] for e in employees if e["phone"] == "+998901110001")
+
+    response = await api.post(
+        f"/api/v1/admin/employees/{mechanic_id}/status",
+        headers=admin,
+        json={"status": "fired"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "fired"
+
+    denied = await api.post(
+        "/api/v1/auth/telegram", json={"init_data": init_data_for(MECHANIC_TG)}
+    )
+    assert denied.status_code == 403
+
+    # yozuvi reyestrda qoladi
+    still = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+    assert any(e["id"] == mechanic_id for e in still)
+
+
+async def test_invalid_status_is_rejected(api):
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    employees = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+    mechanic_id = next(e["id"] for e in employees if e["phone"] == "+998901110001")
+
+    response = await api.post(
+        f"/api/v1/admin/employees/{mechanic_id}/status",
+        headers=admin,
+        json={"status": "vacation"},
+    )
+    assert response.status_code == 422
+
+
+async def test_last_admin_cannot_be_fired(api):
+    """R8 — oxirgi adminni bo'shatib bo'lmaydi."""
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    employees = (await api.get("/api/v1/admin/employees", headers=admin)).json()
+    admin_id = next(e["id"] for e in employees if e["phone"] == "+998901110002")
+
+    response = await api.post(
+        f"/api/v1/admin/employees/{admin_id}/status",
+        headers=admin,
+        json={"status": "fired"},
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "last_admin_required"

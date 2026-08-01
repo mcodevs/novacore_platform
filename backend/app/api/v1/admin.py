@@ -185,12 +185,21 @@ async def set_role(
 
 @router.post("/employees/{employee_id}/status", response_model=schemas.EmployeeOut)
 async def set_status(
-    employee_id: int, status: str, session: SessionDep, actor: AdminDep
+    employee_id: int,
+    payload: schemas.SetStatusRequest,
+    session: SessionDep,
+    actor: AdminDep,
 ):
+    """R5 — `fired`/`blocked` da kirish bloklanadi, ma'lumot **qoladi**."""
     employee = await session.get(Employee, employee_id)
     if employee is None:
         raise NotFound("Xodim topilmadi")
-    new_status = EmployeeStatus(status)
+    try:
+        new_status = EmployeeStatus(payload.status)
+    except ValueError:
+        raise BusinessRuleViolated(
+            "status faqat active/blocked/fired bo'lishi mumkin"
+        ) from None
 
     if employee.role.kind == RoleKind.admin and new_status != EmployeeStatus.active:
         await permissions.ensure_admin_remains(session, changing_employee_id=employee.id)

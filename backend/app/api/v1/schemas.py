@@ -25,7 +25,11 @@ class EmployeeOut(BaseModel):
     phone: str
     lang: str
     role: RoleOut
+    role_id: int
     workshop_name: str | None = None
+    status: str = "active"
+    #: Xodim botga `/start` bosib telefonini yuborganmi (admin ro'yxati uchun)
+    tg_linked: bool = False
 
 
 class TemplateOut(BaseModel):
@@ -324,3 +328,9 @@ class TemplateIn(BaseModel):
 
 class SetRoleRequest(BaseModel):
     role_id: int
+
+
+class SetStatusRequest(BaseModel):
+    """`active` / `blocked` / `fired` — R5: ma'lumot qoladi, kirish bloklanadi."""
+
+    status: str

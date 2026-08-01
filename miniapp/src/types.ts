@@ -21,13 +21,19 @@ export interface Role {
   icon: string;
 }
 
+export type EmployeeStatus = 'active' | 'blocked' | 'fired';
+
 export interface Employee {
   id: number;
   full_name: string;
   phone: string;
   lang: Lang;
   role: Role;
+  role_id: number;
   workshop_name: string | null;
+  status: EmployeeStatus;
+  /** Xodim botga `/start` bosib telefonini yuborganmi. */
+  tg_linked: boolean;
 }
 
 export interface TemplateInfo {

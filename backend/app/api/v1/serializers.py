@@ -31,7 +31,10 @@ def employee_out(employee: Employee) -> schemas.EmployeeOut:
         phone=employee.phone,
         lang=employee.lang,
         role=role_out(employee),
+        role_id=employee.role_id,
         workshop_name=employee.workshop_name,
+        status=employee.status.value,
+        tg_linked=employee.tg_user_id is not None,
     )
 
 
