@@ -7,6 +7,7 @@ import { ApiError } from './api';
 import { setLocale, t } from './i18n';
 import { BuilderScreen } from './screens/BuilderScreen';
 import { DetailScreen } from './screens/DetailScreen';
+import { EmployeesScreen } from './screens/EmployeesScreen';
 import { FormScreen } from './screens/FormScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
@@ -22,6 +23,7 @@ type Route =
   | { name: 'detail'; id: number }
   | { name: 'profile' }
   | { name: 'builder' }
+  | { name: 'employees' }
   | { name: 'template'; id: number | null }
   | { name: 'role'; id: number | null };
 
@@ -124,6 +126,14 @@ export function App() {
           onOpen={(id) => push({ name: 'detail', id })}
           onCreate={(code) => void createReport(code)}
           onBuilder={() => push({ name: 'builder' })}
+          onEmployees={() => push({ name: 'employees' })}
+        />
+      ) : null}
+
+      {route.name === 'employees' ? (
+        <EmployeesScreen
+          currentEmployeeId={auth.employee.id}
+          onDone={(message) => showToast(message)}
         />
       ) : null}
 

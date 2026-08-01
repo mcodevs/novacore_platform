@@ -6,6 +6,7 @@ import type {
   AuthResponse,
   Dashboard,
   Employee,
+  EmployeeStatus,
   Lang,
   LinkableSubmission,
   MediaItem,
@@ -286,6 +287,33 @@ export const publishTemplate = (id: number) =>
   request<TemplateSummary>(`/admin/templates/${id}/publish`, { method: 'POST' });
 
 export const adminRoles = () => request<RoleSummary[]>('/admin/roles');
+
+// --- Xodimlar (faqat admin) ---
+
+export const adminEmployees = () => request<Employee[]>('/admin/employees');
+
+export interface EmployeeInput {
+  full_name: string;
+  phone: string;
+  role_id: number;
+  workshop_name?: string | null;
+  lang?: Lang;
+}
+
+export const createEmployee = (payload: EmployeeInput) =>
+  request<Employee>('/admin/employees', { method: 'POST', body: JSON.stringify(payload) });
+
+export const setEmployeeRole = (id: number, role_id: number) =>
+  request<Employee>(`/admin/employees/${id}/role`, {
+    method: 'POST',
+    body: JSON.stringify({ role_id }),
+  });
+
+export const setEmployeeStatus = (id: number, status: EmployeeStatus) =>
+  request<Employee>(`/admin/employees/${id}/status`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  });
 
 export interface RoleInput {
   code: string;

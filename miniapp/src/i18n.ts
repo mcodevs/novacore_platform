@@ -108,6 +108,30 @@ export const T: Dict = {
     ru: 'текст · число · сумма · да/нет · выбор · фото · машина · строки · геолокация',
   },
 
+  // Xodimlar (admin)
+  employees: { uz: '👥 Xodimlar', ru: '👥 Сотрудники' },
+  new_employee: { uz: '+ Yangi xodim', ru: '+ Новый сотрудник' },
+  employee_added: { uz: 'Xodim reyestrga qo‘shildi', ru: 'Сотрудник добавлен в реестр' },
+  full_name: { uz: 'F.I.Sh.', ru: 'Ф.И.О.' },
+  phone: { uz: 'Telefon', ru: 'Телефон' },
+  workshop_optional: { uz: 'Ustaxona nomi (ixtiyoriy)', ru: 'Название мастерской (необяз.)' },
+  employee_link_hint: {
+    uz: 'Qo‘shgach xodim botga /start bosib SHU raqamni yuborsin — hisob shunda bog‘lanadi.',
+    ru: 'После добавления сотрудник нажимает /start в боте и отправляет ЭТОТ номер.',
+  },
+  no_employees: { uz: 'Reyestr bo‘sh', ru: 'Реестр пуст' },
+  not_linked: { uz: 'kutilmoqda', ru: 'ожидается' },
+  this_is_you: { uz: 'Bu — sizning hisobingiz', ru: 'Это ваша учётная запись' },
+  change_role: { uz: 'Rolni o‘zgartirish', ru: 'Сменить роль' },
+  status: { uz: 'Holat', ru: 'Статус' },
+  status_active: { uz: 'Faol', ru: 'Активен' },
+  status_blocked: { uz: 'Bloklangan', ru: 'Заблокирован' },
+  status_fired: { uz: 'Bo‘shatilgan', ru: 'Уволен' },
+  fired_keeps_data: {
+    uz: 'Bloklash/bo‘shatishda kirish yopiladi, hisobotlar va to‘lovlar qoladi.',
+    ru: 'При блокировке/увольнении вход закрыт, отчёты и выплаты остаются.',
+  },
+
   linkable_empty: {
     uz: 'Bu mashina bo‘yicha bog‘lanadigan hisobot yo‘q',
     ru: 'По этой машине связанных отчётов нет',
