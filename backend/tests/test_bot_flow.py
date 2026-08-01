@@ -18,6 +18,7 @@ from app.db.models import (
     Notification,
     Submission,
     SubmissionStatus,
+    Template,
     Vehicle,
 )
 from app.db.session import SessionFactory, engine
@@ -391,3 +392,73 @@ async def test_custom_work_name_without_catalog(db, bot, dispatcher):
     assert line.name == "Maxsus payvandlash ishi"
     assert line.catalog_id is None
     assert line.proposed_amount == Decimal("250000.00")
+
+
+# --- Mini App'dan yuklangan fotoni botda ko'rsatish (2026-08-01 xatosi) -------
+
+
+async def test_admin_sees_photos_uploaded_from_miniapp(db, bot, dispatcher):
+    """⚠️ Bot «Foto yo'q» derdi, holbuki Mini App'da 5 ta foto ko'rinardi.
+
+    Sabab: `show_photos` `tg_file_id` bo'yicha filtrlardi, Mini App'dan
+    yuklangan foto esa to'g'ridan-to'g'ri omborga tushadi va Telegram'ni
+    ko'rmagan bo'ladi (`tg_file_id IS NULL`).
+    """
+    import hashlib
+
+    from app.db.models import Media, MediaKind
+    from app.domain.media import service as media_service
+
+    # ombor + baza: Mini App yuklagandek media yasaymiz (tg_file_id YO'Q)
+    async with SessionFactory() as session:
+        employee = (
+            await session.execute(sa.select(Employee).where(Employee.phone == MECHANIC_PHONE))
+        ).scalars().one()
+        vehicle = (await session.execute(sa.select(Vehicle))).scalars().one()
+        template = (
+            await session.execute(sa.select(Template).where(Template.code == "car_repair"))
+        ).scalars().one()
+
+        submission = Submission(
+            number="WO-2026-000777",
+            template_id=template.id,
+            template_version=template.version,
+            author_id=employee.id,
+            subject_vehicle_id=vehicle.id,
+            status=SubmissionStatus.SUBMITTED,
+        )
+        session.add(submission)
+        await session.flush()
+
+        payload = b"\xff\xd8\xff\xe0" + bytes(64)
+        key = media_service.storage_key(
+            submission, "photo_problem", hashlib.sha256(payload).hexdigest(), "image/jpeg"
+        )
+        await media_service.get_storage().put(key, payload, content_type="image/jpeg")
+        session.add(
+            Media(
+                submission_id=submission.id,
+                field_code="photo_problem",
+                kind=MediaKind.problem,
+                storage_key=key,
+                mime="image/jpeg",
+                size_bytes=len(payload),
+                sha256=hashlib.sha256(payload).hexdigest(),
+                uploaded_by=employee.id,
+                tg_file_id=None,  # ⬅️ Mini App yo'li
+            )
+        )
+        await session.commit()
+        submission_id = submission.id
+
+    bot.session.clear()
+    await feed(dispatcher, bot, ft.callback_update(ADMIN_TG, f"a:photos:{submission_id}:"))
+
+    methods = [name for name, _ in bot.session.requests]
+    assert "sendMediaGroup" in methods, methods
+    assert all("Foto yo'q" not in text for text in bot.session.sent_texts())
+
+    # Telegram qaytargan file_id keshlanadi — keyingi safar ombor o'qilmaydi
+    async with SessionFactory() as session:
+        media = (await session.execute(sa.select(Media))).scalars().one()
+        assert media.tg_file_id is not None

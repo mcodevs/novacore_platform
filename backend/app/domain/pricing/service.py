@@ -338,6 +338,7 @@ async def _notify_price_proposed(
         payload={
             "submission_id": submission.id,
             "number": submission.number,
+            "vehicle": (submission.vehicle.plate_display if submission.vehicle else "—"),
             "proposed": str(proposed),
             "approved": str(approved),
             "reason": reason,

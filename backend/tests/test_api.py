@@ -184,6 +184,67 @@ async def _upload_photo(api: AsyncClient, token: str, submission_id: int, field:
     return response.json()["id"]
 
 
+async def _submit_repair(api: AsyncClient, m_token: str, *, price: int = 250000) -> int:
+    """Yuborilgan ta'mir hisoboti yasaydi (testlar uchun qisqa yo'l)."""
+    vehicle_id = (
+        await api.get("/api/v1/vehicles/lookup?plate=01A123BC", headers=auth_header(m_token))
+    ).json()["id"]
+    submission_id = (
+        await api.post(
+            "/api/v1/submissions",
+            headers=auth_header(m_token),
+            json={"template_code": "car_repair"},
+        )
+    ).json()["id"]
+
+    media_ids = {}
+    for field in (
+        "photo_car_before",
+        "odometer_photo",
+        "photo_problem",
+        "photo_after",
+        "photo_car_after",
+    ):
+        media_ids[field] = [await _upload_photo(api, m_token, submission_id, field)]
+
+    await api.patch(
+        f"/api/v1/submissions/{submission_id}",
+        headers=auth_header(m_token),
+        json={
+            "data": {
+                "plate": {"vehicle_id": vehicle_id, "plate": "01A123BC"},
+                "odometer_value": 48250,
+                "category": "brakes",
+                "problem_description": "Old tormoz kolodkasi yeyilgan",
+                "comment": "Kolodka almashtirildi, disk normal",
+                **media_ids,
+            }
+        },
+    )
+    await api.put(
+        f"/api/v1/submissions/{submission_id}/lines",
+        headers=auth_header(m_token),
+        json={
+            "lines": [
+                {
+                    "kind": "labor",
+                    "name": "Old tormoz kolodkasini almashtirish",
+                    "qty": 1,
+                    "unit_price": price,
+                }
+            ]
+        },
+    )
+    await api.post(
+        f"/api/v1/submissions/{submission_id}/mark-left", headers=auth_header(m_token)
+    )
+    submitted = await api.post(
+        f"/api/v1/submissions/{submission_id}/submit", headers=auth_header(m_token)
+    )
+    assert submitted.status_code == 200, submitted.text
+    return submission_id
+
+
 async def test_full_submission_flow(api):
     mechanic = await login(api, MECHANIC_TG)
     admin = await login(api, ADMIN_TG)
@@ -816,3 +877,104 @@ async def test_last_admin_cannot_be_fired(api):
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "last_admin_required"
+
+
+# --- Bildirishnoma matni va ro'yxat mosligi (2026-08-01 dagi xatolar) ---------
+
+
+async def test_price_proposed_notification_has_no_raw_placeholders(api):
+    """⚠️ Ustaga `{number} · {vehicle}` ko'rinishida xom shablon ketgan edi.
+
+    Sabab: `t()` bitta yetishmagan kalitda (`vehicle`) BUTUN shablonni xom
+    qaytarardi. Endi yetishmagan joy «—» bo'ladi, qolgani o'rniga qo'yiladi.
+    """
+    from app.bot import notifier
+    from app.db.models import Notification, NotificationStatus
+    from app.db.session import SessionFactory
+
+    mechanic = await login(api, MECHANIC_TG)
+    admin = await login(api, ADMIN_TG)
+    submission_id = await _submit_repair(api, mechanic["access_token"])
+
+    proposed = await api.post(
+        f"/api/v1/submissions/{submission_id}/propose-price",
+        headers=auth_header(admin["access_token"]),
+        json={
+            "lines": [
+                {
+                    "line_id": (
+                        await api.get(
+                            f"/api/v1/submissions/{submission_id}",
+                            headers=auth_header(admin["access_token"]),
+                        )
+                    ).json()["lines"][0]["id"],
+                    "amount": 200000,
+                }
+            ],
+            "comment": "Kolodka narxi bozorda arzonroq",
+        },
+    )
+    assert proposed.status_code == 200, proposed.text
+
+    async with SessionFactory() as session:
+        row = (
+            await session.execute(
+                sa.select(Notification).where(
+                    Notification.template_code == "notify_price_proposed",
+                    Notification.status == NotificationStatus.pending,
+                )
+            )
+        ).scalars().first()
+        assert row is not None
+        employee = await session.get(Employee, row.employee_id)
+        text, _ = await notifier.render(session, row, employee)
+
+    assert "{" not in text and "}" not in text, text
+    assert "200 000" in text and "250 000" in text
+    assert "01 A 123 BC" in text
+    assert "Kolodka narxi bozorda arzonroq" in text
+
+
+async def test_pending_list_keeps_reports_being_reviewed(api):
+    """Admin ochgan hisobot (`in_review`) ro'yxatdan yo'qolib qolmasin.
+
+    Dashboard plitkasi `submitted + in_review` sanaydi — ro'yxat ham shunday
+    bo'lishi kerak, aks holda «1 ta kutmoqda», lekin ro'yxat bo'sh chiqadi.
+    """
+    mechanic = await login(api, MECHANIC_TG)
+    admin = await login(api, ADMIN_TG)
+    a_token = admin["access_token"]
+    submission_id = await _submit_repair(api, mechanic["access_token"])
+
+    # admin kartochkani ochadi → IN_REVIEW
+    opened = await api.get(
+        f"/api/v1/submissions/{submission_id}/price-context", headers=auth_header(a_token)
+    )
+    assert opened.status_code == 200
+    await api.post(
+        f"/api/v1/submissions/{submission_id}/reopen",
+        headers=auth_header(a_token),
+        json={"comment": "Probeg fotosi aniq emas"},
+    )
+    board = (await api.get("/api/v1/reports/dashboard", headers=auth_header(a_token))).json()
+
+    listed = await api.get(
+        "/api/v1/submissions?status=submitted,in_review,price_disputed",
+        headers=auth_header(a_token),
+    )
+    assert listed.status_code == 200
+    # reopen'dan keyin ikkalasi ham nolga tushadi — mos kelishi muhim
+    assert len(listed.json()) == board["pending_review"]
+
+
+async def test_status_filter_accepts_multiple_values(api):
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    mechanic = await login(api, MECHANIC_TG)
+    await _submit_repair(api, mechanic["access_token"])
+
+    one = await api.get("/api/v1/submissions?status=submitted", headers=admin)
+    many = await api.get(
+        "/api/v1/submissions?status=submitted,approved,paid", headers=admin
+    )
+    assert one.status_code == 200 and many.status_code == 200
+    assert len(many.json()) >= len(one.json()) == 1

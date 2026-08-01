@@ -8,7 +8,11 @@ from __future__ import annotations
 import datetime as dt
 from decimal import Decimal
 
+import structlog
+
 from app.core.config import TASHKENT
+
+_log = structlog.get_logger(__name__)
 
 LANGS = ("uz", "ru")
 DEFAULT_LANG = "uz"
@@ -786,6 +790,19 @@ T: dict[str, dict[str, str]] = {
 }
 
 
+class _Missing(dict):
+    """Yetishmagan kalit butun xabarni buzmasin — faqat o'sha joyda «—».
+
+    Ilgari `text.format(**kwargs)` `KeyError` da **xom shablonni** qaytarardi:
+    bitta yetishmagan kalit tufayli foydalanuvchi `{number} · {vehicle}` degan
+    xabarni ko'rardi (2026-08-01 da ustaga aynan shunday ketgan).
+    """
+
+    def __missing__(self, key: str) -> str:
+        _log.warning("i18n_missing_param", param=key)
+        return "—"
+
+
 def t(key: str, lang: str = DEFAULT_LANG, /, **kwargs: object) -> str:
     """Tarjima. Kalit topilmasa — kalitning o'zi (dev'da darhol ko'rinadi)."""
     entry = T.get(key)
@@ -794,8 +811,9 @@ def t(key: str, lang: str = DEFAULT_LANG, /, **kwargs: object) -> str:
     text = entry.get(lang) or entry.get(DEFAULT_LANG) or key
     if kwargs:
         try:
-            return text.format(**kwargs)
-        except (KeyError, IndexError):
+            return text.format_map(_Missing(kwargs))
+        except (IndexError, ValueError):  # nosoz shablon — xom qaytaramiz
+            _log.warning("i18n_bad_template", key=key)
             return text
     return text
 

@@ -44,7 +44,9 @@ async def list_submissions(
     elif author_id:
         stmt = stmt.where(Submission.author_id == int(author_id))
     if status:
-        stmt = stmt.where(Submission.status == SubmissionStatus(status))
+        # vergul bilan bir nechta holat: `?status=submitted,in_review`
+        wanted = [SubmissionStatus(code.strip()) for code in status.split(",") if code.strip()]
+        stmt = stmt.where(Submission.status.in_(wanted))
     if period_id:
         stmt = stmt.where(Submission.period_id == period_id)
     if vehicle_id:

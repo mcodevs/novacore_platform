@@ -45,7 +45,10 @@ class FakeSession(BaseSession):
         if name in ("sendMessage", "sendDocument", "sendPhoto"):
             return self._fake_message(method)
         if name == "sendMediaGroup":
-            return [self._fake_message(method)]
+            # Telegram javobida har rasm uchun `photo` bo'ladi — kod undan
+            # `file_id` ni keshlaydi, shuning uchun fake ham qaytarishi shart
+            count = len(getattr(method, "media", []) or [1])
+            return [self._fake_message(method, with_photo=True) for _ in range(count)]
         return True
 
     async def stream_content(  # type: ignore[override]
@@ -60,18 +63,27 @@ class FakeSession(BaseSession):
 
     # --- Yordamchilar ---
 
-    def _fake_message(self, method: TelegramMethod) -> Message:
+    def _fake_message(self, method: TelegramMethod, *, with_photo: bool = False) -> Message:
         self._message_id += 1
         chat_id = int(getattr(method, "chat_id", 1) or 1)
-        return Message.model_validate(
-            {
-                "message_id": self._message_id,
-                "date": dt.datetime.now(dt.timezone.utc),
-                "chat": {"id": chat_id, "type": "private"},
-                "from": {"id": 1, "is_bot": True, "first_name": "NovaCore"},
-                "text": getattr(method, "text", None) or getattr(method, "caption", "") or "",
-            }
-        )
+        payload = {
+            "message_id": self._message_id,
+            "date": dt.datetime.now(dt.timezone.utc),
+            "chat": {"id": chat_id, "type": "private"},
+            "from": {"id": 1, "is_bot": True, "first_name": "NovaCore"},
+            "text": getattr(method, "text", None) or getattr(method, "caption", "") or "",
+        }
+        if with_photo:
+            payload["photo"] = [
+                {
+                    "file_id": f"AgACFake{self._message_id}",
+                    "file_unique_id": f"u{self._message_id}",
+                    "width": 320,
+                    "height": 240,
+                    "file_size": len(FAKE_JPEG),
+                }
+            ]
+        return Message.model_validate(payload)
 
     # --- Testlarda tekshirish uchun ---
 

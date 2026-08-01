@@ -33,7 +33,9 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
     if (seesAll) {
       api.dashboard().then(setBoard).catch(() => setBoard(null));
       api
-        .listSubmissions({ status: 'submitted', limit: 20 })
+        // dashboard plitkasi bilan bir xil to'plam: ko'rilayotgani ham ro'yxatda
+        // qolsin, aks holda admin ochgan hisobot ko'zdan yo'qoladi
+        .listSubmissions({ status: 'submitted,in_review,price_disputed', limit: 20 })
         .then(setPending)
         .catch(() => setPending([]));
     }
@@ -104,7 +106,8 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
                     <strong>{item.number}</strong> · {money(item.proposed_labor_amount)}
                   </div>
                   <div className="badge">
-                    {item.author_name} · {item.vehicle?.plate_display ?? '—'}
+                    {statusLabel(item.status)} · {item.author_name} ·{' '}
+                    {item.vehicle?.plate_display ?? '—'}
                   </div>
                 </button>
               ))
