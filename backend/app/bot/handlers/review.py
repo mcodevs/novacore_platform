@@ -5,10 +5,11 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation
 
 import sqlalchemy as sa
+import structlog
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InputMediaPhoto, Message
+from aiogram.types import BufferedInputFile, CallbackQuery, InputMediaPhoto, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot import keyboards as kb
@@ -21,15 +22,18 @@ from app.db.models import (
     ApprovalDecision,
     Employee,
     LineKind,
+    Media,
     Submission,
     SubmissionLine,
     SubmissionStatus,
 )
 from app.domain.approval import service as approval_service
+from app.domain.media import service as media_service
 from app.domain.pricing import service as pricing_service
 from app.domain.role import permissions
 from app.domain.submission import service as submission_service
 
+log = structlog.get_logger(__name__)
 router = Router(name="review")
 
 MENU_PENDING = {t("menu_pending", "uz"), t("menu_pending", "ru")}
@@ -141,20 +145,48 @@ async def show_photos(
         return
     submission = await submission_service.get_for_actor(session, callback_data.id, employee)
     lang = employee.lang
-    photos = [m for m in submission.media if m.deleted_at is None and m.tg_file_id]
+    # ⚠️ `tg_file_id` bo'yicha filtrlamaymiz: Mini App'dan yuklangan foto
+    # to'g'ridan-to'g'ri omborga tushadi va Telegram'ni ko'rmagan bo'ladi.
+    photos = [m for m in submission.media if m.deleted_at is None]
     await callback.answer()
     if not photos:
         await callback.message.answer(t("card_no_photos", lang))
         return
 
-    # Telegram file_id — tezkor ko'rsatish keshi (asosiy nusxa omborda)
     for chunk_start in range(0, len(photos), 10):
         chunk = photos[chunk_start : chunk_start + 10]
-        media_group = [
-            InputMediaPhoto(media=item.tg_file_id, caption=item.field_code if idx == 0 else None)
-            for idx, item in enumerate(chunk)
-        ]
-        await callback.message.answer_media_group(media_group)
+        media_group = []
+        for idx, item in enumerate(chunk):
+            caption = item.field_code if idx == 0 else None
+            if item.tg_file_id:  # kesh bor — tezkor yo'l
+                media_group.append(InputMediaPhoto(media=item.tg_file_id, caption=caption))
+                continue
+            try:
+                payload = await media_service.load_bytes(item)
+            except Exception:  # noqa: BLE001 — ombor xatosi ko'rikni to'xtatmasin
+                log.warning("photo_load_failed", media_id=item.id, key=item.storage_key)
+                continue
+            media_group.append(
+                InputMediaPhoto(
+                    media=BufferedInputFile(payload, filename=f"{item.id}.jpg"),
+                    caption=caption,
+                )
+            )
+
+        if not media_group:
+            await callback.message.answer(t("card_no_photos", lang))
+            return
+
+        sent = await callback.message.answer_media_group(media_group)
+        _cache_file_ids(chunk, sent)
+    await session.flush()
+
+
+def _cache_file_ids(items: list[Media], sent: list[Message]) -> None:
+    """Telegram qaytargan `file_id` ni keshlaymiz — keyingi safar tez ochiladi."""
+    for item, message in zip(items, sent, strict=False):
+        if not item.tg_file_id and message.photo:
+            item.tg_file_id = message.photo[-1].file_id
 
 
 @router.callback_query(Act.filter(F.name == "history"))

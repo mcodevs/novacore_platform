@@ -148,6 +148,11 @@ async def get_for_actor(session: AsyncSession, media_id: int, actor: Employee) -
     return media
 
 
+async def load_bytes(media: Media) -> bytes:
+    """Asosiy nusxani ombordan o'qish (Telegram `file_id` — faqat kesh)."""
+    return await get_storage().get(media.storage_key)
+
+
 def view_url(media: Media) -> str:
     """S3'da — signed URL; lokal omborda — API endpointi (`/media/{id}/raw`)."""
     if settings.storage_backend == "local":
