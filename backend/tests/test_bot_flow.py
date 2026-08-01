@@ -168,6 +168,41 @@ async def test_menu_opens_miniapp_and_has_no_actions(db, bot, dispatcher):
     assert labels == {"🧩 Mini App", "🌐 Til", "❓ Yordam"}
 
 
+async def test_menu_button_is_not_web_app(db, bot, dispatcher, monkeypatch):
+    """⚠️ Reply-klaviaturadagi `web_app` Mini App'ga `initData` BERMAYDI.
+
+    2026-08-02 da aynan shu xato chiqdi: menyudagi «🧩 Mini App» `web_app`
+    tugmasi edi, ilova ochilardi-yu «Bu sahifa Telegram ichida ochilishi
+    kerak» deb turardi (`isTelegram = Boolean(tg.initData)` → false).
+    To'g'ri yo'l — matn yuborish → javobda **inline** `web_app` tugmasi.
+    """
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "miniapp_url", "https://example.test/app")
+    await _register_mechanic(dispatcher, bot)
+    bot.session.clear()
+    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "/start"))
+
+    markup = bot.session.last_markup(MECHANIC_TG)
+    buttons = [button for row in markup.keyboard for button in row]
+    assert all(button.web_app is None for button in buttons)
+
+
+async def test_menu_app_button_replies_with_inline_web_app(db, bot, dispatcher, monkeypatch):
+    """«🧩 Mini App» bosilganda inline tugma keladi — u `initData` bilan ochadi."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "miniapp_url", "https://example.test/app")
+    await _register_mechanic(dispatcher, bot)
+    bot.session.clear()
+    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "🧩 Mini App"))
+
+    markup = bot.session.last_markup(MECHANIC_TG)
+    buttons = [button for row in markup.inline_keyboard for button in row]
+    assert len(buttons) == 1
+    assert buttons[0].web_app.url == "https://example.test/app"
+
+
 async def test_admin_menu_is_the_same_as_reporter(db, bot, dispatcher):
     """Rol farqi endi menyuda emas — Mini App ichida."""
     await feed(dispatcher, bot, ft.message_update(ADMIN_TG, "/start"))

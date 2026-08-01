@@ -197,7 +197,8 @@ async def cmd_app(message: Message, employee: Employee | None, lang: str) -> Non
     if markup is None:
         await message.answer(t("app_not_configured", employee.lang))
         return
-    await message.answer(settings.miniapp_url, reply_markup=markup)
+    # ⚠️ Inline tugma — faqat u `initData` bilan ochadi (kb.main_menu izohiga q.)
+    await message.answer(t("app_open_hint", employee.lang), reply_markup=markup)
 
 
 @router.message(Command("menu"))

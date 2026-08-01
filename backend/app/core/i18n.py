@@ -106,6 +106,10 @@ T: dict[str, dict[str, str]] = {
     "menu_help": {"uz": "❓ Yordam", "ru": "❓ Помощь"},
     "menu_app": {"uz": "🧩 Mini App", "ru": "🧩 Mini App"},
     "open_app": {"uz": "🧩 Ochish", "ru": "🧩 Открыть"},
+    "app_open_hint": {
+        "uz": "🧩 Barcha ishlar shu yerda — quyidagi tugmani bosing 👇",
+        "ru": "🧩 Вся работа здесь — нажмите кнопку ниже 👇",
+    },
     "app_not_configured": {
         "uz": "Mini App hali sozlanmagan. Barcha amallar shu bot orqali bajariladi.",
         "ru": "Mini App пока не настроен. Все действия доступны в этом боте.",
