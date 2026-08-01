@@ -148,12 +148,16 @@ Batafsil: [backend/README.md](backend/README.md) · [miniapp/README.md](miniapp/
 Fon sikli: 48 soatlik avtomatik rozilik, 24 soatlik eslatmalar, bildirishnoma
 outbox'i, uzoq downtime signali.
 
-### Mini App (8 ekran, ~64 KB gzip)
+### Mini App (9 ekran, ~65 KB gzip)
 
 Ro'yxat/dashboard · ⭐ **form-renderer** (shablon JSON → forma) · ko'rib chiqish
 (admin uchun narx tarixi bilan) · profil (til + o'z narx statistikasi).
 Telegram temasi, BackButton, haptic, offline qoralama, foto siqish.
 Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
+
+⭐ **Hisobotlar arxivi (admin va buxgalter):** barcha hisobotlar holat bo'yicha
+filtr bilan — bosh ekranda faqat navbat va o'z hisobotlaring ko'rinadi,
+tasdiqlangani esa arxivda topiladi.
 
 ⭐ **Xodimlar (faqat admin):** reyestr — kim bog'langan (`🔗`), kim kutayapti
 (`⏳`) · yangi xodim qo'shish · rol berish · bloklash/bo'shatish (R5: kirish
@@ -175,7 +179,7 @@ ko'rinmaydi; nashr etilgan versiya **o'zgarmas** — eski hisobotlar buzilmaydi.
 | **Bosqich** | Deploy qilingan (fly.io, webhook) · real ma'lumot va pilot navbatda |
 | **Sana** | 2026-08-01 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 202 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · builder · **fleet** · role · submission · bot e2e · API e2e · konfiguratsiya) |
+| **Testlar** | 209 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · builder · **fleet** · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.

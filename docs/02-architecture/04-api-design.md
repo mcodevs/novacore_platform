@@ -53,7 +53,7 @@ Batafsil: [06-security.md](06-security.md)
 
 | Metod | Yo'l | Tavsif |
 |---|---|---|
-| `GET` | `/submissions` | `?template=&status=&author_id=me&period_id=&vehicle_id=` |
+| `GET` | `/submissions` | `?status=&author_id=me&period_id=&vehicle_id=&limit=&offset=`. `status` vergulli bo'lishi mumkin: `submitted,in_review` |
 | `POST` | `/submissions` | Yangi qoralama: `{ template_code, vehicle_id? }` → **`arrived_at` server vaqti bilan yoziladi** |
 | `GET` | `/submissions/{id}` | Sxema + qiymatlar + media + bayroqlar + kelishuv tarixi |
 | `PATCH` | `/submissions/{id}` | Qoralamani qisman saqlash `{ data: {...} }` |

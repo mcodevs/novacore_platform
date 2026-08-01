@@ -11,6 +11,7 @@ import { EmployeesScreen } from './screens/EmployeesScreen';
 import { FormScreen } from './screens/FormScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { ReportsScreen } from './screens/ReportsScreen';
 import { RoleEditScreen } from './screens/RoleEditScreen';
 import { TemplateEditScreen } from './screens/TemplateEditScreen';
 import { isTelegram, tg } from './telegram';
@@ -24,6 +25,7 @@ type Route =
   | { name: 'profile' }
   | { name: 'builder' }
   | { name: 'employees' }
+  | { name: 'reports' }
   | { name: 'template'; id: number | null }
   | { name: 'role'; id: number | null };
 
@@ -127,7 +129,12 @@ export function App() {
           onCreate={(code) => void createReport(code)}
           onBuilder={() => push({ name: 'builder' })}
           onEmployees={() => push({ name: 'employees' })}
+          onReports={() => push({ name: 'reports' })}
         />
+      ) : null}
+
+      {route.name === 'reports' ? (
+        <ReportsScreen onOpen={(id) => push({ name: 'detail', id })} />
       ) : null}
 
       {route.name === 'employees' ? (
