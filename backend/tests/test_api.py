@@ -978,3 +978,65 @@ async def test_status_filter_accepts_multiple_values(api):
     )
     assert one.status_code == 200 and many.status_code == 200
     assert len(many.json()) >= len(one.json()) == 1
+
+
+# --- Hisobotlar arxivi (admin «avvalgi hisobotlarni» ko'ra olsin) -------------
+
+
+async def test_admin_sees_approved_reports_in_archive(api):
+    """⚠️ Tasdiqlangach hisobot admin ko'zidan yo'qolib qolgan edi.
+
+    Bosh ekranda faqat navbat va o'z hisobotlaring ko'rinadi — arxiv uchun
+    filtrsiz (yoki `approved,paid`) ro'yxat kerak.
+    """
+    mechanic = await login(api, MECHANIC_TG)
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    submission_id = await _submit_repair(api, mechanic["access_token"])
+
+    approved = await api.post(
+        f"/api/v1/submissions/{submission_id}/approve", headers=admin, json={}
+    )
+    assert approved.status_code == 200
+
+    # navbatda endi yo'q
+    queue = await api.get(
+        "/api/v1/submissions?status=submitted,in_review,price_disputed", headers=admin
+    )
+    assert [s["id"] for s in queue.json()] == []
+
+    # arxivda bor — bu ilgari imkonsiz edi
+    archive = await api.get("/api/v1/submissions?status=approved,paid", headers=admin)
+    assert [s["id"] for s in archive.json()] == [submission_id]
+
+    everything = await api.get("/api/v1/submissions?limit=50", headers=admin)
+    assert submission_id in [s["id"] for s in everything.json()]
+
+
+async def test_archive_paginates(api):
+    """«Yana yuklash» — `offset` ishlashi kerak."""
+    mechanic = await login(api, MECHANIC_TG)
+    admin = auth_header((await login(api, ADMIN_TG))["access_token"])
+    ids = [await _submit_repair(api, mechanic["access_token"]) for _ in range(3)]
+
+    first = await api.get("/api/v1/submissions?limit=2&offset=0", headers=admin)
+    second = await api.get("/api/v1/submissions?limit=2&offset=2", headers=admin)
+    assert len(first.json()) == 2 and len(second.json()) == 1
+
+    seen = [s["id"] for s in first.json()] + [s["id"] for s in second.json()]
+    assert sorted(seen) == sorted(ids)  # takrorlanmaydi, tushib qolmaydi
+
+
+async def test_reporter_archive_still_shows_only_own_reports(api):
+    """R: ustaga boshqaning hisoboti ochilmaydi — arxiv ham xuddi shunday."""
+    mechanic = await login(api, MECHANIC_TG)
+    admin_auth = await login(api, ADMIN_TG)
+    await _submit_repair(api, mechanic["access_token"])
+
+    # admin o'z nomidan hisobot yozadi (R1a — avtomatik tasdiqlanadi)
+    admin_submission = await _submit_repair(api, admin_auth["access_token"])
+
+    as_mechanic = await api.get(
+        "/api/v1/submissions?limit=50", headers=auth_header(mechanic["access_token"])
+    )
+    ids = [s["id"] for s in as_mechanic.json()]
+    assert admin_submission not in ids

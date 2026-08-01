@@ -33,6 +33,7 @@ async def list_submissions(
     period_id: int | None = None,
     vehicle_id: int | None = None,
     limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
 ):
     from app.domain.role import permissions
 
@@ -53,7 +54,9 @@ async def list_submissions(
         stmt = stmt.where(Submission.subject_vehicle_id == vehicle_id)
 
     rows = (
-        await session.execute(stmt.order_by(Submission.created_at.desc()).limit(limit))
+        await session.execute(
+            stmt.order_by(Submission.created_at.desc()).limit(limit).offset(offset)
+        )
     ).scalars().all()
     return [serializers.submission_out(row) for row in rows]
 

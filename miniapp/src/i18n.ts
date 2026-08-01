@@ -108,6 +108,15 @@ export const T: Dict = {
     ru: 'текст · число · сумма · да/нет · выбор · фото · машина · строки · геолокация',
   },
 
+  // Hisobotlar arxivi (admin/buxgalter)
+  all_reports: { uz: '📋 Hisobotlar', ru: '📋 Отчёты' },
+  filter_all: { uz: 'Hammasi', ru: 'Все' },
+  filter_pending: { uz: 'Kutmoqda', ru: 'Ожидают' },
+  filter_negotiation: { uz: 'Kelishuvda', ru: 'В согласовании' },
+  filter_approved: { uz: 'Tasdiqlangan', ru: 'Подтверждены' },
+  filter_rejected: { uz: 'Rad etilgan', ru: 'Отклонены' },
+  load_more: { uz: 'Yana yuklash', ru: 'Показать ещё' },
+
   // Xodimlar (admin)
   employees: { uz: '👥 Xodimlar', ru: '👥 Сотрудники' },
   new_employee: { uz: '+ Yangi xodim', ru: '+ Новый сотрудник' },

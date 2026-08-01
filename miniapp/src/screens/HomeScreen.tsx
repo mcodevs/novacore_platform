@@ -14,9 +14,17 @@ interface Props {
   onCreate(templateCode: string): void;
   onBuilder(): void;
   onEmployees(): void;
+  onReports(): void;
 }
 
-export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: Props) {
+export function HomeScreen({
+  auth,
+  onOpen,
+  onCreate,
+  onBuilder,
+  onEmployees,
+  onReports,
+}: Props) {
   const kind = auth.employee.role.kind;
   const isReporter = kind === 'reporter' || kind === 'admin';
   const seesAll = kind === 'admin' || kind === 'accountant';
@@ -113,6 +121,15 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
               ))
             )}
           </Card>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={onReports}
+            style={{ marginBottom: 12 }}
+          >
+            {t('all_reports')}
+          </button>
 
           {kind === 'admin' ? (
             <div className="btn-row" style={{ marginBottom: 12 }}>
