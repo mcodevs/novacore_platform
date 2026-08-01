@@ -1,72 +1,40 @@
-"""`setMyCommands` — buyruqlar ro'yxati **rolga qarab** beriladi."""
+"""`setMyCommands` — buyruqlar ro'yxati.
+
+⚠️ 2026-08-01 dan botda **amal yo'q**, shuning uchun rolga xos buyruqlar ham
+yo'q: hamma bir xil to'rtta buyruqni ko'radi, qolgani Mini App'da.
+"""
 
 from __future__ import annotations
 
 from aiogram import Bot
 from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefault
 
-from app.db.models import Employee, RoleKind
+from app.db.models import Employee
 
 COMMON = {
-    "uz": [("start", "Boshlash / menyu"), ("til", "Til"), ("yordam", "Qo'llanma")],
-    "ru": [("start", "Старт / меню"), ("til", "Язык"), ("yordam", "Справка")],
+    "uz": [
+        ("start", "Boshlash"),
+        ("app", "Ilovani ochish"),
+        ("til", "Til"),
+        ("yordam", "Qo'llanma"),
+    ],
+    "ru": [
+        ("start", "Старт"),
+        ("app", "Открыть приложение"),
+        ("til", "Язык"),
+        ("yordam", "Справка"),
+    ],
 }
 
-BY_KIND = {
-    RoleKind.reporter: {
-        "uz": [
-            ("yangi", "Yangi hisobot"),
-            ("mening", "Mening hisobotlarim"),
-            ("hisob", "Bu oydagi summa"),
-            ("kelishuv", "Narx takliflari"),
-        ],
-        "ru": [
-            ("yangi", "Новый отчёт"),
-            ("mening", "Мои отчёты"),
-            ("hisob", "Сумма за месяц"),
-            ("kelishuv", "Предложения по цене"),
-        ],
-    },
-    RoleKind.admin: {
-        "uz": [
-            ("tasdiq", "Tasdiq kutayotganlar"),
-            ("kunlik", "Bugungi hisobot"),
-            ("yangi", "Yangi hisobot"),
-            ("davr", "Davr va oy yopilishi"),
-            ("eksport", "Excel eksport"),
-        ],
-        "ru": [
-            ("tasdiq", "Ожидают подтверждения"),
-            ("kunlik", "Отчёт за сегодня"),
-            ("yangi", "Новый отчёт"),
-            ("davr", "Период и закрытие месяца"),
-            ("eksport", "Экспорт в Excel"),
-        ],
-    },
-    RoleKind.accountant: {
-        "uz": [
-            ("davr", "Davr va oy yopilishi"),
-            ("eksport", "Excel eksport"),
-            ("kunlik", "Bugungi hisobot"),
-        ],
-        "ru": [
-            ("davr", "Период и закрытие месяца"),
-            ("eksport", "Экспорт в Excel"),
-            ("kunlik", "Отчёт за сегодня"),
-        ],
-    },
-}
-
-
-def _commands(kind: RoleKind, lang: str) -> list[BotCommand]:
-    items = BY_KIND[kind].get(lang, BY_KIND[kind]["uz"]) + COMMON.get(lang, COMMON["uz"])
+def _commands(lang: str) -> list[BotCommand]:
+    items = COMMON.get(lang, COMMON["uz"])
     return [BotCommand(command=code, description=title) for code, title in items]
 
 
 async def set_commands_for(bot: Bot, employee: Employee) -> None:
-    """Usta admin buyruqlarini ko'rmaydi."""
+    """Xodim tilida buyruqlar (rol farqi yo'q)."""
     await bot.set_my_commands(
-        _commands(employee.role.kind, employee.lang),
+        _commands(employee.lang),
         scope=BotCommandScopeChat(chat_id=employee.tg_user_id),
     )
 

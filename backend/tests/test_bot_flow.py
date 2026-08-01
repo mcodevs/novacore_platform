@@ -1,26 +1,20 @@
-"""Uchidan-uchiga bot oqimi: /start → hisobot → narx kelishuvi → tasdiq.
+"""Bot oqimi — **faqat kirish va bildirishnoma** (2026-08-01 doirasi).
+
+Botda amal yo'q: hisobot yozish, ko'rib chiqish, narx kelishuvi, davr va
+eksport Mini App'da (API testlari `test_api.py` da). Bu yerda qolgani:
+telefon bog'lash, menyu, til va bildirishnoma tugmasi.
 
 Telegram bilan aloqa soxta sessiya orqali — tarmoq kerak emas.
 """
 
 from __future__ import annotations
 
-from decimal import Decimal
-
 import pytest
 import sqlalchemy as sa
 from aiogram.types import Update
 
 from app.db.base import Base
-from app.db.models import (
-    AcceptMode,
-    Employee,
-    Notification,
-    Submission,
-    SubmissionStatus,
-    Template,
-    Vehicle,
-)
+from app.db.models import Employee, Submission, Vehicle
 from app.db.session import SessionFactory, engine
 from app.seeds.loader import seed_all
 from tests import fake_telegram as ft
@@ -152,219 +146,47 @@ async def test_registration_links_account(db, bot, dispatcher):
     assert "Usta" in texts
 
 
-# --- To'liq oqim --------------------------------------------------------------
+# --- Bot doirasi: amal yo'q, faqat kirish va Mini App ------------------------
 
 
 async def _register_mechanic(dispatcher, bot) -> None:
     await feed(dispatcher, bot, ft.contact_update(MECHANIC_TG, MECHANIC_PHONE))
 
 
-async def _fill_report(dispatcher, bot, *, work_name: str = "Old tormoz kolodka") -> Submission:
-    """Bot orqali ta'mir hisobotini to'liq to'ldiradi."""
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "🚗 Mashina keldi"))
-    if "Qaysi hisobot" in bot.session.last_text(MECHANIC_TG):
-        # rolda bir nechta shablon bor (admin) — ta'mir hisobotini tanlaymiz
-        tpl = bot.session.callback_data("tpl", MECHANIC_TG)
-        assert tpl is not None
-        await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, tpl))
-    assert "raqamini" in bot.session.last_text(MECHANIC_TG)
+async def test_menu_opens_miniapp_and_has_no_actions(db, bot, dispatcher):
+    """⚠️ 2026-08-01: botda amal yo'q. Menyu — Mini App + til + yordam.
 
-    # 1. mashina raqami
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "01 A 123 BC"))
-    assert "BYD" in " ".join(bot.session.sent_texts(MECHANIC_TG)[-3:])
-
-    # 2. mashina fotosi (min 1, max 2) → "Tayyor"
-    await feed(dispatcher, bot, ft.photo_update(MECHANIC_TG, "photo_car_1"))
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "✅ Tayyor"))
-
-    # 3. panel fotosi (max 1) → avtomatik keyingi qadam
-    await feed(dispatcher, bot, ft.photo_update(MECHANIC_TG, "photo_odo"))
-
-    # 4. probeg
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "48250"))
-
-    # 5. nosozlik kategoriyasi (inline)
-    data = bot.session.callback_data("opt", MECHANIC_TG)
-    assert data is not None
-    await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, data))
-
-    # 6. muammo fotosi
-    await feed(dispatcher, bot, ft.photo_update(MECHANIC_TG, "photo_problem"))
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "✅ Tayyor"))
-
-    # 7. muammo tavsifi
-    await feed(
-        dispatcher, bot, ft.message_update(MECHANIC_TG, "Old tormoz kolodkasi to'liq yeyilgan")
-    )
-
-    # 8. bajarilgan ishlar: qo'shish → nom → narx → tayyor
-    add = bot.session.callback_data("line_add", MECHANIC_TG)
-    assert add is not None
-    await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, add))
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, work_name))
-    cat = bot.session.callback_data("cat", MECHANIC_TG)
-    if cat is not None:
-        # katalogdan mos ishni tanlaymiz (narx tarixi shu bo'yicha yig'iladi)
-        await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, cat))
-    # katalogda mos kelmasa — o'z nomi bilan to'g'ridan-to'g'ri narx so'raladi
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "250000"))
-    done = bot.session.callback_data("lines_done", MECHANIC_TG)
-    assert done is not None
-    await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, done))
-
-    # 9. qismlar (ixtiyoriy) → tayyor
-    done = bot.session.callback_data("lines_done", MECHANIC_TG)
-    await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, done))
-
-    # 10. tuzatilgandan keyin + mashina fotosi
-    await feed(dispatcher, bot, ft.photo_update(MECHANIC_TG, "photo_after"))
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "✅ Tayyor"))
-    await feed(dispatcher, bot, ft.photo_update(MECHANIC_TG, "photo_car_after"))
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "✅ Tayyor"))
-
-    # 11. izoh
-    await feed(
-        dispatcher, bot, ft.message_update(MECHANIC_TG, "Kolodka almashtirildi, disk normal")
-    )
-    # 12. tavsiya (ixtiyoriy) — o'tkazib yuboramiz
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "⏭ O'tkazib yuborish"))
-
-    return await fetch_submission()
-
-
-async def test_full_flow_report_to_price_agreement(db, bot, dispatcher):
-    await _register_mechanic(dispatcher, bot)
-    submission = await _fill_report(dispatcher, bot)
-
-    assert submission.status == SubmissionStatus.DRAFT
-    assert submission.subject_vehicle_id is not None
-    assert submission.data["odometer_value"] == 48250
-    assert submission.data["category"] == "brakes"
-    assert len(submission.lines) == 1
-    assert submission.lines[0].proposed_amount == Decimal("250000.00")
-    assert len(submission.media) == 5
-
-    # mashina ketdi → left_at server vaqti
-    left = bot.session.callback_data("mark_left", MECHANIC_TG)
-    assert left is not None
-    await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, left))
-    submission = await fetch_submission(submission.number)
-    assert submission.left_at is not None
-
-    # yuborish
-    submit = bot.session.callback_data("submit", MECHANIC_TG)
-    assert submit is not None
-    await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, submit))
-
-    submission = await fetch_submission(submission.number)
-    assert submission.status == SubmissionStatus.SUBMITTED
-    assert submission.proposed_labor_amount == Decimal("250000.00")
-    assert submission.odometer_km == 48250  # promoted (field_mapping)
-    assert submission.period_id is not None
-
-    # adminga bildirishnoma outbox'ga tushdi
-    async with SessionFactory() as session:
-        pending = (
-            await session.execute(
-                sa.select(Notification).where(
-                    Notification.template_code == "notify_new_submission"
-                )
-            )
-        ).scalars().all()
-        assert len(pending) == 1
-
-    # --- Admin ko'rib chiqadi va narxni kamaytiradi ---
-    bot.session.clear()
-    await feed(dispatcher, bot, ft.message_update(ADMIN_TG, "/tasdiq"))
-    open_card = bot.session.callback_data("review", ADMIN_TG)
-    assert open_card is not None
-    await feed(dispatcher, bot, ft.callback_update(ADMIN_TG, open_card))
-
-    card = bot.session.last_text(ADMIN_TG)
-    assert "250 000" in card
-    assert "Karimov B." in card
-
-    reduce = bot.session.callback_data("reduce", ADMIN_TG)
-    await feed(dispatcher, bot, ft.callback_update(ADMIN_TG, reduce))
-    reduce_line = bot.session.callback_data("reduce_line", ADMIN_TG)
-    assert reduce_line is not None
-    await feed(dispatcher, bot, ft.callback_update(ADMIN_TG, reduce_line))
-
-    # R2 — oshirishga urinish rad etiladi
-    await feed(dispatcher, bot, ft.message_update(ADMIN_TG, "300000"))
-    assert "oshirib bo'lmaydi" in bot.session.last_text(ADMIN_TG)
-
-    await feed(dispatcher, bot, ft.message_update(ADMIN_TG, "180000"))
-    assert "Sabab" in bot.session.last_text(ADMIN_TG)
-    await feed(dispatcher, bot, ft.message_update(ADMIN_TG, "Bu ish odatda 175 000 ga bo'lgan"))
-
-    submission = await fetch_submission(submission.number)
-    assert submission.status == SubmissionStatus.PRICE_NEGOTIATION
-    assert submission.lines[0].approved_amount == Decimal("180000.00")
-    assert submission.lines[0].proposed_amount == Decimal("250000.00")  # R2a
-
-    # --- Usta rozilik beradi ---
-    bot.session.clear()
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "💬 Narx kelishuvi"))
-    accept = bot.session.callback_data("accept_price", MECHANIC_TG)
-    assert accept is not None
-    await feed(dispatcher, bot, ft.callback_update(MECHANIC_TG, accept))
-
-    submission = await fetch_submission(submission.number)
-    assert submission.status == SubmissionStatus.APPROVED
-    assert submission.labor_amount == Decimal("180000.00")
-    assert submission.lines[0].mechanic_accept_mode == AcceptMode.manual
-
-
-async def test_admin_report_is_auto_approved_in_bot(db, bot, dispatcher):
-    """R1a — admin hisoboti botda ham avtomatik tasdiqlanadi."""
-    global MECHANIC_TG
-    await feed(dispatcher, bot, ft.message_update(ADMIN_TG, "/start"))
-
-    # admin ham usta kabi hisobot to'ldiradi
-    original = MECHANIC_TG
-    MECHANIC_TG = ADMIN_TG
-    try:
-        submission = await _fill_report(dispatcher, bot)
-        left = bot.session.callback_data("mark_left", ADMIN_TG)
-        await feed(dispatcher, bot, ft.callback_update(ADMIN_TG, left))
-        submit = bot.session.callback_data("submit", ADMIN_TG)
-        await feed(dispatcher, bot, ft.callback_update(ADMIN_TG, submit))
-    finally:
-        MECHANIC_TG = original
-
-    submission = await fetch_submission(submission.number)
-    assert submission.status == SubmissionStatus.APPROVED
-    assert submission.auto_approved is True
-    assert submission.labor_amount == submission.proposed_labor_amount
-    assert "Avtomatik tasdiqlandi" in " ".join(bot.session.sent_texts(ADMIN_TG))
-
-
-async def test_reporter_menu_has_no_admin_buttons(db, bot, dispatcher):
+    Ilgari menyuda «🚗 Mashina keldi», «⏳ Tasdiq kutmoqda», «📅 Davr» kabi
+    amal tugmalari bor edi va ular Mini App ekranlari bilan takrorlanardi.
+    """
     await _register_mechanic(dispatcher, bot)
     bot.session.clear()
     await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "/start"))
 
     markup = bot.session.last_markup(MECHANIC_TG)
     labels = {button.text for row in markup.keyboard for button in row}
-    assert "🚗 Mashina keldi" in labels
-    assert "⏳ Tasdiq kutmoqda" not in labels  # admin tugmasi
-    assert "📅 Davr" not in labels
+    assert labels == {"🧩 Mini App", "🌐 Til", "❓ Yordam"}
 
 
-async def test_admin_menu_has_review_buttons(db, bot, dispatcher):
+async def test_admin_menu_is_the_same_as_reporter(db, bot, dispatcher):
+    """Rol farqi endi menyuda emas — Mini App ichida."""
     await feed(dispatcher, bot, ft.message_update(ADMIN_TG, "/start"))
     markup = bot.session.last_markup(ADMIN_TG)
     labels = {button.text for row in markup.keyboard for button in row}
-    assert "⏳ Tasdiq kutmoqda" in labels
-    assert "📅 Davr" in labels
+    assert labels == {"🧩 Mini App", "🌐 Til", "❓ Yordam"}
 
 
-async def test_reporter_cannot_open_admin_queue(db, bot, dispatcher):
+@pytest.mark.parametrize(
+    "command", ["/yangi", "/tasdiq", "/davr", "/eksport", "/hisob", "/mening", "/kunlik"]
+)
+async def test_removed_commands_no_longer_act(db, bot, dispatcher, command):
+    """Eski buyruqlar amal bajarmaydi — fallback javob beradi."""
     await _register_mechanic(dispatcher, bot)
     bot.session.clear()
-    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, "/tasdiq"))
-    assert "ruxsat etilmagan" in bot.session.last_text(MECHANIC_TG)
+    await feed(dispatcher, bot, ft.message_update(MECHANIC_TG, command))
+
+    text = bot.session.last_text(MECHANIC_TG)
+    assert "Tushunmadim" in text or "Menyudan" in text
 
 
 async def test_language_switch(db, bot, dispatcher):
@@ -382,83 +204,41 @@ async def test_language_switch(db, bot, dispatcher):
         assert employee.lang == "ru"
 
 
-async def test_custom_work_name_without_catalog(db, bot, dispatcher):
-    """Katalogda yo'q ish — o'z nomi bilan kiritiladi (allow_custom)."""
-    await _register_mechanic(dispatcher, bot)
-    submission = await _fill_report(dispatcher, bot, work_name="Maxsus payvandlash ishi")
-
-    assert len(submission.lines) == 1
-    line = submission.lines[0]
-    assert line.name == "Maxsus payvandlash ishi"
-    assert line.catalog_id is None
-    assert line.proposed_amount == Decimal("250000.00")
+# --- Bildirishnoma: yagona «Ochish» tugmasi ----------------------------------
 
 
-# --- Mini App'dan yuklangan fotoni botda ko'rsatish (2026-08-01 xatosi) -------
+async def test_notification_has_single_open_button(db, bot, dispatcher, monkeypatch):
+    """Bildirishnoma ostida faqat Mini App'ni ochish — tez amallar yo'q.
 
-
-async def test_admin_sees_photos_uploaded_from_miniapp(db, bot, dispatcher):
-    """⚠️ Bot «Foto yo'q» derdi, holbuki Mini App'da 5 ta foto ko'rinardi.
-
-    Sabab: `show_photos` `tg_file_id` bo'yicha filtrlardi, Mini App'dan
-    yuklangan foto esa to'g'ridan-to'g'ri omborga tushadi va Telegram'ni
-    ko'rmagan bo'ladi (`tg_file_id IS NULL`).
+    Ilgari bu yerda «✅ Roziman» / «❌ Rozi emasman» bor edi; endi usta
+    kartochkani ochib javob beradi (bitta amal — bitta joyda).
     """
-    import hashlib
+    from app.bot import notifier
+    from app.core.config import settings
+    from app.db.models import Notification
 
-    from app.db.models import Media, MediaKind
-    from app.domain.media import service as media_service
+    monkeypatch.setattr(settings, "miniapp_url", "https://example.test/app")
+    await _register_mechanic(dispatcher, bot)
 
-    # ombor + baza: Mini App yuklagandek media yasaymiz (tg_file_id YO'Q)
     async with SessionFactory() as session:
         employee = (
             await session.execute(sa.select(Employee).where(Employee.phone == MECHANIC_PHONE))
         ).scalars().one()
-        vehicle = (await session.execute(sa.select(Vehicle))).scalars().one()
-        template = (
-            await session.execute(sa.select(Template).where(Template.code == "car_repair"))
-        ).scalars().one()
-
-        submission = Submission(
-            number="WO-2026-000777",
-            template_id=template.id,
-            template_version=template.version,
-            author_id=employee.id,
-            subject_vehicle_id=vehicle.id,
-            status=SubmissionStatus.SUBMITTED,
+        notification = Notification(
+            employee_id=employee.id,
+            template_code="notify_price_proposed",
+            payload={
+                "submission_id": 42,
+                "number": "WO-2026-000042",
+                "vehicle": "01 A 123 BC",
+                "proposed": "250000",
+                "approved": "200000",
+                "reason": "Bozor narxi arzonroq",
+            },
         )
-        session.add(submission)
-        await session.flush()
+        text, markup = await notifier.render(session, notification, employee)
 
-        payload = b"\xff\xd8\xff\xe0" + bytes(64)
-        key = media_service.storage_key(
-            submission, "photo_problem", hashlib.sha256(payload).hexdigest(), "image/jpeg"
-        )
-        await media_service.get_storage().put(key, payload, content_type="image/jpeg")
-        session.add(
-            Media(
-                submission_id=submission.id,
-                field_code="photo_problem",
-                kind=MediaKind.problem,
-                storage_key=key,
-                mime="image/jpeg",
-                size_bytes=len(payload),
-                sha256=hashlib.sha256(payload).hexdigest(),
-                uploaded_by=employee.id,
-                tg_file_id=None,  # ⬅️ Mini App yo'li
-            )
-        )
-        await session.commit()
-        submission_id = submission.id
-
-    bot.session.clear()
-    await feed(dispatcher, bot, ft.callback_update(ADMIN_TG, f"a:photos:{submission_id}:"))
-
-    methods = [name for name, _ in bot.session.requests]
-    assert "sendMediaGroup" in methods, methods
-    assert all("Foto yo'q" not in text for text in bot.session.sent_texts())
-
-    # Telegram qaytargan file_id keshlanadi — keyingi safar ombor o'qilmaydi
-    async with SessionFactory() as session:
-        media = (await session.execute(sa.select(Media))).scalars().one()
-        assert media.tg_file_id is not None
+    assert "{" not in text  # shablon to'liq to'ldirilgan
+    buttons = [button for row in markup.inline_keyboard for button in row]
+    assert len(buttons) == 1
+    assert buttons[0].web_app.url == "https://example.test/app?submission=42"

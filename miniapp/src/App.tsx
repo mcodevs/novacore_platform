@@ -10,6 +10,7 @@ import { DetailScreen } from './screens/DetailScreen';
 import { EmployeesScreen } from './screens/EmployeesScreen';
 import { FormScreen } from './screens/FormScreen';
 import { HomeScreen } from './screens/HomeScreen';
+import { PeriodScreen } from './screens/PeriodScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { RoleEditScreen } from './screens/RoleEditScreen';
@@ -26,6 +27,7 @@ type Route =
   | { name: 'builder' }
   | { name: 'employees' }
   | { name: 'reports' }
+  | { name: 'period' }
   | { name: 'template'; id: number | null }
   | { name: 'role'; id: number | null };
 
@@ -37,6 +39,12 @@ export function App() {
   const route = stack[stack.length - 1];
 
   const push = useCallback((next: Route) => setStack((prev) => [...prev, next]), []);
+
+  /** Bildirishnomadagi «Ochish» → `?submission=42` → o'sha kartochka. */
+  const deepLink = useCallback((): Route[] => {
+    const id = Number(new URLSearchParams(window.location.search).get('submission'));
+    return id > 0 ? [{ name: 'home' }, { name: 'detail', id }] : [{ name: 'home' }];
+  }, []);
   const pop = useCallback(
     () => setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev)),
     [],
@@ -53,11 +61,12 @@ export function App() {
       .then((response) => {
         setLocale(response.employee.lang);
         setAuth(response);
+        setStack(deepLink());
       })
       .catch((err: ApiError) => {
         setError(err.code === 'not_in_registry' ? t('not_in_registry') : err.message);
       });
-  }, []);
+  }, [deepLink]);
 
   useEffect(() => {
     const back = tg.BackButton;
@@ -130,7 +139,12 @@ export function App() {
           onBuilder={() => push({ name: 'builder' })}
           onEmployees={() => push({ name: 'employees' })}
           onReports={() => push({ name: 'reports' })}
+          onPeriod={() => push({ name: 'period' })}
         />
+      ) : null}
+
+      {route.name === 'period' ? (
+        <PeriodScreen onDone={(message) => showToast(message)} />
       ) : null}
 
       {route.name === 'reports' ? (

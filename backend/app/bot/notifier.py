@@ -49,19 +49,13 @@ async def render(
 
 
 def _markup(code: str, lang: str, submission_id: int | None) -> InlineKeyboardMarkup | None:
-    if submission_id is None:
-        return None
-    if code in ("notify_price_proposed", "notify_price_reminder"):
-        return kb.negotiation_actions(lang, submission_id)
-    if code in ("notify_new_submission", "notify_price_disputed", "notify_long_service"):
-        return kb.open_submission(lang, submission_id, admin=True)
-    if code == "notify_reopened":
-        return kb.fix_submission(lang, submission_id)
-    if code == "notify_draft_stale":
-        return kb.draft_prompt(lang, submission_id)
-    if code == "notify_approved":
-        return kb.open_submission(lang, submission_id, admin=False)
-    return None
+    """Bildirishnoma ostida **bitta** tugma — Mini App'da ochish.
+
+    Ilgari har bildirishnoma turi uchun alohida tez tugmalar bor edi
+    («✅ Roziman», «✏️ Narxni kamaytirish», «Davom ettirish»). 2026-08-01 dan
+    barcha amallar Mini App'da: bitta amal — bitta joyda.
+    """
+    return kb.open_app(lang, submission_id)
 
 
 async def _price_hint(

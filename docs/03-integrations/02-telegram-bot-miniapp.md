@@ -2,54 +2,69 @@
 
 ## 1. Vazifalarni bo'lish
 
-| Bot (chat) | Mini App (veb) |
-|---|---|
-| Ro'yxatdan o'tish (`/start`, telefon) | Forma to'ldirish |
-| **Bildirishnomalar** | Foto yuklash |
-| Tezkor tugmalar (`✅ Roziman`) | Ro'yxatlar, kartochkalar |
-| Qisqa so'rovlar (`/hisob`) | Tasdiqlash ekrani |
-| Fayl yuborish (Excel eksport) | Dashboard, analitika |
-| Tarmoq zaif bo'lganda zaxira kanal | Admin panel |
+> ⭐ **Prinsip (egasining qarori, 2026-08-01): barcha AMALLAR — Mini App'da.**
+> *«Botdan ham, Mini App'dan ham bir amalni qilish odamni chalkashtiradi.»*
+> Botda faqat **kirish** va **bildirishnoma** qoladi.
 
-> **Prinsip:** murakkab narsa — Mini App'da, tezkor narsa — bot'da.
-> Bildirishnoma **doim** bot orqali (Mini App yopiq bo'lsa ham yetadi).
+| Bot (chat) — amal YO'Q | Mini App — barcha amallar |
+|---|---|
+| Ro'yxatdan o'tish (`/start`, telefon) | Hisobot yozish, foto, narx qo'yish |
+| **Bildirishnomalar** (+ «Ochish» tugmasi) | Ko'rib chiqish, tasdiqlash, narxni kamaytirish |
+| Til, yordam | Narxga rozilik / nizo |
+| Excel'ni **hujjat sifatida yetkazish** | Davr, oy yopilishi, to'lov varaqalari |
+| Mini App'ni ochish tugmasi | Arxiv, statistika, xodimlar, konstruktor |
+
+**Nima uchun kirish botda qoladi:** Telegram `initData` da telefon raqami
+**yo'q** — bog'lanish faqat botdagi `request_contact` orqali mumkin
+(texnik cheklov, tanlov emas).
+
+**Nima uchun eksport botga tushadi:** Telegram WebView'da fayl yuklab olish,
+ayniqsa iOS'da, ishonchsiz. Tugma Mini App'da, fayl esa suhbatga keladi —
+bu *amal* emas, *yetkazib berish*.
+
+⚠️ **Yon ta'sir:** botdagi foto oqimi ham o'chdi — u
+[A-10](../05-delivery/02-open-questions.md) kamera xavfining zaxirasi edi.
+Endi zaxira faqat Mini App ichida: «🖼 Galereyadan» tugmasi.
+**Kamera sinovi endi kechiktirib bo'lmaydi.**
 
 ## 2. Bot buyruqlari
 
-| Buyruq | Kim uchun | Tavsif |
-|---|---|---|
-| `/start` | Hamma | Ro'yxatdan o'tish / asosiy menyu |
-| `/app` | Hamma | Mini App'ni ochish |
-| `/yangi` | `reporter` | Yangi hisobot boshlash |
-| `/mening` | `reporter` | Mening hisobotlarim |
-| `/hisob` | `reporter` | Bu oyda: so'ralgan / tasdiqlangan summa |
-| `/kelishuv` | `reporter` | Javob kutayotgan narx takliflari |
-| `/tasdiq` | `admin` | Tasdiq kutayotganlar |
-| `/kunlik` | `admin` | Bugungi qisqa hisobot |
-| `/til` | Hamma | Til almashtirish (uz/ru) |
-| `/yordam` | Hamma | Qo'llanma |
+| Buyruq | Tavsif |
+|---|---|
+| `/start` | Ro'yxatdan o'tish / menyu |
+| `/app` | Mini App'ni ochish |
+| `/til` | Til almashtirish (uz/ru) |
+| `/yordam` | Qo'llanma |
 
-Buyruqlar ro'yxati `setMyCommands(scope=chat)` orqali **rolga qarab** beriladi —
-usta admin buyruqlarini ko'rmaydi.
+**Hammasi shu — to'rtta.** Rolga xos buyruq yo'q: amal qolmagach, rol farqi
+ham menyuda emas, Mini App ichida. Menyu klaviaturasi uch tugmadan iborat:
+`🧩 Mini App` · `🌐 Til` · `❓ Yordam`.
+
+O'chirilgan buyruqlar (`/yangi`, `/tasdiq`, `/kelishuv`, `/hisob`, `/mening`,
+`/kunlik`, `/davr`, `/eksport`) endi javob bermaydi — fallback matni chiqadi.
 
 **Menu button** (BotFather → Menu Button) → Mini App'ni ochadi. Bu eng ko'p
 ishlatiladigan kirish nuqtasi bo'ladi.
 
 ## 3. Bildirishnomalar matritsasi
 
-| Hodisa | Kimga | Tugmalar |
-|---|---|---|
-| Hisobot yuborildi | Admin | `✅ Tasdiqlash` `👁 Ko'rish` |
-| **Admin narxni kamaytirdi** ⭐ | Muallif | `✅ Roziman` `❌ Rozi emasman` |
-| **Muallif narxga rozi bo'lmadi** | Admin | `👁 Ko'rish` |
-| **Kelishuvga 24 soat javob yo'q** | Muallif (eslatma) | `✅ Roziman` |
-| Hisobot tasdiqlandi | Muallif | — |
-| Hisobot qaytarildi / rad etildi | Muallif | `✏️ Tuzatish` |
-| Hisobotda kritik bayroq (Faza 3) | Admin | `👁 Ko'rish` |
-| Mashina 24 soatdan beri ustaxonada | Admin | `👁 Ko'rish` |
-| Qoralama 24 soat turdi | Muallif | `Davom ettirish` |
-| Oy yopilishiga 3 kun | Admin, buxgalter | `Tekshirish` |
-| Fleet sinxron xatosi (Faza 3) | Admin | — |
+Har bir bildirishnoma ostida **bitta** tugma: `🧩 Ochish` — Mini App'da o'sha
+kartochkani ochadi (`?submission=<id>`). Tez tugmalar (`✅ Roziman`,
+`✏️ Narxni kamaytirish`) **olib tashlandi**: bitta amal — bitta joyda.
+
+| Hodisa | Kimga |
+|---|---|
+| Hisobot yuborildi | Admin |
+| **Admin narxni kamaytirdi** ⭐ | Muallif |
+| **Muallif narxga rozi bo'lmadi** | Admin |
+| **Kelishuvga 24 soat javob yo'q** | Muallif (eslatma) |
+| Hisobot tasdiqlandi / avtomatik qabul qilindi | Muallif |
+| Hisobot qaytarildi / rad etildi | Muallif |
+| Hisobotda kritik bayroq (Faza 3) | Admin |
+| Mashina 24 soatdan beri ustaxonada | Admin |
+| Qoralama 24 soat turdi | Muallif |
+| Oy yopilishiga 3 kun | Admin, buxgalter |
+| Fleet sinxroni (yangi/yo'qolgan mashina yoki xato) | Admin |
 
 **Guruh bildirishnomalari:** admin guruhiga umumiy signal (kritik bayroq, uzoq
 downtime). `driver_status_reporter`dagi kabi — bu yondashuv ishlaydi.
