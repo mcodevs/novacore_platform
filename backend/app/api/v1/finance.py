@@ -251,3 +251,43 @@ async def export(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.post("/reports/export")
+async def export_to_telegram(
+    session: SessionDep,
+    employee: FinanceDep,
+    kind: str = Query("submissions", pattern="^(submissions|payouts|savings)$"),
+    period_id: int | None = None,
+):
+    """Excel'ni **bot orqali** yuboradi (amal Mini App'da, yetkazish botda).
+
+    Telegram WebView'da fayl yuklab olish, ayniqsa iOS'da, ishonchsiz — shuning
+    uchun tugma Mini App'da bo'ladi, fayl esa suhbatga hujjat bo'lib tushadi.
+    Bitta process bo'lgani uchun bot shu yerdan chaqiriladi (ADR-0004).
+    """
+    from aiogram.types import BufferedInputFile
+
+    from app.bot.bot import get_bot
+
+    if employee.tg_user_id is None:
+        raise BusinessRuleViolated("Avval botda /start bosing")
+
+    period = (
+        await session.get(Period, period_id)
+        if period_id
+        else await period_service.current_period(session)
+    )
+    if period is None:
+        raise NotFound("Davr topilmadi")
+    try:
+        filename, payload = await export_service.build(session, kind, period)
+    except ValueError as exc:
+        raise BusinessRuleViolated(str(exc)) from exc
+
+    await get_bot().send_document(
+        employee.tg_user_id,
+        BufferedInputFile(payload, filename=filename),
+        caption=f"📥 {filename}",
+    )
+    return {"data": {"ok": True, "filename": filename, "sent_to": "telegram"}}

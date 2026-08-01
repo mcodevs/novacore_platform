@@ -15,6 +15,7 @@ interface Props {
   onBuilder(): void;
   onEmployees(): void;
   onReports(): void;
+  onPeriod(): void;
 }
 
 export function HomeScreen({
@@ -24,6 +25,7 @@ export function HomeScreen({
   onBuilder,
   onEmployees,
   onReports,
+  onPeriod,
 }: Props) {
   const kind = auth.employee.role.kind;
   const isReporter = kind === 'reporter' || kind === 'admin';
@@ -122,14 +124,14 @@ export function HomeScreen({
             )}
           </Card>
 
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={onReports}
-            style={{ marginBottom: 12 }}
-          >
-            {t('all_reports')}
-          </button>
+          <div className="btn-row" style={{ marginBottom: 12 }}>
+            <button type="button" className="btn-secondary" onClick={onReports}>
+              {t('all_reports')}
+            </button>
+            <button type="button" className="btn-secondary" onClick={onPeriod}>
+              {t('period')}
+            </button>
+          </div>
 
           {kind === 'admin' ? (
             <div className="btn-row" style={{ marginBottom: 12 }}>

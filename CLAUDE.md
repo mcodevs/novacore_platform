@@ -128,10 +128,32 @@ tekshirish shart emas**:
   kutilmagan muammolar manbai
 - Foydalanuvchi bilan muloqot va barcha UI matnlari — **o'zbek tilida**
 
+## Bot va Mini App doirasi (2026-08-01 qarori)
+
+⭐ **Barcha AMALLAR — Mini App'da.** *«Botdan ham, Mini App'dan ham bir amalni
+qilish odamni chalkashtiradi.»*
+
+| Botda | Mini App'da |
+|---|---|
+| `/start` → telefon → bog'lash | **Boshqa hammasi** |
+| Bildirishnomalar (+ yagona «🧩 Ochish» tugmasi) | hisobot, ko'rik, narx kelishuvi |
+| `/til`, `/yordam`, `/app` | davr, eksport, arxiv, xodimlar, konstruktor |
+| Excel'ni hujjat sifatida **yetkazish** | |
+
+- Botda **handler yozmang** — `report`, `review`, `negotiation`, `stats`,
+  `period` handlerlari ataylab o'chirilgan (~2100 qator)
+- Kirish botda qoladi, chunki `initData` da **telefon raqami yo'q** — bu texnik
+  cheklov, tanlov emas
+- Bildirishnomada tez tugma yo'q: `kb.open_app(lang, submission_id)` →
+  `?submission=<id>` bilan kartochkani ochadi
+
 ## Ochiq texnik xavf
 
 `<input type="file" accept="image/*" capture="environment">` Telegram
 WebView'ida (ayniqsa **iOS**) galereyani bloklaydimi — **hali sinalmagan**.
-Ishlamasa foto-dalil g'oyasi zaiflashadi; zaxira: EXIF tekshiruvi
-(`photo_not_fresh`, `photo_no_exif`) va bot orqali foto yuborish oqimi.
-Bu — **Faza 0 ning birinchi vazifasi**.
+Ishlamasa foto-dalil g'oyasi zaiflashadi.
+
+⚠️ Zaxira **kamaydi**: botdagi foto oqimi yuqoridagi qaror bilan o'chdi. Qolgani
+— Mini App'dagi «🖼 Galereyadan» tugmasi va EXIF tekshiruvi (`photo_not_fresh`,
+`photo_no_exif`). Shuning uchun kamera sinovi **kechiktirib bo'lmaydigan**
+birinchi vazifa.

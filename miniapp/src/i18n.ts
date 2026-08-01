@@ -108,6 +108,51 @@ export const T: Dict = {
     ru: 'текст · число · сумма · да/нет · выбор · фото · машина · строки · геолокация',
   },
 
+  // Davr, to'lovlar, eksport (admin/buxgalter)
+  period: { uz: '📅 Davr', ru: '📅 Период' },
+  period_open: { uz: 'Ochiq', ru: 'Открыт' },
+  period_closed: { uz: 'Yopilgan', ru: 'Закрыт' },
+  precheck: { uz: 'Yopishdan oldin', ru: 'Перед закрытием' },
+  precheck_clean: { uz: 'To‘siq yo‘q', ru: 'Препятствий нет' },
+  precheck_unapproved: { uz: '{n} ta hisobot tasdiqlanmagan', ru: '{n} отчётов не подтверждено' },
+  precheck_negotiation: {
+    uz: '{n} ta hisobot narx kelishuvida',
+    ru: '{n} отчётов в согласовании цены',
+  },
+  precheck_reopened: {
+    uz: '{n} ta hisobot qaytarilgan (tuzatilmagan)',
+    ru: '{n} отчётов возвращено (не исправлены)',
+  },
+  precheck_drafts: {
+    uz: '{n} ta qoralama {days} kundan beri turibdi',
+    ru: '{n} черновиков висят более {days} дн.',
+  },
+  close_period: { uz: '🔒 Oyni yopish', ru: '🔒 Закрыть месяц' },
+  confirm_close: { uz: 'Ha, yopilsin', ru: 'Да, закрыть' },
+  close_blocked: {
+    uz: 'To‘siqlar hal qilinmaguncha yopib bo‘lmaydi.',
+    ru: 'Пока препятствия не сняты, закрыть нельзя.',
+  },
+  period_closed_ok: { uz: 'Davr yopildi', ru: 'Период закрыт' },
+  payouts: { uz: 'To‘lov varaqalari', ru: 'Ведомости' },
+  payouts_after_close: {
+    uz: 'Varaqalar oy yopilganda hosil bo‘ladi.',
+    ru: 'Ведомости формируются при закрытии месяца.',
+  },
+  mark_paid: { uz: 'To‘landi deb belgilash', ru: 'Отметить выплаченным' },
+  marked_paid: { uz: 'To‘landi deb belgilandi', ru: 'Отмечено как выплачено' },
+  paid: { uz: 'To‘langan', ru: 'Выплачено' },
+  total: { uz: 'Jami', ru: 'Итого' },
+  export: { uz: '📥 Eksport', ru: '📥 Экспорт' },
+  export_via_bot: {
+    uz: 'Excel botga hujjat bo‘lib keladi.',
+    ru: 'Excel придёт документом в бот.',
+  },
+  export_sent: { uz: 'Excel botga yuborildi', ru: 'Excel отправлен в бот' },
+  export_submissions: { uz: 'Hisobotlar', ru: 'Отчёты' },
+  export_payouts: { uz: 'To‘lovlar', ru: 'Выплаты' },
+  export_savings: { uz: 'Kelishuv tejamkorligi', ru: 'Экономия согласования' },
+
   // Hisobotlar arxivi (admin/buxgalter)
   all_reports: { uz: '📋 Hisobotlar', ru: '📋 Отчёты' },
   filter_all: { uz: 'Hammasi', ru: 'Все' },

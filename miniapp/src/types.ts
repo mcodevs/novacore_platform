@@ -267,3 +267,36 @@ export interface LinkableSubmission {
   vehicle_plate: string | null;
   submitted_at: string | null;
 }
+
+// --- Davr va to'lovlar (admin/buxgalter) -------------------------------------
+
+export interface Period {
+  id: number;
+  year: number;
+  month: number;
+  status: 'open' | 'locking' | 'closed';
+  closed_at: string | null;
+}
+
+export interface Precheck {
+  can_close: boolean;
+  /** `[{code, params}]` — i18n kaliti va o'rniga qo'yiladigan qiymatlar. */
+  blockers: Record<string, unknown>[];
+  warnings: Record<string, unknown>[];
+}
+
+export interface Payout {
+  id: number;
+  employee_id: number;
+  employee_name: string;
+  submissions_count: number;
+  proposed_total: number;
+  labor_total: number;
+  reduction_total: number;
+  bonus: number;
+  penalty: number;
+  total: number;
+  status: 'draft' | 'approved' | 'paid';
+}
+
+export type ExportKind = 'submissions' | 'payouts' | 'savings';

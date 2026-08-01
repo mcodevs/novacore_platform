@@ -9,7 +9,11 @@ import type {
   EmployeeStatus,
   Lang,
   LinkableSubmission,
+  ExportKind,
   MediaItem,
+  Payout,
+  Period,
+  Precheck,
   PriceContext,
   PriceStats,
   RoleKind,
@@ -264,6 +268,31 @@ export async function uploadMedia(
 // --- Analitika ---
 
 export const dashboard = () => request<Dashboard>('/reports/dashboard');
+
+// --- Davr, to'lovlar, eksport (admin/buxgalter) ---
+
+export const periods = () => request<Period[]>('/periods');
+
+export const currentPeriod = () => request<Period>('/periods/current');
+
+export const precheck = (periodId: number) =>
+  request<Precheck>(`/periods/${periodId}/precheck`);
+
+export const closePeriod = (periodId: number) =>
+  request<Period>(`/periods/${periodId}/close`, { method: 'POST' });
+
+export const payouts = (periodId: number) =>
+  request<Payout[]>(`/payouts?period_id=${periodId}`);
+
+export const markPayoutPaid = (payoutId: number) =>
+  request<Payout>(`/payouts/${payoutId}/mark-paid`, { method: 'POST' });
+
+/** Excel **bot orqali** keladi — WebView'da fayl yuklash ishonchsiz. */
+export const exportToTelegram = (kind: ExportKind, periodId?: number) =>
+  request<{ ok: boolean; filename: string }>(
+    `/reports/export?kind=${kind}${periodId ? `&period_id=${periodId}` : ''}`,
+    { method: 'POST' },
+  );
 
 // --- Konstruktorlar (Faza 2, faqat admin) ---
 

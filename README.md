@@ -2,9 +2,10 @@
 
 [![CI](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml/badge.svg)](https://github.com/mcodevs/novacore_platform/actions/workflows/ci.yml)
 
-> 📄 **Repo holati:** Faza 1 (MVP) va **Faza 2 (rol/shablon konstruktori)**
-> yozilgan — **backend + Telegram bot** (`backend/`) va **Mini App**
-> (`miniapp/`). Prod ishlayapti: https://novacore-platform.fly.dev
+> 📄 **Repo holati:** Faza 1–3 yozilgan (MVP · konstruktorlar · Fleet) —
+> **backend + Telegram bot** (`backend/`) va **Mini App** (`miniapp/`).
+> ⭐ Barcha amallar Mini App'da, botda faqat kirish va bildirishnoma.
+> Prod ishlayapti: https://novacore-platform.fly.dev
 > Hujjatlar — yagona haqiqat manbai va texnik topshiriq.
 > Ishga tushirish: [Tez boshlash](#tez-boshlash) · Reja:
 > [docs/05-delivery/01-roadmap.md](docs/05-delivery/01-roadmap.md)
@@ -103,7 +104,7 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 | **Media** | Tigris (fly.io S3-mos ombori) | Telegram `file_id` — faqat kesh |
 | **Fon vazifalari** | asyncio loop + Postgres outbox | **Redis kerak emas** |
 | **Fleet** | Yandex Fleet partner API (httpx) | ⚠️ **faqat o'qish** — orqaga yozilmaydi |
-| **Mini App** | React 18 + TS + Vite | 4 ekran, form-renderer, ~59 KB gzip |
+| **Mini App** | React 18 + TS + Vite | ⭐ barcha amallar shu yerda, 10 ekran, ~66 KB gzip |
 | **Deploy** | fly.io (Docker) | ~$10–25/oy |
 
 > Arxitektura **ataylab kichik**: 150 mashina, 4–5 usta, kuniga 3–5 hisobot,
@@ -118,7 +119,7 @@ make bootstrap               # ⭐ venv + .env (kalitlar avtomatik) + npm + seed
 #   → backend/.env ichiga BOT_TOKEN yozing (BotFather, LOKAL uchun alohida bot)
 cd backend && ../.venv/bin/python manage.py employee-add "Admin A." +998901234567 admin
 cd .. && make run            # bot (polling) + API bitta process'da
-make test                    # 121 ta test (domen, bot, API, konfiguratsiya)
+make test                    # 212 ta test (domen, bot, API, konfiguratsiya)
 ```
 
 Mini App ham kerak bo'lsa: `make miniapp-build` (backend uni `/app` da beradi)
@@ -128,7 +129,7 @@ Repoda faqat `.env.example` bor — **hech qanday sir repoga tushmaydi**.
 `.venv/`, `node_modules/`, `backend/var/` va `backend/miniapp_dist/` esa
 buyruqlar orqali hosil bo'ladi, ularni ko'chirib yurish shart emas.
 
-Telegram'da botga `/start` → telefon raqamini yuborish → menyu ochiladi.
+Telegram'da botga `/start` → telefon raqamini yuborish → «🧩 Mini App» tugmasi.
 
 **Postgres bilan (compose):** `make compose-up` · **Prod:** `fly deploy`
 (webhook rejimi, `fly secrets set BOT_TOKEN=… JWT_SECRET=… WEBHOOK_SECRET=…`).
@@ -137,23 +138,36 @@ uchun shu URL ko'rsatiladi.
 
 Batafsil: [backend/README.md](backend/README.md) · [miniapp/README.md](miniapp/README.md)
 
-### Bot nima qila oladi (Faza 1)
+### ⭐ Bot va Mini App doirasi
 
-| Rol | Imkoniyatlar |
+> *«Botdan ham, Mini App'dan ham bir amalni qilish odamni chalkashtiradi.»*
+> **Barcha amallar — Mini App'da.** Botda amal yo'q.
+
+| Bot (718 qator) | Mini App |
 |---|---|
-| **Usta** (`reporter`) | 🚗 Mashina keldi → shablon bo'yicha ketma-ket forma (foto, probeg, muammo, **ishlar + o'z narxi**) → 🚙 Mashina ketdi → 📤 Yuborish · narx taklifiga ✅/❌ javob · `/mening`, `/hisob`, `/kelishuv` |
-| **Admin** | ⏳ Tasdiq navbati · kartochkada **tarixiy narx statistikasi** · ✅ tasdiqlash · ✏️ narxni kamaytirish (sabab majburiy) · ↩️ qaytarish · ❌ rad etish · `/kunlik`, `/davr`, `/eksport` · o'z hisoboti **avtomatik tasdiqlanadi** (R1a) |
-| **Buxgalter** | Davr precheck, oyni yopish, to'lov varaqalari, Excel eksport |
+| `/start` → telefon → bog'lash | **Boshqa hammasi** |
+| Bildirishnomalar + yagona «🧩 Ochish» tugmasi | |
+| `/til`, `/yordam`, `/app` | |
+| Excel'ni hujjat sifatida yetkazish | |
+
+Kirish botda qoladi, chunki Telegram `initData` da **telefon raqami yo'q** —
+bu texnik cheklov, tanlov emas. Excel ham botga tushadi: WebView'da fayl
+yuklab olish, ayniqsa iOS'da, ishonchsiz.
 
 Fon sikli: 48 soatlik avtomatik rozilik, 24 soatlik eslatmalar, bildirishnoma
-outbox'i, uzoq downtime signali.
+outbox'i, uzoq downtime signali, kunlik Fleet sinxroni.
 
-### Mini App (9 ekran, ~65 KB gzip)
+### Mini App (10 ekran, ~66 KB gzip)
 
 Ro'yxat/dashboard · ⭐ **form-renderer** (shablon JSON → forma) · ko'rib chiqish
 (admin uchun narx tarixi bilan) · profil (til + o'z narx statistikasi).
 Telegram temasi, BackButton, haptic, offline qoralama, foto siqish.
 Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
+Bildirishnomadagi «Ochish» → `?submission=<id>` → o'sha kartochka darhol ochiladi.
+
+⭐ **Davr (admin va buxgalter):** yopishdan oldingi tekshiruv, oyni yopish,
+to'lov varaqalari (`approved_amount` bo'yicha, R5) va Excel eksport —
+uchala hisobot ham botga hujjat bo'lib keladi.
 
 ⭐ **Hisobotlar arxivi (admin va buxgalter):** barcha hisobotlar holat bo'yicha
 filtr bilan — bosh ekranda faqat navbat va o'z hisobotlaring ko'rinadi,
@@ -179,7 +193,7 @@ ko'rinmaydi; nashr etilgan versiya **o'zgarmas** — eski hisobotlar buzilmaydi.
 | **Bosqich** | Deploy qilingan (fly.io, webhook) · real ma'lumot va pilot navbatda |
 | **Sana** | 2026-08-01 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 209 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · builder · **fleet** · role · submission · bot e2e · API e2e · konfiguratsiya) |
+| **Testlar** | 212 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · builder · **fleet** · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.

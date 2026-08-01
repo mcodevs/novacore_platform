@@ -184,18 +184,20 @@ Yuborilgandan keyin:
 - Qoralama 24 soatdan ortiq tursa — eslatma
 - Qoralama 7 kundan ortiq tursa — adminga signal
 
-## 5. Bot orqali tezkor amallar
+## 5. Bot nima uchun kerak
+
+⚠️ **Botda amal yo'q** (2026-08-01 qarori) — hamma ish Mini App'da.
 
 | Buyruq / amal | Natija |
 |---|---|
-| `/start` | Ro'yxatdan o'tish / asosiy menyu |
-| `/app` | Mini App'ni ochish |
-| `/yangi` | Yangi hisobot boshlash |
-| `/mening` | Mening bu oydagi hisobotlarim |
-| `/hisob` | Bu oyda: so'ralgan / tasdiqlangan summa |
-| `/kelishuv` | Javob kutayotgan narx takliflari |
+| `/start` | Ro'yxatdan o'tish (telefon) / menyu |
+| `/app` yoki «🧩 Mini App» | Ilovani ochish |
 | `/til` | uz ↔ ru |
-| Bildirishnomaga `✅ Roziman` | Narx kelishuviga rozilik |
+| `/yordam` | Qo'llanma |
+| Bildirishnomaga «🧩 Ochish» | Mini App'da **o'sha kartochka** ochiladi |
+
+Narx taklifiga rozilik, hisobot yozish, statistika — hammasi ilovada.
+Batafsil: [03-integrations/02-telegram-bot-miniapp.md](../03-integrations/02-telegram-bot-miniapp.md) §1
 
 ## 6. Xodim nimani ko'radi
 
