@@ -44,15 +44,24 @@ def phone_request(lang: str) -> ReplyKeyboardMarkup:
 
 
 def main_menu(employee: Employee) -> ReplyKeyboardMarkup:
-    """Botda amal yo'q — menyu Mini App'ni ochadi."""
+    """Botda amal yo'q — menyu Mini App'ni ochishga olib boradi.
+
+    ⚠️ **Bu yerda `web_app` ISHLATILMAYDI.** Reply-klaviaturadagi `web_app`
+    tugmasi Mini App'ni ochadi, lekin unga **`initData` bermaydi** (u
+    `sendData()` orqali oddiy ma'lumot yig'ish uchun mo'ljallangan). Natijada
+    ilova o'zini Telegram tashqarisida deb hisoblaydi va «Bu sahifa Telegram
+    ichida ochilishi kerak» xatosini beradi.
+
+    To'g'ri yo'llar — `initData` imzolangan holda keladi:
+    • BotFather Menu Button (pastdagi «NovaCore» tugmasi)
+    • **inline** klaviaturadagi `web_app` tugmasi → `open_app()`
+
+    Shuning uchun bu tugma oddiy matn yuboradi, `cmd_app` esa javobiga inline
+    tugma qo'yadi.
+    """
     lang = employee.lang
     builder = ReplyKeyboardBuilder()
-    if _https():
-        builder.row(
-            KeyboardButton(text=t("menu_app", lang), web_app=WebAppInfo(url=app_url()))
-        )
-    else:
-        builder.row(KeyboardButton(text=t("menu_app", lang)))
+    builder.row(KeyboardButton(text=t("menu_app", lang)))
     builder.row(
         KeyboardButton(text=t("menu_lang", lang)), KeyboardButton(text=t("menu_help", lang))
     )
