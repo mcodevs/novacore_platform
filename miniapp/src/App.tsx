@@ -15,7 +15,7 @@ import { ProfileScreen } from './screens/ProfileScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { RoleEditScreen } from './screens/RoleEditScreen';
 import { TemplateEditScreen } from './screens/TemplateEditScreen';
-import { isTelegram, tg } from './telegram';
+import { tg, waitForInitData } from './telegram';
 import type { AuthResponse, Lang } from './types';
 import { Skeleton, useToast } from './ui';
 
@@ -52,20 +52,33 @@ export function App() {
   const reset = useCallback(() => setStack([{ name: 'home' }]), []);
 
   useEffect(() => {
-    if (!isTelegram) {
-      setError(t('open_in_telegram'));
-      return;
-    }
-    api
-      .login()
-      .then((response) => {
-        setLocale(response.employee.lang);
-        setAuth(response);
-        setStack(deepLink());
-      })
-      .catch((err: ApiError) => {
-        setError(err.code === 'not_in_registry' ? t('not_in_registry') : err.message);
-      });
+    let cancelled = false;
+
+    // `initData` Telegram bilan asinxron handshake orqali keladi — darhol
+    // bo'sh bo'lsa ham xato chiqarmasdan qisqa kutamiz (telegram.ts izohi).
+    void waitForInitData().then((ready) => {
+      if (cancelled) return;
+      if (!ready) {
+        setError(t('open_in_telegram'));
+        return;
+      }
+      api
+        .login()
+        .then((response) => {
+          if (cancelled) return;
+          setLocale(response.employee.lang);
+          setAuth(response);
+          setStack(deepLink());
+        })
+        .catch((err: ApiError) => {
+          if (cancelled) return;
+          setError(err.code === 'not_in_registry' ? t('not_in_registry') : err.message);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [deepLink]);
 
   useEffect(() => {

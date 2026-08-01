@@ -75,7 +75,35 @@ const stub: WebApp = {
 export const tg: WebApp =
   (window as unknown as { Telegram?: { WebApp?: WebApp } }).Telegram?.WebApp ?? stub;
 
-export const isTelegram = Boolean(tg.initData);
+/** `telegram-web-app.js` skripti yuklanganmi — brauzerda ochilgan bo'lsa yo'q. */
+const hasTelegramObject = Boolean(
+  (window as unknown as { Telegram?: { WebApp?: WebApp } }).Telegram?.WebApp,
+);
+
+/**
+ * ⚠️ `tg.initData`ni sinxron o'qib bo'lmaydi — u Telegram klienti bilan
+ * asinxron `postMessage` handshake orqali to'ladi. Odatda millisekundlarda
+ * tugaydi, lekin bir nechta Mini App tabi parallel ochiq bo'lsa (Telegram
+ * Desktop) kechikishi mumkin. 2026-08-02 da aynan shu sabab bilan foydalanuvchi
+ * **haqiqiy Telegram ichida turib** «Bu sahifa Telegram ichida ochilishi
+ * kerak» xatosini ko'rgan — modul darajasidagi `const isTelegram` bir marta
+ * hisoblanib, keyin hech qachon qayta tekshirilmagan.
+ *
+ * Yechim: `initData` darhol bo'lmasa, qisqa muddat kutib qayta tekshiramiz.
+ * `hasTelegramObject=false` bo'lsa (haqiqatan brauzerda ochilgan) — darhol
+ * xato, kutishning hojati yo'q.
+ */
+export async function waitForInitData(timeoutMs = 2000): Promise<boolean> {
+  if (tg.initData) return true;
+  if (!hasTelegramObject) return false;
+
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    if (tg.initData) return true;
+  }
+  return false;
+}
 
 /** Telegram temasini CSS o'zgaruvchilariga ko'chiradi. */
 export function applyTheme(): void {
