@@ -40,6 +40,8 @@ export const T: Dict = {
   awaiting_review: { uz: 'Tasdiq kutmoqda', ru: 'Ждут подтверждения' },
   approved_month: { uz: 'Bu oy tasdiqlangan', ru: 'Подтверждено за месяц' },
   this_month: { uz: 'Bu oy', ru: 'Этот месяц' },
+  more_details: { uz: 'Qo‘shimcha', ru: 'Дополнительно' },
+  saved_short: { uz: 'Tejaldi', ru: 'Сэкономлено' },
   requested: { uz: 'So‘radim', ru: 'Запросил' },
   approved_sum: { uz: 'Tasdiqlandi', ru: 'Подтверждено' },
   reduced: { uz: 'Kamaydi', ru: 'Снижено' },

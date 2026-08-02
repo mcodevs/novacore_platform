@@ -8,10 +8,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import * as api from '../api';
-import { money } from '../format';
+import { shortMoney } from '../format';
 import { t } from '../i18n';
 import type { Submission, SubmissionStatus } from '../types';
-import { Card, Skeleton, StatusBadge } from '../ui';
+import { Card, ReportRow, Skeleton } from '../ui';
 
 interface Props {
   onOpen(id: number): void;
@@ -85,24 +85,19 @@ export function ReportsScreen({ onOpen }: Props) {
         {rows?.length === 0 ? <p className="muted">{t('no_reports')}</p> : null}
 
         {rows?.map((item) => (
-          <button
+          <ReportRow
             key={item.id}
-            className="list-item"
-            type="button"
+            title={
+              <>
+                {item.number}
+                {item.auto_approved ? ' ⓘ' : ''}
+              </>
+            }
+            amount={shortMoney(item.labor_amount ?? item.proposed_labor_amount)}
+            status={item.status}
+            meta={`${item.author_name} · ${item.vehicle?.plate_display ?? '—'}`}
             onClick={() => onOpen(item.id)}
-          >
-            <div>
-              <strong>{item.number}</strong> ·{' '}
-              {money(item.labor_amount ?? item.proposed_labor_amount)}
-              {item.auto_approved ? ' · ⓘ' : ''}
-            </div>
-            <div className="badge">
-              <StatusBadge status={item.status} />
-              <span>
-                {item.author_name} · {item.vehicle?.plate_display ?? '—'}
-              </span>
-            </div>
-          </button>
+          />
         ))}
 
         {rows && rows.length > 0 && !done ? (

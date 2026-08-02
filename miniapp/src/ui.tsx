@@ -38,6 +38,100 @@ export function StatusBadge({ status }: { status: SubmissionStatus }) {
   return <span className={`status status-${STATUS_TONE[status]}`}>{statusText(status)}</span>;
 }
 
+/**
+ * Ekranni boshlaydigan yagona katta raqam — **sahifada faqat bittasi**.
+ *
+ * `share` berilsa ostida nisbat ko'rsatkichi (meter) chiziladi: to'ldirilgan
+ * qism — tasdiqlangan ulush, bo'sh yo'lak — so'ralganning qolgani.
+ */
+export function Hero({
+  label,
+  value,
+  currency,
+  caption,
+  share,
+  foot,
+  delta,
+}: {
+  label: ReactNode;
+  value: string;
+  currency?: string;
+  caption?: ReactNode;
+  share?: number;
+  foot?: ReactNode;
+  delta?: ReactNode;
+}) {
+  const filled = share === undefined ? null : Math.max(0, Math.min(100, share));
+  return (
+    <section className="hero">
+      <div className="hero-label">{label}</div>
+      <div className="hero-value">
+        {value}
+        {currency ? <span className="cur">{currency}</span> : null}
+      </div>
+      {caption ? <div className="hero-caption">{caption}</div> : null}
+      {filled !== null ? (
+        <div className="meter" role="presentation">
+          <span style={{ width: `${filled}%` }} />
+        </div>
+      ) : null}
+      {foot || delta ? (
+        <div className="hero-foot">
+          <span>{foot}</span>
+          {delta ? <span className="delta">{delta}</span> : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+const CHEVRON = 'm9 5 7 7-7 7';
+
+/** Hisobot qatori — holat belgisi, summa va ochish ishorasi bir qatorda. */
+export function ReportRow({
+  title,
+  amount,
+  status,
+  meta,
+  onClick,
+}: {
+  title: ReactNode;
+  amount: ReactNode;
+  status: SubmissionStatus;
+  meta?: ReactNode;
+  onClick(): void;
+}) {
+  return (
+    <button className="list-item" type="button" onClick={onClick}>
+      <span className={`li-mark tone-${STATUS_TONE[status]}`}>
+        <Icon path={ICONS.reports} />
+      </span>
+      <span className="li-body">
+        <span className="li-top">
+          <strong>{title}</strong>
+          <span className="li-amount">{amount}</span>
+        </span>
+        <span className="badge">
+          <StatusBadge status={status} />
+          {meta ? <span>{meta}</span> : null}
+        </span>
+      </span>
+      <svg
+        className="li-chevron"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d={CHEVRON} />
+      </svg>
+    </button>
+  );
+}
+
 export function Tile({
   value,
   label,

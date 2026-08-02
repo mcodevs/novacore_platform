@@ -3,10 +3,15 @@
 import { useEffect, useState } from 'react';
 
 import * as api from '../api';
-import { money, percent } from '../format';
+import { money, percent, shortMoney } from '../format';
 import { t } from '../i18n';
 import type { AuthResponse, Dashboard, Submission } from '../types';
-import { Card, Row, Skeleton, StatusBadge, Tile } from '../ui';
+import { Card, Hero, ReportRow, Row, Skeleton, Tile } from '../ui';
+
+/** Tasdiqlangan ulush — hero ostidagi meter uchun. So'ralgan 0 bo'lsa to'la. */
+function approvedShare(proposed: number, approved: number): number {
+  return proposed > 0 ? (approved / proposed) * 100 : 100;
+}
 
 interface Props {
   auth: AuthResponse;
@@ -64,6 +69,26 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
         <>
           {board ? (
             <>
+              <Hero
+                label={`${t('this_month')} · ${board.period}`}
+                value={shortMoney(board.approved_total)}
+                currency={t('currency')}
+                caption={t('approved_sum')}
+                share={approvedShare(
+                  Number(board.proposed_total),
+                  Number(board.approved_total),
+                )}
+                foot={
+                  <>
+                    {t('requested')} <b>{shortMoney(board.proposed_total)}</b>
+                  </>
+                }
+                delta={
+                  Number(board.saved) > 0
+                    ? `${t('saved_short')} ${shortMoney(board.saved)} · ${percent(board.saved_pct)}`
+                    : undefined
+                }
+              />
               <div className="grid">
                 <Tile
                   value={board.pending_review}
@@ -78,18 +103,11 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
                 <Tile value={board.vehicles_in_service} label={t('cars_in_service')} />
                 <Tile value={board.approved_count} label={t('approved_month')} />
               </div>
-              <Card title={`${t('this_month')} · ${board.period}`}>
-                <Row label={t('requested')} value={money(board.proposed_total)} />
-                <Row label={t('approved_sum')} value={money(board.approved_total)} />
-                <Row
-                  label={t('savings')}
-                  tone={Number(board.saved) > 0 ? 'good' : undefined}
-                  value={`${money(board.saved)} · ${percent(board.saved_pct)}`}
-                />
+              <Card title={t('more_details')}>
                 <Row label={t('parts_total')} value={money(board.parts_total)} />
                 {board.auto_approved_count > 0 ? (
                   <Row
-                    label={`ⓘ ${t('auto_approved_line')}`}
+                    label={t('auto_approved_line')}
                     value={`${board.auto_approved_count} · ${money(board.auto_approved_total)}`}
                   />
                 ) : null}
@@ -106,22 +124,14 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
               <p className="muted">{t('no_reports')}</p>
             ) : (
               pending.map((item) => (
-                <button
+                <ReportRow
                   key={item.id}
-                  className="list-item"
-                  type="button"
+                  title={item.number}
+                  amount={shortMoney(item.proposed_labor_amount)}
+                  status={item.status}
+                  meta={`${item.author_name} · ${item.vehicle?.plate_display ?? '—'}`}
                   onClick={() => onOpen(item.id)}
-                >
-                  <div>
-                    <strong>{item.number}</strong> · {money(item.proposed_labor_amount)}
-                  </div>
-                  <div className="badge">
-                    <StatusBadge status={item.status} />
-                    <span>
-                      {item.author_name} · {item.vehicle?.plate_display ?? '—'}
-                    </span>
-                  </div>
-                </button>
+                />
               ))
             )}
           </Card>
@@ -141,6 +151,26 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
 
       {isReporter ? (
         <>
+          {seesAll ? null : (
+            <Hero
+              label={t('this_month')}
+              value={shortMoney(myApproved)}
+              currency={t('currency')}
+              caption={t('approved_sum')}
+              share={approvedShare(myProposed, myApproved)}
+              foot={
+                <>
+                  {t('requested')} <b>{shortMoney(myProposed)}</b>
+                </>
+              }
+              delta={
+                myProposed > myApproved
+                  ? `${t('reduced')} ${shortMoney(myProposed - myApproved)}`
+                  : undefined
+              }
+            />
+          )}
+
           <div className="grid">
             <Tile value={drafts.length} label={t('drafts')} />
             <Tile
@@ -160,20 +190,8 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
             />
           </div>
 
-          <Card title={t('this_month')}>
-            <Row label={t('requested')} value={money(myProposed)} />
-            <Row label={t('approved_sum')} value={money(myApproved)} />
-            <Row
-              label={t('reduced')}
-              value={
-                myProposed > 0
-                  ? `${money(myProposed - myApproved)} (${percent(
-                      ((myProposed - myApproved) / myProposed) * 100,
-                    )})`
-                  : '—'
-              }
-            />
-          </Card>
+          {/* Shaxsiy pul yakuni hero'da (usta) yoki profil statistikasida
+              (admin) turadi — bu yerda takrorlanmaydi. */}
 
           {picking ? (
             <Card title={t('choose_template')}>
@@ -201,21 +219,14 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
               <p className="muted">{t('no_reports')}</p>
             ) : (
               mine.slice(0, 10).map((item) => (
-                <button
+                <ReportRow
                   key={item.id}
-                  className="list-item"
-                  type="button"
+                  title={item.number}
+                  amount={shortMoney(item.labor_amount ?? item.proposed_labor_amount)}
+                  status={item.status}
+                  meta={item.vehicle?.plate_display ?? '—'}
                   onClick={() => onOpen(item.id)}
-                >
-                  <div>
-                    <strong>{item.number}</strong> ·{' '}
-                    {money(item.labor_amount ?? item.proposed_labor_amount)}
-                  </div>
-                  <div className="badge">
-                    <StatusBadge status={item.status} />
-                    <span>{item.vehicle?.plate_display ?? '—'}</span>
-                  </div>
-                </button>
+                />
               ))
             )}
           </Card>

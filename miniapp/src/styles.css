@@ -45,10 +45,14 @@
   --radius-pill: 999px;
   --gap: 12px;
 
-  --tabbar-h: 58px;
-  --tabbar-bg: rgba(247, 248, 250, 0.82);
+  --tabbar-h: 62px;
+  --tabbar-bg: rgba(255, 255, 255, 0.72);
   --shadow: 0 1px 2px rgba(21, 22, 28, 0.04), 0 4px 12px rgba(21, 22, 28, 0.05);
   --shadow-accent: 0 4px 14px rgba(79, 70, 229, 0.28);
+  --shadow-float: 0 8px 32px rgba(21, 22, 28, 0.12), 0 2px 8px rgba(21, 22, 28, 0.06);
+  /* Sahifa tepasidagi sokin yorug'lik — chuqurlik beradi, e'tibor tortmaydi */
+  --glow: rgba(79, 70, 229, 0.13);
+  --hero-ink: #ffffff;
 
   /* Eski nom — hali ishlatilayotgan qoidalar uchun alias */
   --bg-secondary: var(--surface-2);
@@ -80,9 +84,12 @@
   --warning: #fbbf24;
   --warning-soft: rgba(251, 191, 36, 0.14);
 
-  --tabbar-bg: rgba(11, 11, 17, 0.82);
+  --tabbar-bg: rgba(28, 30, 39, 0.72);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-accent: 0 4px 16px rgba(139, 133, 255, 0.25);
+  --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --glow: rgba(139, 133, 255, 0.16);
+  --hero-ink: #ffffff;
 }
 
 * {
@@ -116,7 +123,23 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Tepadagi sokin yorug'lik — ekran yassi bo'lib qolmasin. Fon qatlami,
+   scroll bilan qimirlamaydi va bosishga xalaqit bermaydi. */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 340px;
+  background: radial-gradient(120% 100% at 50% 0%, var(--glow) 0%, transparent 68%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 #root {
+  position: relative;
+  z-index: 1;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -127,7 +150,39 @@ body {
 .app {
   max-width: 560px;
   margin: 0 auto;
-  padding: 8px 16px calc(var(--tabbar-h) + 24px + env(safe-area-inset-bottom));
+  padding: 8px 16px calc(var(--tabbar-h) + 32px + env(safe-area-inset-bottom));
+}
+
+/* Kirish animatsiyasi — kontent pastdan ko'tarilib chiqadi. Bosqichma-bosqich
+   kechikish ekranga ritm beradi; harakatni kamaytirish rejimida o'chadi. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.app > *:not(.tabbar):not(.toast) {
+  animation: rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.app > *:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.app > *:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.app > *:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.app > *:nth-child(n + 5) {
+  animation-delay: 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app > *:not(.tabbar):not(.toast) {
+    animation: none;
+  }
 }
 
 /* --- Sarlavha ----------------------------------------------------------- */
@@ -168,7 +223,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px 15px;
   margin-bottom: var(--gap);
   box-shadow: var(--shadow);
 }
@@ -179,6 +234,128 @@ body {
   font-weight: 650;
   color: var(--text);
   letter-spacing: -0.01em;
+}
+
+/* --- Hero ---------------------------------------------------------------
+ * Ekran boshlaydigan yagona katta raqam (sahifada FAQAT bittasi bo'ladi).
+ * Katta mustaqil qiymat proporsional raqamlar bilan yoziladi — `tabular-nums`
+ * bo'lsa har raqam «0» kengligini oladi va bunday o'lchamda bo'sh ko'rinadi.
+ */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  padding: 20px;
+  margin-bottom: var(--gap);
+  color: var(--hero-ink);
+  background: linear-gradient(150deg, #4f46e5 0%, #6d5ef0 46%, #8b5cf6 100%);
+  box-shadow: 0 10px 30px rgba(79, 70, 229, 0.32);
+}
+
+:root[data-scheme='dark'] .hero {
+  background: linear-gradient(150deg, #3b34c4 0%, #5b50e0 46%, #7c4fe0 100%);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* Yumshoq nur — yassi to'rtburchak emas, hajmli sirt hissi */
+.hero::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  right: -25%;
+  width: 78%;
+  height: 190%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.22), transparent);
+  pointer-events: none;
+}
+
+.hero-label {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 0.78;
+}
+
+/* Summa 8–9 xonali bo'lishi mumkin — o'lcham ekran kengligiga moslashadi,
+   aks holda «26 493 123» ikki qatorga sinadi. */
+.hero-value {
+  position: relative;
+  margin-top: 6px;
+  font-size: clamp(28px, 8.2vw, 38px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.hero-value .cur {
+  font-size: 0.45em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  opacity: 0.75;
+  margin-left: 5px;
+}
+
+.hero-caption {
+  position: relative;
+  margin-top: 4px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Meter — nisbat: tasdiqlangan / so'ralgan. Bo'sh yo'lak to'ldirgichning
+   o'z rangidan ochroq bosqich, shunda holat butun chiziq bo'ylab o'qiladi. */
+.meter {
+  position: relative;
+  height: 6px;
+  margin-top: 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.26);
+  overflow: hidden;
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 13px;
+  opacity: 0.88;
+}
+
+.hero-foot > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-foot b {
+  font-weight: 650;
+}
+
+.hero-foot .delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.18);
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 /* --- Yorliq/qiymat qatori ----------------------------------------------- */
@@ -238,7 +415,8 @@ body {
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
+  /* Proporsional raqamlar — bu o'lchamda `tabular-nums` bo'sh ko'rinadi.
+     Tabular faqat ustunga tizilgan sonlarda (`.row strong`) kerak. */
 }
 
 /* E'tibor talab qiladigan plitka — raqam rang bilan ajraladi (nol bo'lsa yo'q) */
@@ -316,27 +494,30 @@ button:disabled {
 
 /* --- Pastki navigatsiya ------------------------------------------------- */
 
+/* Suzuvchi panel — ekran chetiga yopishgan tasma emas, kontent uning ostidan
+   o'tib ketadi va ilova «qatlamli» ko'rinadi. */
 .tabbar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 12px;
+  right: 12px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
   z-index: 30;
   display: flex;
   justify-content: center;
-  gap: 2px;
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  padding: 6px;
+  border-radius: 22px;
   background: var(--tabbar-bg);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-top: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-float);
 }
 
 .tabbar-inner {
   display: flex;
   width: 100%;
-  max-width: 560px;
-  gap: 2px;
+  max-width: 536px;
+  gap: 4px;
 }
 
 .tab {
@@ -347,16 +528,17 @@ button:disabled {
   justify-content: center;
   gap: 3px;
   min-height: 46px;
-  padding: 4px 2px;
+  padding: 5px 2px;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 16px;
   box-shadow: none;
   color: var(--muted);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.01em;
   width: auto;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .tab .tab-icon {
@@ -374,6 +556,7 @@ button:disabled {
 
 .tab.active {
   color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .tab.active .tab-icon {
@@ -532,7 +715,9 @@ label.field {
 /* --- Ro'yxat elementi --------------------------------------------------- */
 
 .list-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   text-align: left;
   background: transparent;
@@ -544,6 +729,81 @@ label.field {
   color: inherit;
   font-weight: 400;
   min-height: 0;
+}
+
+/* Holat rangidagi belgi — ro'yxatni ko'z bilan «skanerlash» oson bo'ladi */
+.li-mark {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.li-mark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.li-mark.tone-wait {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.li-mark.tone-talk {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.li-mark.tone-good {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.li-mark.tone-bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.li-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.li-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.li-top strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.li-top .li-amount {
+  flex: none;
+  font-size: 14px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.li-chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  opacity: 0.55;
 }
 
 .list-item + .list-item {
@@ -583,6 +843,18 @@ label.field {
   font-size: 13px;
   color: var(--muted);
   margin-top: 5px;
+}
+
+/* Ro'yxat qatorida meta bir qatorda qoladi — qator balandligi sakramasin */
+.li-body .badge {
+  flex-wrap: nowrap;
+}
+
+.li-body .badge > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Holat — emoji emas, rangli nuqta bilan pill. Ro'yxatda holat bir qarashda
