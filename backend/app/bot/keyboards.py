@@ -32,9 +32,18 @@ def _https() -> bool:
 
 
 def app_url(submission_id: int | None = None) -> str:
-    """Mini App havolasi; `submission_id` berilsa o'sha kartochka ochiladi."""
-    base = settings.miniapp_url
-    return f"{base}?submission={submission_id}" if submission_id else base
+    """Mini App havolasi; `submission_id` berilsa o'sha kartochka ochiladi.
+
+    `?v=<build>` — Telegram WebView keshini chetlab o'tish uchun: bundle
+    o'zgarganda URL ham o'zgaradi, WebView yangi `index.html` ni yuklaydi.
+    """
+    params = []
+    if submission_id:
+        params.append(f"submission={submission_id}")
+    if settings.miniapp_version:
+        params.append(f"v={settings.miniapp_version}")
+    query = "&".join(params)
+    return f"{settings.miniapp_url}?{query}" if query else settings.miniapp_url
 
 
 def phone_request(lang: str) -> ReplyKeyboardMarkup:

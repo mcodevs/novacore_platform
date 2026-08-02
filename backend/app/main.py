@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import structlog
-from aiogram.types import Update
+from aiogram.types import MenuButtonWebApp, Update, WebAppInfo
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.types import Scope
 
 from app.api.v1 import api_router
+from app.bot import keyboards as kb
 from app.bot.bot import get_bot, get_dispatcher
 from app.bot.commands import set_default_commands
 from app.core.config import settings
@@ -52,6 +54,18 @@ async def lifespan(app: FastAPI):  # noqa: ANN201
     me = await bot.get_me()
     log.info("bot_started", username=me.username, mode=settings.bot_mode)
     await set_default_commands(bot)
+
+    # Menyu tugmasi (pastdagi «NovaCore») — versiyalangan URL bilan dasturiy
+    # o'rnatiladi. Deployda `?v=<hash>` o'zgargani uchun WebView eski keshni
+    # emas, yangi bundle'ni yuklaydi. BotFather'dagi statik sozlamani almashtiradi.
+    if settings.miniapp_url.startswith("https://"):
+        await bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="NovaCore",
+                web_app=WebAppInfo(url=kb.app_url()),
+            )
+        )
+        log.info("menu_button_set", url=kb.app_url())
 
     if settings.bot_mode == "webhook":
         await bot.set_webhook(
@@ -120,11 +134,26 @@ class _MiniAppStatic(StaticFiles):
         return resp
 
 
+def _miniapp_build_version() -> str:
+    """`index.html` dagi asosiy asset hash'i — bundle versiyasi.
+
+    Vite fayllarni `index-<hash>.js` deb nomlaydi; hash bundle o'zgarganda
+    almashadi. Shu hash `?v=` bo'lib havolaga qo'shiladi → WebView keshi
+    deploydan keyin avtomatik chetlanadi.
+    """
+    index = MINIAPP_DIST / "index.html"
+    if not index.is_file():
+        return ""
+    match = re.search(r"assets/index-([A-Za-z0-9_-]+)\.js", index.read_text("utf-8"))
+    return match.group(1) if match else ""
+
+
 if MINIAPP_DIST.is_dir():
     app.mount("/app", _MiniAppStatic(directory=MINIAPP_DIST, html=True), name="miniapp")
     if not settings.miniapp_url:
         settings.miniapp_url = f"{settings.base_url.rstrip('/')}/app"
-    log.info("miniapp_mounted", url=settings.miniapp_url)
+    settings.miniapp_version = _miniapp_build_version()
+    log.info("miniapp_mounted", url=settings.miniapp_url, version=settings.miniapp_version)
 
 
 @app.exception_handler(DomainError)

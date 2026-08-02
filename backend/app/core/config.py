@@ -42,6 +42,10 @@ class Settings(BaseSettings):
 
     # --- Mini App / API ---
     miniapp_url: str = ""
+    # Bundle versiyasi (build hash) — Mini App havolasiga `?v=` bo'lib qo'shiladi.
+    # Telegram WebView index.html'ni keshlab, eski bundle'ni ushlab qolmasligi
+    # uchun har deployda o'zgaradi (startup'da index.html'dan hisoblanadi).
+    miniapp_version: str = ""
     # NoDecode: `.env` dagi bo'sh yoki vergulli qiymat JSON deb o'qilmasin
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
     jwt_secret: str = "change-me-at-least-32-bytes-long-secret!"
