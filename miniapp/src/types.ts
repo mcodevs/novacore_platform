@@ -300,3 +300,22 @@ export interface Payout {
 }
 
 export type ExportKind = 'submissions' | 'payouts' | 'savings';
+
+// --- E'lonlar (faqat admin) --------------------------------------------------
+
+/** Admin e'loni — bot orqali barcha faol, botga bog'langan xodimlarga boradi.
+ *
+ * Yetkazish hisobi (`delivered/failed/pending`) faqat tarix ro'yxatida keladi:
+ * yuborish javobida navbat endi to'lgan bo'ladi, sanashning ma'nosi yo'q.
+ * `body` — XOM matn (HTML escape serverda, faqat botga yuborishda qilinadi).
+ */
+export interface Broadcast {
+  id: number;
+  body: string;
+  recipients_total: number;
+  created_at: string;
+  author_name: string;
+  delivered?: number;
+  failed?: number;
+  pending?: number;
+}

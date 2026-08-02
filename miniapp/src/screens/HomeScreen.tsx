@@ -19,10 +19,18 @@ interface Props {
   onCreate(templateCode: string): void;
   onBuilder(): void;
   onEmployees(): void;
+  onBroadcast(): void;
 }
 
 /** Hisobotlar va davr — pastki paneldagi tab. Bu yerda takrorlanmaydi. */
-export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: Props) {
+export function HomeScreen({
+  auth,
+  onOpen,
+  onCreate,
+  onBuilder,
+  onEmployees,
+  onBroadcast,
+}: Props) {
   const kind = auth.employee.role.kind;
   const isReporter = kind === 'reporter' || kind === 'admin';
   const seesAll = kind === 'admin' || kind === 'accountant';
@@ -136,15 +144,24 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
             )}
           </Card>
 
+          {/* Admin amallari ikki qatorda: 375 px'da uchta tugma bir qatorga
+              sig'maydi — yorliqlar qisqarib o'qilmay qoladi. */}
           {kind === 'admin' ? (
-            <div className="btn-row">
-              <button type="button" className="btn-secondary" onClick={onEmployees}>
-                {t('employees')}
-              </button>
-              <button type="button" className="btn-secondary" onClick={onBuilder}>
-                {t('builder')}
-              </button>
-            </div>
+            <>
+              <div className="btn-row">
+                <button type="button" className="btn-secondary" onClick={onEmployees}>
+                  {t('employees')}
+                </button>
+                <button type="button" className="btn-secondary" onClick={onBuilder}>
+                  {t('builder')}
+                </button>
+              </div>
+              <div className="btn-row">
+                <button type="button" className="btn-secondary" onClick={onBroadcast}>
+                  {t('broadcast')}
+                </button>
+              </div>
+            </>
           ) : null}
         </>
       ) : null}

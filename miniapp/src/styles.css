@@ -857,6 +857,25 @@ label.field {
   white-space: nowrap;
 }
 
+/* Ko'p qatorli qator (e'lon matni 3 qatorgacha cho'ziladi) — belgi markazda
+   qolsa qator o'rtasida osilib ko'rinadi, shuning uchun tepaga tekislanadi. */
+.list-item.list-item-top {
+  align-items: flex-start;
+}
+
+/* Bir nechta holat belgisi bo'lgan qator (e'lon tarixi: yetkazildi/navbatda/
+   xato) — 375 px'da bir qatorga sig'maydi. O'ralish ruxsat etilmasa, ortiqcha
+   en oxirgi pill hisobidan yeyiladi va aynan «xato» soni kesilib ketadi. */
+.li-body .badge.badge-wrap {
+  flex-wrap: wrap;
+}
+
+.li-body .badge.badge-wrap > span:last-child {
+  min-width: auto;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 /* Holat — emoji emas, rangli nuqta bilan pill. Ro'yxatda holat bir qarashda
    o'qiladi va emoji platformalar orasida sakramaydi. */
 .status {
@@ -1025,6 +1044,31 @@ label.field {
   font-size: 13px;
   color: var(--muted);
   margin-top: 4px;
+}
+
+/* --- E'lon (broadcast) --------------------------------------------------- */
+
+/* Tarixdagi e'lon matni. Qator uzilishlari saqlanadi (admin yozgandek), lekin
+   uzun matn ro'yxatni cho'zib yubormasin — uch qatordan keyin kesiladi. */
+.broadcast-text {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* Qator bosilganda matn to'liq ochiladi — e'lonni o'qishning boshqa yo'li yo'q */
+.broadcast-text.is-open {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
 }
 
 /* --- Konstruktor (Faza 2) ----------------------------------------------- */

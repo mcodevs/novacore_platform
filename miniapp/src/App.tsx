@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import * as api from './api';
 import { ApiError } from './api';
 import { setLocale, t } from './i18n';
+import { BroadcastScreen } from './screens/BroadcastScreen';
 import { BuilderScreen } from './screens/BuilderScreen';
 import { DetailScreen } from './screens/DetailScreen';
 import { EmployeesScreen } from './screens/EmployeesScreen';
@@ -34,6 +35,7 @@ type Route =
   | { name: 'profile' }
   | { name: 'builder' }
   | { name: 'employees' }
+  | { name: 'broadcast' }
   | { name: 'reports' }
   | { name: 'period' }
   | { name: 'template'; id: number | null }
@@ -175,6 +177,7 @@ export function App() {
           onCreate={(code) => void createReport(code)}
           onBuilder={() => push({ name: 'builder' })}
           onEmployees={() => push({ name: 'employees' })}
+          onBroadcast={() => push({ name: 'broadcast' })}
         />
       ) : null}
 
@@ -191,6 +194,10 @@ export function App() {
           currentEmployeeId={auth.employee.id}
           onDone={(message) => showToast(message)}
         />
+      ) : null}
+
+      {route.name === 'broadcast' ? (
+        <BroadcastScreen onDone={(message) => showToast(message)} />
       ) : null}
 
       {route.name === 'builder' ? (

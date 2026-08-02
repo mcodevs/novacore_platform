@@ -65,12 +65,73 @@ kartochkani ochadi (`?submission=<id>`). Tez tugmalar (`✅ Roziman`,
 | Qoralama 24 soat turdi | Muallif |
 | Oy yopilishiga 3 kun | Admin, buxgalter |
 | Fleet sinxroni (yangi/yo'qolgan mashina yoki xato) | Admin |
+| **📢 E'lon (admin yozgan)** ⭐ | **Barcha faol xodimlar** |
 
 **Guruh bildirishnomalari:** admin guruhiga umumiy signal (kritik bayroq, uzoq
 downtime). `driver_status_reporter`dagi kabi — bu yondashuv ishlaydi.
 
 > ❌ Zayavka va haydovchi bildirishnomalari **yo'q** — bu rollar tizimda yo'q
 > ([ADR-0013](../05-delivery/03-decisions.md#adr-0013--haydovchi-tizimda-rolga-ega-emas)).
+
+### E'lon (broadcast) yetkazish
+
+E'lonni admin **Mini App'da** yozadi, bot faqat yetkazadi — botda e'lon buyrug'i
+yo'q ([admin oqimi §8](../01-product/03-admin-flow.md#8-elon-broadcast)).
+Boshqa bildirishnomalardan farqi: qabul qiluvchi bitta emas, **hammasi**.
+
+Shablon `notify_broadcast` (uz + ru), xabar ostida odatdagi yagona
+`🧩 Ochish` tugmasi:
+
+```
+📢 E'lon                 |  📢 Объявление
+
+<admin yozgan matn>      |  <текст админа>
+```
+
+**⚠️ HTML escape — buzilmasligi shart**
+
+Bot xabarlarni `parse_mode=HTML` bilan yuboradi. Admin matnida `<` belgisi
+bo'lsa (masalan «narx < 200 000»), Telegram butun xabarni **rad etadi** va
+e'lon **hech kimga yetmaydi**.
+
+Shuning uchun `notify_broadcast` render qilinishida matn shablonga
+qo'yilishidan **oldin** escape qilinadi. Xom matn esa bazada va `payload`da
+o'zgarishsiz qoladi — Mini App tarixida e'lon admin yozganidek ko'rinsin.
+
+**Yetkazish tezligi**
+
+Outbox sikli navbatni bo'shatguncha aylanadi, lekin Telegram limitiga
+urilmaslik uchun har xabar orasida pauza bilan
+([outbox](../02-architecture/02-data-model.md#notifications--chiquvchi-navbat-outbox)):
+
+| Parametr | Qiymat | Manba |
+|---|---|---|
+| Bir partiya | **20** | `tasks/worker.py` → `BATCH` |
+| Bir tickda ko'pi bilan | **300** | `MAX_PER_TICK` |
+| Xabarlar orasida pauza | **0.05 sek** (~20 xabar/sek) | `SEND_PAUSE_SEC` |
+| Tick oralig'i | **60 sek** | `background_tick_sec` |
+| **~150 xodim** | **≈ 8 sekund** | bitta tick ichida |
+
+⚠️ **Navbat tartibi FIFO emas.** Tanlov `broadcast_id IS NULL` yozuvlarni
+oldinga qo'yadi: e'lon ommaviy, lekin shoshilinch emas — 150 kishilik e'lon
+narx kelishuvi yoki yangi hisobot signalini ortida ushlab qolmasligi kerak.
+
+⚠️ **Har yozuv alohida commit qilinadi.** Deploy yoki ulanish uzilganda
+allaqachon Telegram'ga ketgan xabar `pending` bo'lib qolmaydi — aks holda
+keyingi tik uni qayta yuborardi (bitta partiyada 20 kishigacha dublikat).
+
+**Blok qilgan xodim:** bot bloklangan bo'lsa xabar `failed` bo'ladi
+(qayta urinilmaydi) — e'lon boshqalarga baribir yetadi.
+
+**Flood-limit (`429`):** Telegram `retry_after` bergan bo'lsa bu urinish
+sifatida **sanalmaydi** va kutish vaqti serverning o'z qiymatidan olinadi
+(`2**attempts` formulasi emas). Aks holda e'lon 5 ta flood-waitdan keyin
+butunlay `failed` bo'lib qolardi.
+
+**Takroriy so'rov:** zaif internetda klient POST'ni qayta yuborishi mumkin
+(javob yo'lda yo'qolganda `fetch` ham rad etadi). Shuning uchun bitta admin
+**60 sekund** ichida aynan bir xil matn yuborsa yangi e'lon yaratilmaydi —
+mavjudi qaytariladi (`domain/broadcast.DEDUP_WINDOW_SEC`).
 
 ## 4. Mini App texnik jihatlari
 

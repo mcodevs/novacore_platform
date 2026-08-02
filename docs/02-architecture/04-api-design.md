@@ -117,6 +117,8 @@ Batafsil: [03-integrations/03-media-and-storage.md](../03-integrations/03-media-
 | `GET` | `/admin/flags` | Bayroqlar |
 | `POST` | `/admin/flags/{id}/resolve` | `{ resolution, comment }` |
 | `POST` | `/admin/fleet/sync` | Qo'lda Fleet sinxroni. Xato bo'lsa ham **200** + `error` — platforma Fleet'siz ishlaydi |
+| **`POST`** | **`/admin/broadcasts`** | ⭐ E'lon yuborish: `{ body }` → barcha faol xodimlar navbatga qo'yiladi |
+| **`GET`** | **`/admin/broadcasts`** | E'lonlar tarixi + yetkazish hisobi. `?limit=20` |
 
 ⚠️ `POST /admin/roles` — `kind` faqat `reporter` / `admin` / `accountant`
 
@@ -126,6 +128,61 @@ Batafsil: [03-integrations/03-media-and-storage.md](../03-integrations/03-media-
 - `kind='admin'` rolni boshqa turga o'tkazish shu roldagi **barcha** xodimlarni
   admin huquqidan mahrum qiladi → R8 tekshiriladi (`last_admin_required`)
 bo'lishi mumkin. Oxirgi `admin` rolli xodimni o'chirish `409` beradi (R8).
+
+### E'lon (broadcast) ⭐
+
+Butun `/admin/*` kabi — **faqat `role.kind = 'admin'`**. Klient tekshiruviga
+ishonilmaydi; boshqa rol `403 forbidden` oladi.
+
+**Yuborish**
+
+```
+POST /api/v1/admin/broadcasts
+{ "body": "Ertaga ombor yopiq. Qism kerak bo'lsa bugun oling." }
+        ↓  201
+{ "id": 7,
+  "body": "Ertaga ombor yopiq. Qism kerak bo'lsa bugun oling.",
+  "recipients_total": 24,
+  "created_at": "2026-08-02T05:14:00Z",
+  "author_name": "Aliyev A." }
+```
+
+- `body` — **xom matn**, javobda ham xom qaytadi (escape faqat botga yuborishda)
+- Qabul qiluvchilar: `status = active` **va** `deleted_at IS NULL` **va**
+  `tg_user_id IS NOT NULL`
+- `recipients_total` — navbatga (`notifications`) qo'yilganlar soni, **yetkazilgan
+  emas**
+- Har yuborish `audit_log`ga tushadi: `broadcast_sent`
+- ⚠️ **Takror so'rovga chidamli:** bitta admin **60 sekund** ichida aynan bir xil
+  `body` yuborsa yangi e'lon yaratilmaydi — mavjudi qaytariladi (201, o'sha `id`).
+  Sabab: `fetch` javob yo'lda yo'qolganda ham rad etadi, klient esa so'rovni
+  takrorlashi mumkin — e'lon esa qaytarib bo'lmaydigan amal
+
+**Tarix**
+
+```
+GET /api/v1/admin/broadcasts?limit=20
+        ↓  200
+[ { "id": 7, "body": "Ertaga ombor yopiq…",
+    "recipients_total": 24,
+    "created_at": "2026-08-02T05:14:00Z",
+    "author_name": "Aliyev A.",
+    "delivered": 22, "failed": 1, "pending": 1 } ]
+```
+
+`delivered` / `failed` / `pending` — `notifications.broadcast_id` bo'yicha
+status hisobi; ular vaqt o'tishi bilan o'zgaradi (outbox sikli).
+
+**Xatolar**
+
+| HTTP | `code` | Qachon |
+|---|---|---|
+| 400 | `validation_failed` | `body` bo'sh (yoki faqat probel) |
+| 400 | `validation_failed` | `body` uzunligi **3500** belgidan oshdi |
+| 403 | `forbidden` | Yuboruvchi `admin` emas |
+
+⚠️ E'lonni **o'chirish yoki tahrirlash endpointi yo'q** — yuborilgan xabar
+qaytarilmaydi, tarix o'zgarmaydi (R9).
 
 ## 8. Davr va to'lovlar
 

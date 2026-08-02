@@ -666,6 +666,11 @@ T: dict[str, dict[str, str]] = {
         "uz": "{summary}",
         "ru": "{summary}",
     },
+    # {body} — admin yozgan xom matn; escape notifier.render'da (parse_mode=HTML)
+    "notify_broadcast": {
+        "uz": "📢 <b>E'lon</b>\n\n{body}",
+        "ru": "📢 <b>Объявление</b>\n\n{body}",
+    },
     # --- Statistika ---
     "my_month": {
         "uz": (

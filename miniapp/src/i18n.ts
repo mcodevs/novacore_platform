@@ -195,6 +195,59 @@ export const T: Dict = {
     ru: 'При блокировке/увольнении вход закрыт, отчёты и выплаты остаются.',
   },
 
+  // E'lon (admin → barcha xodimlar, bot orqali)
+  broadcast: { uz: '📢 E‘lon', ru: '📢 Объявление' },
+  broadcast_hint: {
+    uz: 'Xabar botga bog‘langan barcha faol xodimlarga boradi.',
+    ru: 'Сообщение получат все активные сотрудники, привязанные к боту.',
+  },
+  broadcast_placeholder: {
+    uz: 'Masalan: Ertaga ustaxona 9:00 da ochiladi.',
+    ru: 'Например: завтра мастерская откроется в 9:00.',
+  },
+  broadcast_counter: { uz: '{n} / {max}', ru: '{n} / {max}' },
+  broadcast_too_long: {
+    uz: 'Matn juda uzun — {max} belgidan oshmasin',
+    ru: 'Текст слишком длинный — не более {max} символов',
+  },
+  broadcast_recipients: { uz: 'Qabul qiluvchilar', ru: 'Получатели' },
+  broadcast_no_recipients: {
+    uz: 'Botga bog‘langan faol xodim yo‘q — yuborib bo‘lmaydi.',
+    ru: 'Нет активных сотрудников, привязанных к боту — отправить нельзя.',
+  },
+  broadcast_send: { uz: '📨 Yuborish', ru: '📨 Отправить' },
+  broadcast_confirm: {
+    uz: '{n} ta xodimga yuborilsinmi? Buni qaytarib bo‘lmaydi.',
+    ru: 'Отправить {n} сотрудникам? Отменить это нельзя.',
+  },
+  // Qabul qiluvchilar soni ma'lum bo'lmasa (ro'yxat yuklanmadi) — noaniq son
+  // aytilmaydi, chunki bu qaytarib bo'lmaydigan amalning tasdig'i.
+  broadcast_confirm_any: {
+    uz: 'E‘lon barcha faol xodimlarga yuborilsinmi? Buni qaytarib bo‘lmaydi.',
+    ru: 'Отправить объявление всем активным сотрудникам? Отменить это нельзя.',
+  },
+  broadcast_sent: { uz: 'E‘lon {n} ta xodimga yuborildi', ru: 'Объявление отправлено {n} сотрудникам' },
+  broadcast_history: { uz: 'Yuborilgan e‘lonlar', ru: 'Отправленные объявления' },
+  broadcast_empty: { uz: 'Hali e‘lon yuborilmagan', ru: 'Объявлений пока не было' },
+  // ⚠️ Bo'sh ro'yxatdan farqli matn: xatolikni «e'lon yo'q» deb ko'rsatsak,
+  // admin yuborilgan e'lonni qaytadan yuboradi.
+  broadcast_history_error: {
+    uz: 'Tarixni yuklab bo‘lmadi — e‘lon yuborilgan bo‘lishi mumkin.',
+    ru: 'Не удалось загрузить историю — объявление могло быть отправлено.',
+  },
+  broadcast_error: {
+    uz: 'E‘lonni yuborib bo‘lmadi. Tarixni tekshiring.',
+    ru: 'Не удалось отправить объявление. Проверьте историю.',
+  },
+  // Tarmoq uzildi: so'rov serverga yetib borgan bo'lishi ham mumkin
+  broadcast_unknown: {
+    uz: 'Tarmoq uzildi — e‘lon yuborilgan bo‘lishi mumkin. Tarixni tekshiring.',
+    ru: 'Связь прервалась — объявление могло уйти. Проверьте историю.',
+  },
+  broadcast_delivered: { uz: 'yetkazildi', ru: 'доставлено' },
+  broadcast_failed: { uz: 'xato', ru: 'ошибка' },
+  broadcast_pending: { uz: 'navbatda', ru: 'в очереди' },
+
   linkable_empty: {
     uz: 'Bu mashina bo‘yicha bog‘lanadigan hisobot yo‘q',
     ru: 'По этой машине связанных отчётов нет',

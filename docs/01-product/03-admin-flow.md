@@ -226,6 +226,80 @@ Bu — nazorat halqasidagi yagona ochiq joy, shuning uchun u **yashirilmaydi**:
 
 Buxgalter — de-fakto kuzatuvchi: u barcha hisobotlarni ko'radi va oyni yopadi.
 
+## 8. E'lon (broadcast)
+
+Adminning barcha xodimlarga bir vaqtda xabar yetkazish vositasi: «ertaga ombor
+yopiq», «yangi qism narxi», «shanba ish kuni». Ilgari bu Telegram guruhida
+qilinardi — endi platformada, **iz bilan**.
+
+**Amal Mini App'da, yetkazish bot orqali.** Admin matnni Mini App'da yozadi;
+xabar har bir xodimga **shaxsiy** chatda keladi. Botda e'lon yozadigan buyruq
+**yo'q** ([bot doirasi](../03-integrations/02-telegram-bot-miniapp.md#1-vazifalarni-bolish)).
+
+```
+┌───────────────────────────────────────┐
+│  📢 E'lon                              │
+├───────────────────────────────────────┤
+│  ┌───────────────────────────────────┐│
+│  │ Ertaga ombor yopiq. Qism          ││
+│  │ kerak bo'lsa bugun oling.         ││
+│  │                                   ││
+│  └───────────────────────────────────┘│
+│  142 / 3500 belgi                     │
+│                                        │
+│  Qabul qiladi: 24 xodim               │
+│  ⚠️ Yuborilgan e'lon qaytarilmaydi     │
+│  [ 📤 Yuborish ]                       │
+├───────────────────────────────────────┤
+│  Tarix                                 │
+│  02.08 10:14 · 24 ta                  │
+│  «Ertaga ombor yopiq…»                │
+│  ✅ 24  ⏳ 0  ❌ 0                      │
+└───────────────────────────────────────┘
+```
+
+### Kimga boradi
+
+| Shart | Sabab |
+|---|---|
+| `status = active` | Bloklangan/ishdan ketgan xodim xabar olmaydi |
+| `deleted_at IS NULL` | O'chirilgan yozuv |
+| `tg_user_id IS NOT NULL` | Botga hali bog'lanmagan xodimga yuborib bo'lmaydi |
+
+Rol farqi **yo'q** — e'lon hammaga: usta ham, ta'minotchi ham, buxgalter ham.
+
+### Qoidalar
+
+| Qoida | Tafsilot |
+|---|---|
+| Faqat **admin** yuboradi | `role.kind = 'admin'`, serverda tekshiriladi |
+| Matn — **3500 belgigacha** | Telegram xabar chegarasidan zaxira bilan pastda |
+| Bo'sh matn qabul qilinmaydi | Faqat probel — xato |
+| **Qaytarib bo'lmaydi** | Yuborilgach o'chirish/tahrirlash yo'q — shuning uchun tasdiq oynasi |
+| Har e'lon `audit_log`da | `broadcast_sent` — kim, qachon, necha kishiga (R9) |
+| E'lon **hech qachon o'chirilmaydi** | Tarix — soft delete ham yo'q |
+
+### Yetkazish hisobi
+
+E'lon darhol emas, **navbat orqali** yetadi (`notifications` outbox). Tarixda
+har e'lon uchun uchta raqam ko'rinadi:
+
+| Belgi | Ma'nosi |
+|---|---|
+| ✅ **Yetkazildi** | Bot xabarni yubordi |
+| ⏳ **Navbatda** | Hali yuborilmagan yoki qayta urinishda |
+| ❌ **Yetmadi** | Xodim botni bloklagan yoki urinishlar tugadi |
+
+~150 xodimga to'liq yetkazish **~8 sekund** oladi (bitta fon tiki ichida), lekin
+oddiy bildirishnomalar e'londan **oldin** ketadi — narx kelishuvi e'lon ortida
+qolib ketmasin. Sabab va raqamlar:
+[bot bildirishnomalari](../03-integrations/02-telegram-bot-miniapp.md#elon-broadcast-yetkazish).
+
+**Bir xil matn ikki marta:** e'lon qaytarib bo'lmaydigan amal, shuning uchun
+bitta admin 60 sekund ichida aynan bir xil matnni qayta yuborsa yangi e'lon
+yaratilmaydi — mavjudi qaytariladi. Bu zaif internetdagi takroriy so'rovdan
+himoya (klient javobni ololmay so'rovni takrorlashi mumkin).
+
 ---
 
 **Keyingi:** [04. Rollar va shablonlar](04-roles-and-templates.md)

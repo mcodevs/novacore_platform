@@ -364,11 +364,36 @@ audit_log(id, actor_id, action, entity_type, entity_id,
 
 ```
 notifications(id, employee_id, template_code, payload jsonb,
-              status enum(pending|sent|failed), attempts, last_error, sent_at)
+              status enum(pending|sent|failed), attempts, last_error, sent_at,
+              broadcast_id FK → broadcasts null)
 ```
 
 Redis navbatsiz ishlaydi: oddiy `SELECT … FOR UPDATE SKIP LOCKED` sikli yetadi
 (kuniga ~50 xabar).
+
+**Indeks:** `broadcast_id` — e'lon kartochkasida yetkazish hisobi shu ustun
+bo'yicha sanaladi.
+
+### `broadcasts` — e'lonlar
+
+Admin barcha xodimlarga yuborgan xabar. Bitta e'lon → har bir qabul qiluvchiga
+bitta `notifications` yozuvi ([admin oqimi §8](../01-product/03-admin-flow.md#8-elon-broadcast)).
+
+| Ustun | Tur | Izoh |
+|---|---|---|
+| `id` | bigserial PK | |
+| `author_id` | FK → employees | Yuborgan admin (`role.kind = 'admin'`) |
+| `body` | text | **Xom matn** — HTML escape qilinmagan holda saqlanadi |
+| `recipients_total` | int | Navbatga qo'yilgan xodimlar soni (default 0) |
+| `created_at` | timestamptz | |
+
+> **Nima uchun xom matn:** escape yuborish payti, `notify_broadcast`ni
+> render qilishda qo'llanadi. Bazada `<` belgisi `&lt;` bo'lib qolsa, Mini App
+> tarixida e'lon buzilgan ko'rinardi
+> ([HTML escape](../03-integrations/02-telegram-bot-miniapp.md#elon-broadcast-yetkazish)).
+
+> ⚠️ **E'lon o'chirilmaydi** — soft delete ham yo'q (R9). Kim, qachon, nima
+> yozgani doimiy tarix bo'lib qoladi; `audit_log`da `broadcast_sent` yozuvi.
 
 ## 7. Yaxlitlik qoidalari
 

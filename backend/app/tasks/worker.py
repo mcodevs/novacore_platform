@@ -37,10 +37,50 @@ log = structlog.get_logger(__name__)
 
 MAX_ATTEMPTS = 5
 BATCH = 20
+# Bitta tikda ko'pi bilan shuncha xabar. E'lon bir zumda 150 ta yozuv qo'shadi:
+# eski BATCH=20 bilan u 8 tikka (~8 daqiqa) cho'zilar va ortidagi narx kelishuvi
+# bildirishnomasini ham shuncha ushlab turardi.
+MAX_PER_TICK = 300
+# Telegram ~30 xabar/sek ruxsat beradi — undan pastda turamiz.
+SEND_PAUSE_SEC = 0.05
+# Qayta urinish foydasiz bo'lgan xatolar — darhol `failed`
+TERMINAL_ERRORS = frozenset(
+    {"bot_blocked", "employee_inactive", "employee_without_telegram", "no_chat"}
+)
+RETRY_AFTER_PREFIX = "retry_after:"
+MAX_RETRY_AFTER_SEC = 3600
 
 
-async def dispatch_notifications(bot: Bot) -> int:
+def _reschedule(notification: Notification, error: str) -> None:
+    """Xatodan keyin: qayta urinish vaqti yoki yakuniy `failed`.
+
+    `retry_after:` — Telegram flood-limiti, ya'ni **vaqtinchalik** cheklov, xato
+    emas. Uni urinish sifatida sanasak, e'lon 5 ta flood-waitdan keyin butunlay
+    yiqilardi; kutish vaqti ham serverning o'z qiymatidan olinadi.
+    """
+    notification.last_error = error
+    if error.startswith(RETRY_AFTER_PREFIX):
+        try:
+            wait = int(error[len(RETRY_AFTER_PREFIX) :])
+        except ValueError:
+            wait = 5
+        wait = min(max(wait, 1), MAX_RETRY_AFTER_SEC)
+        notification.not_before = utcnow() + dt.timedelta(seconds=wait + 1)
+        return
+
+    notification.attempts += 1
+    if notification.attempts >= MAX_ATTEMPTS or error in TERMINAL_ERRORS:
+        notification.status = NotificationStatus.failed
+    else:
+        notification.not_before = utcnow() + dt.timedelta(
+            minutes=2 ** notification.attempts
+        )
+
+
+async def _dispatch_batch(bot: Bot, limit: int) -> tuple[int, int]:
+    """(yuborildi, ko'rib chiqildi) — bitta partiya."""
     sent = 0
+    seen = 0
     async with session_scope() as session:
         stmt = (
             sa.select(Notification)
@@ -48,32 +88,43 @@ async def dispatch_notifications(bot: Bot) -> int:
                 Notification.status == NotificationStatus.pending,
                 Notification.not_before <= utcnow(),
             )
-            .order_by(Notification.id)
-            .limit(BATCH)
+            # E'lon ommaviy, lekin shoshilinch emas: 150 kishilik e'lon narx
+            # kelishuvi yoki yangi hisobot signalini navbatda ushlab qolmasin.
+            .order_by(Notification.broadcast_id.is_not(None), Notification.id)
+            .limit(limit)
         )
         if not settings.is_sqlite:
             stmt = stmt.with_for_update(skip_locked=True)
 
         for notification in (await session.execute(stmt)).scalars().all():
+            seen += 1
             ok, error = await notifier.deliver(bot, session, notification)
-            notification.attempts += 1
             if ok:
+                notification.attempts += 1
                 notification.status = NotificationStatus.sent
                 notification.sent_at = utcnow()
                 sent += 1
             else:
-                notification.last_error = error
-                if notification.attempts >= MAX_ATTEMPTS or error in (
-                    "bot_blocked",
-                    "employee_inactive",
-                    "employee_without_telegram",
-                    "no_chat",
-                ):
-                    notification.status = NotificationStatus.failed
-                else:
-                    notification.not_before = utcnow() + dt.timedelta(
-                        minutes=2 ** notification.attempts
-                    )
+                _reschedule(notification, error or "unknown")
+            # Har yozuv alohida commit: deploy yoki ulanish uzilganda allaqachon
+            # Telegram'ga ketgan xabarlar `pending` bo'lib qolmasin (aks holda
+            # keyingi tik ularni qayta yuboradi — e'londa bu 20 kishigacha).
+            await session.commit()
+            await asyncio.sleep(SEND_PAUSE_SEC)
+    return sent, seen
+
+
+async def dispatch_notifications(bot: Bot) -> int:
+    """Navbatni bo'shatgunicha aylanadi (bitta tikda MAX_PER_TICK gacha)."""
+    sent = 0
+    handled = 0
+    while handled < MAX_PER_TICK:
+        limit = min(BATCH, MAX_PER_TICK - handled)
+        batch_sent, seen = await _dispatch_batch(bot, limit)
+        sent += batch_sent
+        handled += seen
+        if seen < limit:  # navbat bo'shadi
+            break
     return sent
 
 

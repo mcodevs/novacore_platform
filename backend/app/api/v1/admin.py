@@ -23,6 +23,7 @@ from app.db.models import (
     WorkCatalog,
 )
 from app.domain import audit
+from app.domain.broadcast import service as broadcast_service
 from app.domain.fleet import service as fleet_service
 from app.domain.role import permissions
 from app.domain.template import builder
@@ -478,6 +479,41 @@ async def fleet_sync(session: SessionDep, actor: AdminDep):
             "summary": report.summary(),
         }
     }
+
+
+# --- E'lonlar (broadcast) ------------------------------------------------------
+
+
+@router.post("/broadcasts", response_model=schemas.BroadcastOut, status_code=201)
+async def create_broadcast(payload: schemas.BroadcastIn, session: SessionDep, actor: AdminDep):
+    """E'lonni barcha faol xodimlarga yuboradi.
+
+    Amalning o'zi Mini App'da, bot faqat yetkazadi (CLAUDE.md). Ruxsat —
+    `AdminDep`, klient yuborgan hech narsaga ishonilmaydi. Matn xato bo'lsa
+    domen `ValidationFailed` (400) beradi.
+    """
+    broadcast = await broadcast_service.send(session, author=actor, body=payload.body)
+    # yangi yuborilgan e'londa hamma yozuv navbatda — hisob GET'da yangilanadi
+    return schemas.BroadcastOut(
+        id=broadcast.id,
+        body=broadcast.body,
+        recipients_total=broadcast.recipients_total,
+        created_at=broadcast.created_at,
+        author_name=actor.full_name,
+        pending=broadcast.recipients_total,
+    )
+
+
+@router.get("/broadcasts", response_model=list[schemas.BroadcastOut])
+async def list_broadcasts(
+    session: SessionDep, actor: AdminDep, limit: int = Query(20, ge=1, le=100)
+):
+    """Oxirgi e'lonlar tarixi — eng yangisi birinchi.
+
+    Matn xom holida qaytadi (botga ketishdan oldingi escape bu yerga tegmaydi).
+    R9: e'lon hech qachon o'chirilmaydi, shuning uchun filtr yo'q.
+    """
+    return await broadcast_service.history(session, limit=limit)
 
 
 # --- Audit va bayroqlar --------------------------------------------------------

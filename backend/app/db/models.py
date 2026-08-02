@@ -685,6 +685,20 @@ class AuditLog(Base):
     )
 
 
+class Broadcast(Base):
+    """Adminning barcha xodimlarga e'loni. ⚠️ Hech qachon o'chirilmaydi (R9) —
+    soft delete ham yo'q, chunki bu yuborilgan xabar tarixi."""
+
+    __tablename__ = "broadcasts"
+
+    id: Mapped[int] = mapped_column(PKType, primary_key=True, autoincrement=True)
+    author_id: Mapped[int] = mapped_column(sa.ForeignKey("employees.id"))
+    # XOM matn — HTML escape faqat botga yuborishdan oldin (app/bot/notifier.py)
+    body: Mapped[str] = mapped_column(sa.Text)
+    recipients_total: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[dt.datetime] = mapped_column(default=utcnow)
+
+
 class Notification(Base):
     """Chiquvchi navbat (outbox) — Redis o'rniga (ADR-0004)."""
 
@@ -693,6 +707,10 @@ class Notification(Base):
     id: Mapped[int] = mapped_column(PKType, primary_key=True, autoincrement=True)
     employee_id: Mapped[int | None] = mapped_column(sa.ForeignKey("employees.id"), default=None)
     chat_id: Mapped[int | None] = mapped_column(sa.BigInteger, default=None)  # guruh uchun
+    # e'lon yetkazilishini sanash uchun — JSON payload'dan so'ramaymiz (ustun tez)
+    broadcast_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("broadcasts.id"), default=None
+    )
     template_code: Mapped[str] = mapped_column(sa.Text)
     payload: Mapped[dict] = mapped_column(JSONType, default=dict)
     status: Mapped[NotificationStatus] = mapped_column(
@@ -704,7 +722,10 @@ class Notification(Base):
     sent_at: Mapped[dt.datetime | None] = mapped_column(default=None)
     created_at: Mapped[dt.datetime] = mapped_column(default=utcnow)
 
-    __table_args__ = (sa.Index("ix_notifications_status", "status", "not_before"),)
+    __table_args__ = (
+        sa.Index("ix_notifications_status", "status", "not_before"),
+        sa.Index("ix_notifications_broadcast", "broadcast_id"),
+    )
 
 
 class RefreshToken(Base):

@@ -5,6 +5,7 @@ Bildirishnoma **doim** bot orqali — Mini App yopiq bo'lsa ham yetadi.
 
 from __future__ import annotations
 
+import html
 from decimal import Decimal
 
 import structlog
@@ -39,6 +40,11 @@ async def render(
 
     payload.setdefault("hours", settings.price_auto_accept_hours)
     payload.setdefault("context", "")
+
+    if code == "notify_broadcast":
+        # e'lon matnini admin qo'lda yozadi: «<» bo'lsa Telegram butun xabarni
+        # rad etadi va e'lon hech kimga yetmaydi. DB'dagi matn xom qoladi.
+        payload["body"] = html.escape(str(payload.get("body", "")), quote=False)
 
     if code == "notify_new_submission" and submission_id and employee is not None:
         payload["context"] = await _price_hint(session, submission_id, employee, lang)

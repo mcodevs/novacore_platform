@@ -4,6 +4,7 @@ import { tg } from './telegram';
 import { unwrap } from './unwrap';
 import type {
   AuthResponse,
+  Broadcast,
   Dashboard,
   Employee,
   EmployeeStatus,
@@ -82,8 +83,14 @@ async function request<T>(
   try {
     response = await fetch(`${BASE}${path}`, { ...init, headers });
   } catch {
-    // tarmoq uzildi — bir marta qayta urinamiz
-    if (!retry) throw new ApiError('network', 'Tarmoq bilan aloqa yo‘q');
+    // Tarmoq uzildi — bir marta qayta urinamiz, lekin FAQAT o'qish so'rovlarida.
+    // ⚠️ `fetch` so'rov serverga yetib borib, javob yo'lda yo'qolganda ham rad
+    // etadi: yozuv so'rovini ko'r-ko'rona takrorlash amalni ikki marta bajaradi
+    // (e'lon hammaga ikki marta ketardi).
+    const method = (init.method ?? 'GET').toUpperCase();
+    if (!retry || method !== 'GET') {
+      throw new ApiError('network', 'Tarmoq bilan aloqa yo‘q');
+    }
     await new Promise((r) => setTimeout(r, 1200));
     return request<T>(path, init, false);
   }
@@ -352,6 +359,15 @@ export interface RoleInput {
   kind: RoleKind;
   template_ids: number[];
 }
+
+// --- E'lonlar (faqat admin) ---
+
+/** Matn XOM yuboriladi — HTML escape serverda, botga uzatishda qilinadi. */
+export const sendBroadcast = (body: string) =>
+  request<Broadcast>('/admin/broadcasts', { method: 'POST', body: JSON.stringify({ body }) });
+
+export const listBroadcasts = (limit = 20) =>
+  request<Broadcast[]>(`/admin/broadcasts?limit=${limit}`);
 
 export const createRole = (payload: RoleInput) =>
   request<{ id: number; code: string }>('/admin/roles', {

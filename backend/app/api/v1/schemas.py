@@ -334,3 +334,30 @@ class SetStatusRequest(BaseModel):
     """`active` / `blocked` / `fired` — R5: ma'lumot qoladi, kirish bloklanadi."""
 
     status: str
+
+
+class BroadcastIn(BaseModel):
+    """E'lon matni — **xom** ko'rinishda keladi va shundayligicha saqlanadi.
+
+    Uzunlik/bo'shlik tekshiruvi ataylab shu yerda emas, `domain/broadcast` da:
+    Pydantic 422 ni FastAPI o'z shaklida qaytaradi, domen xatosi esa hamma
+    joydagidek `{"error": {...}}` 400 bo'ladi — klient bitta shaklga tayanadi.
+    """
+
+    body: str
+
+
+class BroadcastOut(BaseModel):
+    """E'lon + yetkazilish hisobi (`notifications.broadcast_id` bo'yicha).
+
+    POST javobida barcha yozuvlar hali navbatda: `pending == recipients_total`.
+    """
+
+    id: int
+    body: str
+    recipients_total: int
+    created_at: dt.datetime
+    author_name: str
+    delivered: int = 0
+    failed: int = 0
+    pending: int = 0
