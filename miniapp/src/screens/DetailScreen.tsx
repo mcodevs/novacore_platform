@@ -10,10 +10,10 @@ import { useEffect, useState } from 'react';
 import * as api from '../api';
 import { ApiError } from '../api';
 import { dateTime, duration, money } from '../format';
-import { statusLabel, t } from '../i18n';
+import { t } from '../i18n';
 import { confirmAction, haptic } from '../telegram';
 import type { AuthResponse, PriceContext, Submission } from '../types';
-import { Card, Row, Skeleton } from '../ui';
+import { Card, Row, Skeleton, StatusBadge } from '../ui';
 
 interface Props {
   auth: AuthResponse;
@@ -81,7 +81,7 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
     <>
       <div className="header">
         <h1>{submission.number}</h1>
-        <span className="badge">{statusLabel(submission.status)}</span>
+        <StatusBadge status={submission.status} />
       </div>
 
       <Card>

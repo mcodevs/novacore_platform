@@ -123,8 +123,9 @@ export function applyTheme(): void {
   const root = document.documentElement;
   root.dataset.scheme = tg.colorScheme;
 
-  // Telegram paneli ham ilova foni bilan bir xil bo'lsin (chok ko'rinmasin)
-  const bg = tg.colorScheme === 'dark' ? '#000000' : '#ffffff';
+  // Telegram paneli ham ilova foni bilan bir xil bo'lsin (chok ko'rinmasin).
+  // Qiymatlar styles.css dagi --bg bilan sinxron.
+  const bg = tg.colorScheme === 'dark' ? '#0b0b11' : '#f7f8fa';
   try {
     tg.setBackgroundColor?.(bg);
     tg.setHeaderColor?.(bg);

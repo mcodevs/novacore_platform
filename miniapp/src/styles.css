@@ -1,7 +1,11 @@
 /* NovaCore Mini App — dizayn tizimi.
  *
- * Uslub: monoxrom (oq/qora), minimal, «haqiqiy ilova» hissi.
- * Rang faqat ma'no uchun ishlatiladi (xato, ogohlantirish, muvaffaqiyat).
+ * Uslub: minimal, «haqiqiy ilova» hissi. Asos — sokin neytral qatlamlar,
+ * ustiga **bitta** urg'u rangi (indigo) va uchta ma'noli rang.
+ *
+ * Rang qoidasi: urg'u — faqat asosiy amal, faol tab va e'tibor kerak bo'lgan
+ * raqamda. Ma'noli ranglar (yashil/sariq/qizil) — faqat holatni bildiradi.
+ * Qolgan hamma narsa neytral: shunda rang ko'zga tashlanadi va ma'no anglatadi.
  *
  * ⚠️ Telegram temasidagi ranglar ataylab qabul qilinmaydi — faqat `colorScheme`
  * (light/dark) olinadi. Aks holda har foydalanuvchining temasi tufayli ilova
@@ -13,54 +17,72 @@
 :root {
   color-scheme: light;
 
-  --bg: #ffffff;
+  /* Neytrallar sovuq ko'k tomonga bir oz siljitilgan — sof kulrang «o'lik»
+     ko'rinadi, bu esa ekranga chuqurlik va iliqlik beradi. */
+  --bg: #f7f8fa;
   --surface: #ffffff;
-  --surface-2: #f4f4f5;
-  --surface-3: #ebebed;
-  --border: #e4e4e7;
-  --text: #09090b;
-  --muted: #71717a;
+  --surface-2: #f1f2f6;
+  --surface-3: #e6e8ef;
+  --border: #e6e8ef;
+  --text: #15161c;
+  --muted: #6b6f80;
 
-  --accent: #09090b;
+  /* Bitta ishonchli urg'u rangi — indigo. Faqat asosiy amal, faol tab va
+     e'tibor talab qiladigan raqamda ishlatiladi. */
+  --accent: #4f46e5;
   --accent-text: #ffffff;
+  --accent-soft: rgba(79, 70, 229, 0.1);
 
-  --danger: #dc2626;
-  --success: #16a34a;
-  --warning: #b45309;
+  --danger: #d92d20;
+  --danger-soft: rgba(217, 45, 32, 0.1);
+  --success: #067647;
+  --success-soft: rgba(6, 118, 71, 0.1);
+  --warning: #b54708;
+  --warning-soft: rgba(181, 71, 8, 0.1);
 
-  --radius: 14px;
-  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-sm: 11px;
   --radius-pill: 999px;
   --gap: 12px;
 
   --tabbar-h: 58px;
-  --shadow: 0 1px 2px rgba(9, 9, 11, 0.04), 0 1px 3px rgba(9, 9, 11, 0.06);
+  --tabbar-bg: rgba(247, 248, 250, 0.82);
+  --shadow: 0 1px 2px rgba(21, 22, 28, 0.04), 0 4px 12px rgba(21, 22, 28, 0.05);
+  --shadow-accent: 0 4px 14px rgba(79, 70, 229, 0.28);
 
   /* Eski nom — hali ishlatilayotgan qoidalar uchun alias */
   --bg-secondary: var(--surface-2);
   --hint: var(--muted);
-  --link: var(--text);
+  --link: var(--accent);
 }
 
 :root[data-scheme='dark'] {
   color-scheme: dark;
 
-  --bg: #000000;
-  --surface: #0c0c0f;
-  --surface-2: #17171a;
-  --surface-3: #232327;
-  --border: #26262b;
-  --text: #fafafa;
-  --muted: #a1a1aa;
+  /* Sof qora (#000) emas: karta va fon farqi yo'qolib, ekran yassi ko'rinadi.
+     Bir oz ko'k tortgan tun rangi qatlamlarni ajratadi. */
+  --bg: #0b0b11;
+  --surface: #14151c;
+  --surface-2: #1c1e27;
+  --surface-3: #262935;
+  --border: #262935;
+  --text: #f2f3f7;
+  --muted: #9a9fb2;
 
-  --accent: #fafafa;
-  --accent-text: #09090b;
+  --accent: #8b85ff;
+  --accent-text: #12121a;
+  --accent-soft: rgba(139, 133, 255, 0.16);
 
-  --danger: #f87171;
+  --danger: #ff8a7a;
+  --danger-soft: rgba(255, 138, 122, 0.16);
   --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
   --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
 
-  --shadow: none;
+  --tabbar-bg: rgba(11, 11, 17, 0.82);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-accent: 0 4px 16px rgba(139, 133, 255, 0.25);
 }
 
 * {
@@ -152,12 +174,11 @@ body {
 }
 
 .card h2 {
-  margin: 0 0 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text);
+  letter-spacing: -0.01em;
 }
 
 /* --- Yorliq/qiymat qatori ----------------------------------------------- */
@@ -213,11 +234,24 @@ body {
 }
 
 .tile .value {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+}
+
+/* E'tibor talab qiladigan plitka — raqam rang bilan ajraladi (nol bo'lsa yo'q) */
+.tile.tone-warn .value {
+  color: var(--warning);
+}
+
+.tile.tone-accent .value {
+  color: var(--accent);
+}
+
+.tile.tone-good .value {
+  color: var(--success);
 }
 
 .tile .label {
@@ -231,15 +265,17 @@ body {
 button,
 .btn {
   font: inherit;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   border: 1px solid transparent;
   border-radius: var(--radius);
   padding: 14px 18px;
   background: var(--accent);
   color: var(--accent-text);
+  box-shadow: var(--shadow-accent);
   width: 100%;
   cursor: pointer;
-  min-height: 50px;
+  min-height: 52px;
   transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
@@ -261,9 +297,10 @@ button:disabled {
 }
 
 .btn-danger {
-  background: transparent;
+  background: var(--danger-soft);
   color: var(--danger);
-  border-color: currentColor;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .btn-row {
@@ -289,7 +326,7 @@ button:disabled {
   justify-content: center;
   gap: 2px;
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  background: var(--tabbar-bg);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-top: 1px solid var(--border);
@@ -308,12 +345,13 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   min-height: 46px;
   padding: 4px 2px;
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
+  box-shadow: none;
   color: var(--muted);
   font-size: 10px;
   font-weight: 600;
@@ -324,8 +362,7 @@ button:disabled {
 .tab .tab-icon {
   width: 22px;
   height: 22px;
-  opacity: 0.7;
-  transition: opacity 0.15s ease;
+  transition: transform 0.18s ease;
 }
 
 .tab .tab-text {
@@ -336,11 +373,15 @@ button:disabled {
 }
 
 .tab.active {
-  color: var(--text);
+  color: var(--accent);
 }
 
 .tab.active .tab-icon {
-  opacity: 1;
+  transform: translateY(-1px) scale(1.06);
+}
+
+.tab:active {
+  transform: none;
 }
 
 /* --- Profil ------------------------------------------------------------- */
@@ -354,18 +395,17 @@ button:disabled {
 
 .avatar {
   flex: none;
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: var(--radius-pill);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--accent-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--text);
+  color: var(--accent);
 }
 
 .profile-head .who {
@@ -471,6 +511,7 @@ label.field {
   flex: none;
   background: var(--surface);
   border: 1px solid var(--border);
+  box-shadow: none;
   border-radius: var(--radius-pill);
   padding: 9px 15px;
   width: auto;
@@ -485,6 +526,7 @@ label.field {
   background: var(--accent);
   color: var(--accent-text);
   border-color: var(--accent);
+  box-shadow: var(--shadow-accent);
 }
 
 /* --- Ro'yxat elementi --------------------------------------------------- */
@@ -495,6 +537,7 @@ label.field {
   text-align: left;
   background: transparent;
   border: none;
+  box-shadow: none;
   border-radius: var(--radius-sm);
   padding: 13px 0;
   margin: 0;
@@ -533,9 +576,69 @@ label.field {
 }
 
 .badge {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 13px;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 5px;
+}
+
+/* Holat — emoji emas, rangli nuqta bilan pill. Ro'yxatda holat bir qarashda
+   o'qiladi va emoji platformalar orasida sakramaydi. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 7px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
+.status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-wait {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.status-talk {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.status-good {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.status-bad {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.status-neutral {
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+/* Karta qatoridagi ijobiy/salbiy qiymat */
+.row strong.good {
+  color: var(--success);
+}
+
+.row strong.accent {
+  color: var(--accent);
 }
 
 /* --- Fotolar ------------------------------------------------------------ */
@@ -560,6 +663,7 @@ label.field {
 }
 
 .photo-slot button.remove {
+  box-shadow: none;
   position: absolute;
   top: 5px;
   right: 5px;
@@ -670,6 +774,7 @@ label.field {
   flex: 1;
   background: transparent;
   border: none;
+  box-shadow: none;
   color: var(--text);
   text-align: left;
   padding: 0;
@@ -686,6 +791,7 @@ label.field {
 }
 
 .builder-field-actions button {
+  box-shadow: none;
   width: 40px;
   min-height: 40px;
   padding: 0;

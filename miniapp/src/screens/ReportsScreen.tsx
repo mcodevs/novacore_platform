@@ -9,9 +9,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import * as api from '../api';
 import { money } from '../format';
-import { statusLabel, t } from '../i18n';
+import { t } from '../i18n';
 import type { Submission, SubmissionStatus } from '../types';
-import { Card, Skeleton } from '../ui';
+import { Card, Skeleton, StatusBadge } from '../ui';
 
 interface Props {
   onOpen(id: number): void;
@@ -97,8 +97,10 @@ export function ReportsScreen({ onOpen }: Props) {
               {item.auto_approved ? ' · ⓘ' : ''}
             </div>
             <div className="badge">
-              {statusLabel(item.status)} · {item.author_name} ·{' '}
-              {item.vehicle?.plate_display ?? '—'}
+              <StatusBadge status={item.status} />
+              <span>
+                {item.author_name} · {item.vehicle?.plate_display ?? '—'}
+              </span>
             </div>
           </button>
         ))}

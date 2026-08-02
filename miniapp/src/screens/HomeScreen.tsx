@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 
 import * as api from '../api';
 import { money, percent } from '../format';
-import { statusLabel, t } from '../i18n';
+import { t } from '../i18n';
 import type { AuthResponse, Dashboard, Submission } from '../types';
-import { Card, Row, Skeleton, Tile } from '../ui';
+import { Card, Row, Skeleton, StatusBadge, Tile } from '../ui';
 
 interface Props {
   auth: AuthResponse;
@@ -65,8 +65,16 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
           {board ? (
             <>
               <div className="grid">
-                <Tile value={board.pending_review} label={t('pending')} />
-                <Tile value={board.in_negotiation} label={t('in_negotiation')} />
+                <Tile
+                  value={board.pending_review}
+                  label={t('pending')}
+                  tone={board.pending_review > 0 ? 'warn' : undefined}
+                />
+                <Tile
+                  value={board.in_negotiation}
+                  label={t('in_negotiation')}
+                  tone={board.in_negotiation > 0 ? 'accent' : undefined}
+                />
                 <Tile value={board.vehicles_in_service} label={t('cars_in_service')} />
                 <Tile value={board.approved_count} label={t('approved_month')} />
               </div>
@@ -75,6 +83,7 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
                 <Row label={t('approved_sum')} value={money(board.approved_total)} />
                 <Row
                   label={t('savings')}
+                  tone={Number(board.saved) > 0 ? 'good' : undefined}
                   value={`${money(board.saved)} · ${percent(board.saved_pct)}`}
                 />
                 <Row label={t('parts_total')} value={money(board.parts_total)} />
@@ -107,8 +116,10 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
                     <strong>{item.number}</strong> · {money(item.proposed_labor_amount)}
                   </div>
                   <div className="badge">
-                    {statusLabel(item.status)} · {item.author_name} ·{' '}
-                    {item.vehicle?.plate_display ?? '—'}
+                    <StatusBadge status={item.status} />
+                    <span>
+                      {item.author_name} · {item.vehicle?.plate_display ?? '—'}
+                    </span>
                   </div>
                 </button>
               ))
@@ -132,9 +143,21 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
         <>
           <div className="grid">
             <Tile value={drafts.length} label={t('drafts')} />
-            <Tile value={negotiating.length} label={t('negotiation')} />
-            <Tile value={waiting.length} label={t('awaiting_review')} />
-            <Tile value={approved.length} label={t('approved_month')} />
+            <Tile
+              value={negotiating.length}
+              label={t('negotiation')}
+              tone={negotiating.length > 0 ? 'accent' : undefined}
+            />
+            <Tile
+              value={waiting.length}
+              label={t('awaiting_review')}
+              tone={waiting.length > 0 ? 'warn' : undefined}
+            />
+            <Tile
+              value={approved.length}
+              label={t('approved_month')}
+              tone={approved.length > 0 ? 'good' : undefined}
+            />
           </div>
 
           <Card title={t('this_month')}>
@@ -189,7 +212,8 @@ export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: P
                     {money(item.labor_amount ?? item.proposed_labor_amount)}
                   </div>
                   <div className="badge">
-                    {statusLabel(item.status)} · {item.vehicle?.plate_display ?? '—'}
+                    <StatusBadge status={item.status} />
+                    <span>{item.vehicle?.plate_display ?? '—'}</span>
                   </div>
                 </button>
               ))

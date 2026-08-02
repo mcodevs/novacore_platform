@@ -314,6 +314,21 @@ export const STATUS_LABEL: Record<SubmissionStatus, { uz: string; ru: string }> 
   paid: { uz: '💵 To‘langan', ru: '💵 Выплачен' },
 };
 
+/** Holatning vizual ohangi — ro'yxatdagi rangli belgini tanlaydi. */
+export type StatusTone = 'neutral' | 'wait' | 'talk' | 'good' | 'bad';
+
+export const STATUS_TONE: Record<SubmissionStatus, StatusTone> = {
+  draft: 'neutral',
+  submitted: 'wait',
+  in_review: 'wait',
+  price_negotiation: 'talk',
+  price_disputed: 'bad',
+  reopened: 'talk',
+  approved: 'good',
+  rejected: 'bad',
+  paid: 'good',
+};
+
 let current: Lang = 'uz';
 
 export function setLocale(lang: Lang): void {
@@ -336,6 +351,11 @@ export function t(key: string, params: Record<string, string | number> = {}): st
 
 export function statusLabel(status: SubmissionStatus): string {
   return STATUS_LABEL[status]?.[current] ?? status;
+}
+
+/** Emoji'siz matn — rangli belgida (`StatusBadge`) nuqta emoji o'rnini bosadi. */
+export function statusText(status: SubmissionStatus): string {
+  return statusLabel(status).replace(/^\S+\s+/, '');
 }
 
 export function label(value: { uz: string; ru?: string } | undefined): string {

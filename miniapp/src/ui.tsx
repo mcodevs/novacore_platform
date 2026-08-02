@@ -3,6 +3,9 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
+import { STATUS_TONE, statusText } from './i18n';
+import type { SubmissionStatus } from './types';
+
 export function Card({ title, children }: { title?: ReactNode; children: ReactNode }) {
   return (
     <div className="card">
@@ -12,26 +15,43 @@ export function Card({ title, children }: { title?: ReactNode; children: ReactNo
   );
 }
 
-export function Row({ label, value }: { label: ReactNode; value: ReactNode }) {
+export function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  /** Qiymatni rang bilan ajratadi (masalan tejamkorlik — yashil). */
+  tone?: 'good' | 'accent';
+}) {
   return (
     <div className="row">
       <span className="muted">{label}</span>
-      <strong>{value}</strong>
+      <strong className={tone}>{value}</strong>
     </div>
   );
+}
+
+/** Holat belgisi — rangli nuqta + matn. */
+export function StatusBadge({ status }: { status: SubmissionStatus }) {
+  return <span className={`status status-${STATUS_TONE[status]}`}>{statusText(status)}</span>;
 }
 
 export function Tile({
   value,
   label,
+  tone,
   onClick,
 }: {
   value: ReactNode;
   label: ReactNode;
+  /** Raqamni rang bilan ajratadi — faqat e'tibor kerak bo'lganda beriladi. */
+  tone?: 'warn' | 'accent' | 'good';
   onClick?: () => void;
 }) {
   return (
-    <button className="tile" onClick={onClick} type="button">
+    <button className={`tile${tone ? ` tone-${tone}` : ''}`} onClick={onClick} type="button">
       <div className="value">{value}</div>
       <div className="label">{label}</div>
     </button>
