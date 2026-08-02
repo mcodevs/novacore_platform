@@ -26,6 +26,13 @@ export const T: Dict = {
     ru: 'Эта страница должна открываться внутри Telegram.',
   },
 
+  // Pastki navigatsiya — qisqa yorliqlar (emoji alohida beriladi)
+  nav_home: { uz: 'Asosiy', ru: 'Главная' },
+  nav_reports: { uz: 'Hisobotlar', ru: 'Отчёты' },
+  nav_period: { uz: 'Davr', ru: 'Период' },
+  nav_team: { uz: 'Xodimlar', ru: 'Сотрудники' },
+  nav_profile: { uz: 'Profil', ru: 'Профиль' },
+
   // Bosh ekran
   in_workshop: { uz: 'Ustaxonada', ru: 'В сервисе' },
   drafts: { uz: 'Qoralamalar', ru: 'Черновики' },

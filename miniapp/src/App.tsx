@@ -1,4 +1,11 @@
-/** Ilova qobig'i: auth, oddiy navigatsiya, Telegram BackButton. */
+/** Ilova qobig'i: auth, pastki navigatsiya, Telegram BackButton.
+ *
+ * Navigatsiya ikki qatlamli:
+ *  • **Tab** — ildiz bo'limlar (pastki panel). Tanlansa stek almashadi.
+ *  • **Push** — vazifa ekranlari (kartochka, forma, tahrir). Ular tab ustiga
+ *    qo'yiladi, orqaga qaytish Telegram BackButton bilan. Push turganda pastki
+ *    panel yashiriladi — diqqat bitta vazifada qolsin.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -16,8 +23,9 @@ import { ReportsScreen } from './screens/ReportsScreen';
 import { RoleEditScreen } from './screens/RoleEditScreen';
 import { TemplateEditScreen } from './screens/TemplateEditScreen';
 import { tg, waitForInitData } from './telegram';
-import type { AuthResponse, Lang } from './types';
-import { Skeleton, useToast } from './ui';
+import type { AuthResponse, Lang, RoleKind } from './types';
+import { Skeleton, TabBar, useToast } from './ui';
+import type { Tab } from './ui';
 
 type Route =
   | { name: 'home' }
@@ -30,6 +38,20 @@ type Route =
   | { name: 'period' }
   | { name: 'template'; id: number | null }
   | { name: 'role'; id: number | null };
+
+/** Ildiz bo'limlar — rolga qarab. Qolgani (xodimlar, konstruktor) bosh
+ *  ekrandagi admin bo'limidan ochiladi: pastki panel 4 tadan oshmasin. */
+function tabsFor(kind: RoleKind): Tab[] {
+  const home: Tab = { key: 'home', icon: 'home', label: t('nav_home') };
+  const profile: Tab = { key: 'profile', icon: 'profile', label: t('nav_profile') };
+  if (kind === 'reporter') return [home, profile];
+  return [
+    home,
+    { key: 'reports', icon: 'reports', label: t('nav_reports') },
+    { key: 'period', icon: 'period', label: t('nav_period') },
+    profile,
+  ];
+}
 
 export function App() {
   const [auth, setAuth] = useState<AuthResponse | null>(null);
@@ -126,21 +148,23 @@ export function App() {
     setAuth((prev) => (prev ? { ...prev, employee: { ...prev.employee, lang } } : prev));
   }
 
+  const tabs = tabsFor(auth.employee.role.kind);
+
+  /** Tab — ildiz bo'lim: stek almashadi, push tarixi tozalanadi. */
+  function selectTab(key: string) {
+    setStack([{ name: key } as Route]);
+  }
+
   return (
     <div className="app">
       {route.name !== 'home' ? null : (
         <div className="header">
           <h1>
-            {auth.employee.role.icon} NovaCore — {auth.employee.role.name}
+            {auth.employee.full_name.split(/\s+/)[0]}
+            <span className="sub">
+              {auth.employee.role.icon} {auth.employee.role.name}
+            </span>
           </h1>
-          <button
-            type="button"
-            className="chip"
-            onClick={() => push({ name: 'profile' })}
-            aria-label={t('profile')}
-          >
-            👤
-          </button>
         </div>
       )}
 
@@ -151,8 +175,6 @@ export function App() {
           onCreate={(code) => void createReport(code)}
           onBuilder={() => push({ name: 'builder' })}
           onEmployees={() => push({ name: 'employees' })}
-          onReports={() => push({ name: 'reports' })}
-          onPeriod={() => push({ name: 'period' })}
         />
       ) : null}
 
@@ -220,6 +242,11 @@ export function App() {
 
       {route.name === 'profile' ? (
         <ProfileScreen auth={auth} onLangChange={changeLang} />
+      ) : null}
+
+      {/* Push turganda panel yashiriladi — vazifa ekrani to'liq bo'lsin */}
+      {stack.length === 1 ? (
+        <TabBar tabs={tabs} active={route.name} onSelect={selectTab} />
       ) : null}
 
       {toast}

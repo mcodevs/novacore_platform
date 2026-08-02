@@ -6,7 +6,7 @@ import * as api from '../api';
 import { money, percent } from '../format';
 import { setLocale, t } from '../i18n';
 import type { AuthResponse, Lang, PriceStats } from '../types';
-import { Card, Row, Skeleton } from '../ui';
+import { Avatar, Card, Row, Skeleton } from '../ui';
 
 interface Props {
   auth: AuthResponse;
@@ -29,14 +29,18 @@ export function ProfileScreen({ auth, onLangChange }: Props) {
 
   return (
     <>
-      <div className="header">
-        <h1>{t('profile')}</h1>
+      <div className="profile-head">
+        <Avatar name={auth.employee.full_name} />
+        <div className="who">
+          <div className="name">{auth.employee.full_name}</div>
+          <div className="meta">
+            {auth.employee.role.icon} {auth.employee.role.name}
+          </div>
+        </div>
       </div>
 
       <Card>
-        <Row label={auth.employee.role.icon} value={auth.employee.full_name} />
-        <Row label={t('profile')} value={auth.employee.role.name} />
-        <Row label="📱" value={auth.employee.phone} />
+        <Row label={t('phone')} value={auth.employee.phone} />
         {auth.employee.workshop_name ? (
           <Row label={t('workshop')} value={auth.employee.workshop_name} />
         ) : null}

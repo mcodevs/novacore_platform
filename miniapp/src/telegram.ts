@@ -47,6 +47,14 @@ export interface WebApp {
   showConfirm(message: string, cb: (ok: boolean) => void): void;
   onEvent(event: string, cb: () => void): void;
   offEvent(event: string, cb: () => void): void;
+
+  // Quyidagilar eski klientlarda bo'lmasligi mumkin — chaqirishdan oldin
+  // mavjudligi tekshiriladi (Bot API 6.1+ / 7.7+).
+  viewportHeight?: number;
+  viewportStableHeight?: number;
+  disableVerticalSwipes?(): void;
+  setBackgroundColor?(color: string): void;
+  setHeaderColor?(color: string): void;
 }
 
 const noop = () => {};
@@ -105,25 +113,48 @@ export async function waitForInitData(timeoutMs = 2000): Promise<boolean> {
   return false;
 }
 
-/** Telegram temasini CSS o'zgaruvchilariga ko'chiradi. */
+/** Light/dark rejimni ilovaga uzatadi.
+ *
+ * ⚠️ Telegram `themeParams` **ranglari ataylab olinmaydi**. Ilova monoxrom
+ * (oq/qora) palitraga ega: foydalanuvchining temasiga qarab ranglar sakrasa,
+ * kontrast va ko'rinish kafolatlanmasdi. Bizga faqat `colorScheme` kerak.
+ */
 export function applyTheme(): void {
   const root = document.documentElement;
-  const params = tg.themeParams || {};
-  const map: Record<string, string> = {
-    bg_color: '--bg',
-    secondary_bg_color: '--bg-secondary',
-    text_color: '--text',
-    hint_color: '--hint',
-    link_color: '--link',
-    button_color: '--accent',
-    button_text_color: '--accent-text',
-    destructive_text_color: '--danger',
-  };
-  for (const [key, cssVar] of Object.entries(map)) {
-    const value = params[key];
-    if (value) root.style.setProperty(cssVar, value);
-  }
   root.dataset.scheme = tg.colorScheme;
+
+  // Telegram paneli ham ilova foni bilan bir xil bo'lsin (chok ko'rinmasin)
+  const bg = tg.colorScheme === 'dark' ? '#000000' : '#ffffff';
+  try {
+    tg.setBackgroundColor?.(bg);
+    tg.setHeaderColor?.(bg);
+  } catch {
+    /* eski klient — e'tiborsiz */
+  }
+}
+
+/** Telegram WebView scroll muammolariga qarshi himoya.
+ *
+ * 1. `disableVerticalSwipes` — pastga tortilganda ilova yopilib ketmasin
+ *    (ro'yxatni scroll qilayotganda tez-tez sodir bo'lardi). Bot API 7.7+.
+ * 2. `--vh` — klaviatura ochilganda `100vh` noto'g'ri bo'ladi; haqiqiy
+ *    balandlik `viewportStableHeight` dan olinadi.
+ */
+export function guardScroll(): void {
+  try {
+    tg.disableVerticalSwipes?.();
+  } catch {
+    /* eski klient — e'tiborsiz */
+  }
+
+  const setViewport = () => {
+    const height = tg.viewportStableHeight || tg.viewportHeight;
+    if (height) {
+      document.documentElement.style.setProperty('--vh', `${height}px`);
+    }
+  };
+  setViewport();
+  tg.onEvent('viewportChanged', setViewport);
 }
 
 export function haptic(type: 'success' | 'error' | 'warning'): void {
@@ -142,5 +173,6 @@ export function init(): void {
   tg.ready();
   tg.expand();
   applyTheme();
+  guardScroll();
   tg.onEvent('themeChanged', applyTheme);
 }

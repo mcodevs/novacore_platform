@@ -1,19 +1,66 @@
-/* Telegram temasiga moslashadigan minimal uslublar.
-   Katta tugmalar — usta qo'li moyli, qo'lqopda. */
+/* NovaCore Mini App — dizayn tizimi.
+ *
+ * Uslub: monoxrom (oq/qora), minimal, «haqiqiy ilova» hissi.
+ * Rang faqat ma'no uchun ishlatiladi (xato, ogohlantirish, muvaffaqiyat).
+ *
+ * ⚠️ Telegram temasidagi ranglar ataylab qabul qilinmaydi — faqat `colorScheme`
+ * (light/dark) olinadi. Aks holda har foydalanuvchining temasi tufayli ilova
+ * har xil ko'rinardi va kontrast kafolatlanmasdi. Qarang: telegram.ts applyTheme.
+ *
+ * Katta teginish maydonlari saqlanadi — usta qo'li moyli, qo'lqopda.
+ */
 
 :root {
+  color-scheme: light;
+
   --bg: #ffffff;
-  --bg-secondary: #f2f2f7;
-  --text: #000000;
-  --hint: #8e8e93;
-  --link: #2481cc;
-  --accent: #2481cc;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-3: #ebebed;
+  --border: #e4e4e7;
+  --text: #09090b;
+  --muted: #71717a;
+
+  --accent: #09090b;
   --accent-text: #ffffff;
-  --danger: #e53935;
-  --success: #1f9d55;
-  --warning: #f0a500;
-  --radius: 12px;
+
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #b45309;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
   --gap: 12px;
+
+  --tabbar-h: 58px;
+  --shadow: 0 1px 2px rgba(9, 9, 11, 0.04), 0 1px 3px rgba(9, 9, 11, 0.06);
+
+  /* Eski nom — hali ishlatilayotgan qoidalar uchun alias */
+  --bg-secondary: var(--surface-2);
+  --hint: var(--muted);
+  --link: var(--text);
+}
+
+:root[data-scheme='dark'] {
+  color-scheme: dark;
+
+  --bg: #000000;
+  --surface: #0c0c0f;
+  --surface-2: #17171a;
+  --surface-3: #232327;
+  --border: #26262b;
+  --text: #fafafa;
+  --muted: #a1a1aa;
+
+  --accent: #fafafa;
+  --accent-text: #09090b;
+
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+
+  --shadow: none;
 }
 
 * {
@@ -21,12 +68,20 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* --- Scroll himoyasi (Telegram WebView) ---------------------------------
+ * Muammolar: pastga tortilganda ilova yopilib ketadi; sahifa «rezina» bo'lib
+ * sakraydi; `100vh` klaviatura ochilganda noto'g'ri. Yechim: hujjat o'zi
+ * scroll qilmaydi (`overflow: hidden`), scroll faqat `#root` ichida bo'ladi va
+ * u chetga «o'tib ketmaydi» (`overscroll-behavior: contain`).
+ * Buni telegram.ts dagi `disableVerticalSwipes()` to'ldiradi.
+ */
 html,
-body,
-#root {
+body {
   margin: 0;
   padding: 0;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
@@ -35,146 +90,340 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app {
-  padding: 12px 12px 96px;
   max-width: 560px;
   margin: 0 auto;
+  padding: 8px 16px calc(var(--tabbar-h) + 24px + env(safe-area-inset-bottom));
 }
+
+/* --- Sarlavha ----------------------------------------------------------- */
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 12px;
+  padding: 8px 0 16px;
 }
 
 .header h1 {
-  font-size: 18px;
   margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.header .sub {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+  margin-top: 2px;
 }
 
 .muted {
-  color: var(--hint);
+  color: var(--muted);
   font-size: 14px;
 }
 
+/* --- Karta -------------------------------------------------------------- */
+
 .card {
-  background: var(--bg-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 16px;
   margin-bottom: var(--gap);
+  box-shadow: var(--shadow);
 }
 
 .card h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
+
+/* --- Yorliq/qiymat qatori ----------------------------------------------- */
 
 .row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 11px 0;
 }
 
 .row + .row {
-  border-top: 1px solid rgba(128, 128, 128, 0.18);
+  border-top: 1px solid var(--border);
+}
+
+.row > .muted {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .row strong {
+  flex: 0 1 auto;
   font-variant-numeric: tabular-nums;
-  /* Tor ekranda summa ikki qatorga sinsa ham o'ng chetga tekislangan qolsin */
+  font-weight: 600;
   text-align: right;
 }
+
+/* --- Statistika plitkalari ---------------------------------------------- */
 
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   align-items: start;
-  gap: var(--gap);
-  /* Keyingi karta bilan yopishmasin: foni bir xil bo'lgani uchun ular
-     qo'shilib ko'rinib, ustunlar orasidagi bo'shliq «qora xanjar» bo'lardi. */
+  gap: 10px;
   margin-bottom: var(--gap);
 }
 
 .tile {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background: var(--bg-secondary);
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: 14px;
   text-align: left;
-  border: none;
   color: inherit;
   font: inherit;
   width: 100%;
+  min-height: 0;
+  box-shadow: var(--shadow);
 }
 
 .tile .value {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
-  /* Katta raqamda body'ning 1.45 leading'i ortiqcha bo'shliq beradi */
   line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .tile .label {
-  color: var(--hint);
+  color: var(--muted);
   font-size: 13px;
+  line-height: 1.3;
 }
+
+/* --- Tugmalar ----------------------------------------------------------- */
 
 button,
 .btn {
   font: inherit;
-  border: none;
+  font-weight: 600;
+  border: 1px solid transparent;
   border-radius: var(--radius);
-  padding: 14px 16px;
+  padding: 14px 18px;
   background: var(--accent);
   color: var(--accent-text);
   width: 100%;
   cursor: pointer;
-  min-height: 48px;
+  min-height: 50px;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+button:active {
+  transform: scale(0.985);
+  opacity: 0.9;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
+  transform: none;
 }
 
 .btn-secondary {
-  background: var(--bg-secondary);
+  background: var(--surface);
   color: var(--text);
+  border-color: var(--border);
+  box-shadow: var(--shadow);
 }
 
 .btn-danger {
   background: transparent;
   color: var(--danger);
-  border: 1px solid currentColor;
+  border-color: currentColor;
 }
 
 .btn-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  margin-bottom: var(--gap);
 }
 
 .btn-row > * {
   flex: 1;
+  margin-bottom: 0;
 }
+
+/* --- Pastki navigatsiya ------------------------------------------------- */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--border);
+}
+
+.tabbar-inner {
+  display: flex;
+  width: 100%;
+  max-width: 560px;
+  gap: 2px;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 46px;
+  padding: 4px 2px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  width: auto;
+}
+
+.tab .tab-icon {
+  width: 22px;
+  height: 22px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.tab .tab-text {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab.active {
+  color: var(--text);
+}
+
+.tab.active .tab-icon {
+  opacity: 1;
+}
+
+/* --- Profil ------------------------------------------------------------- */
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0 20px;
+}
+
+.avatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.profile-head .who {
+  min-width: 0;
+}
+
+.profile-head .name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-head .meta {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Sarlavhadagi kichik avatar tugmasi */
+.avatar-btn {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Kirish maydonlari -------------------------------------------------- */
 
 input,
 textarea,
 select {
   font: inherit;
   width: 100%;
-  padding: 14px;
-  border-radius: var(--radius);
-  border: 1px solid rgba(128, 128, 128, 0.3);
+  padding: 13px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
-  min-height: 48px;
+  min-height: 50px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--text);
 }
 
 textarea {
@@ -186,12 +435,13 @@ label.field {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
+  font-size: 14px;
 }
 
 .hint {
-  color: var(--hint);
+  color: var(--muted);
   font-size: 13px;
-  margin: 4px 0 0;
+  margin: 6px 0 0;
 }
 
 .error {
@@ -200,41 +450,95 @@ label.field {
   margin-top: 6px;
 }
 
+/* --- Chiplar ------------------------------------------------------------ */
+
 .chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: var(--gap);
+  padding-bottom: 2px;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
 }
 
 .chip {
-  background: var(--bg-secondary);
-  border-radius: 999px;
-  padding: 10px 14px;
+  flex: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 9px 15px;
   width: auto;
   min-height: 40px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text);
+  white-space: nowrap;
 }
 
 .chip.active {
   background: var(--accent);
   color: var(--accent-text);
+  border-color: var(--accent);
 }
+
+/* --- Ro'yxat elementi --------------------------------------------------- */
 
 .list-item {
   display: block;
   width: 100%;
   text-align: left;
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 0;
+  margin: 0;
   color: inherit;
+  font-weight: 400;
+  min-height: 0;
+}
+
+.list-item + .list-item {
+  border-top: 1px solid var(--border);
+}
+
+/* Kartadan tashqarida turgan ro'yxat (masalan shablon tanlash) */
+.card > .list-item:first-of-type {
+  padding-top: 4px;
+}
+
+.list-item strong {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Tanlangan element (masalan hisobotni bog'lash ro'yxati) */
+.list-item.active {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding-left: 12px;
+  padding-right: 12px;
+  margin: 0 -12px;
+  width: calc(100% + 24px);
+}
+
+/* Ro'yxatdan keyingi oddiy tugma yopishib qolmasin */
+.list-item + button:not(.list-item) {
+  margin-top: 14px;
 }
 
 .badge {
   font-size: 13px;
-  color: var(--hint);
+  color: var(--muted);
+  margin-top: 2px;
 }
+
+/* --- Fotolar ------------------------------------------------------------ */
 
 .photos {
   display: grid;
@@ -247,7 +551,8 @@ label.field {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
 }
 
 .photo-slot {
@@ -256,78 +561,102 @@ label.field {
 
 .photo-slot button.remove {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 5px;
+  right: 5px;
   width: 26px;
   height: 26px;
   min-height: 26px;
   padding: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.65);
   color: #fff;
   line-height: 1;
+  font-size: 14px;
 }
+
+/* --- Qadam indikatori --------------------------------------------------- */
 
 .stepper {
   display: flex;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .stepper span {
   flex: 1;
-  height: 4px;
+  height: 3px;
   border-radius: 2px;
-  background: rgba(128, 128, 128, 0.25);
+  background: var(--surface-3);
 }
 
 .stepper span.done {
   background: var(--accent);
 }
 
+/* --- Skeleton / toast --------------------------------------------------- */
+
 .skeleton {
-  background: linear-gradient(90deg, rgba(128, 128, 128, 0.12), rgba(128, 128, 128, 0.24), rgba(128, 128, 128, 0.12));
+  background: var(--surface-2);
   border-radius: var(--radius);
   height: 72px;
   margin-bottom: var(--gap);
-  animation: pulse 1.2s ease-in-out infinite;
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .toast {
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom));
+  max-width: 528px;
+  margin: 0 auto;
   background: var(--text);
   color: var(--bg);
-  padding: 12px 14px;
+  padding: 13px 16px;
   border-radius: var(--radius);
   text-align: center;
-  z-index: 20;
+  font-size: 15px;
+  font-weight: 500;
+  z-index: 40;
+  animation: toast-in 0.2s ease;
 }
 
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* --- Maxsus holatlar ---------------------------------------------------- */
+
 .negotiation {
-  border-left: 3px solid var(--warning);
-  padding-left: 10px;
+  border-left: 2px solid var(--warning);
+  padding-left: 12px;
 }
 
 .history {
   font-size: 13px;
-  color: var(--hint);
+  color: var(--muted);
   margin-top: 4px;
 }
 
-/* --- Konstruktor (Faza 2) --- */
+/* --- Konstruktor (Faza 2) ----------------------------------------------- */
 
 .builder-field {
-  border: 1px solid rgba(128, 128, 128, 0.25);
-  border-radius: var(--radius);
-  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
   margin-bottom: 8px;
 }
 
@@ -340,6 +669,7 @@ label.field {
 .builder-field-head .link {
   flex: 1;
   background: transparent;
+  border: none;
   color: var(--text);
   text-align: left;
   padding: 0;
@@ -359,29 +689,32 @@ label.field {
   width: 40px;
   min-height: 40px;
   padding: 0;
-  background: var(--bg-secondary);
+  background: var(--surface-2);
+  border-color: var(--border);
   color: var(--text);
 }
 
 .builder-field-body {
-  margin-top: 10px;
-  border-top: 1px dashed rgba(128, 128, 128, 0.25);
-  padding-top: 10px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
 }
 
 .card label {
   display: block;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: var(--hint);
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .card label input,
 .card label select,
 .card label textarea {
-  margin-top: 4px;
+  margin-top: 6px;
   color: var(--text);
   font-size: 16px;
+  font-weight: 400;
 }
 
 label.switch {
@@ -390,6 +723,7 @@ label.switch {
   gap: 10px;
   color: var(--text);
   font-size: 16px;
+  font-weight: 400;
   min-height: 44px;
 }
 
@@ -398,4 +732,5 @@ label.switch input {
   min-height: 22px;
   margin: 0;
   flex: none;
+  accent-color: var(--accent);
 }

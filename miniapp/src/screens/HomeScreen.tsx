@@ -14,19 +14,10 @@ interface Props {
   onCreate(templateCode: string): void;
   onBuilder(): void;
   onEmployees(): void;
-  onReports(): void;
-  onPeriod(): void;
 }
 
-export function HomeScreen({
-  auth,
-  onOpen,
-  onCreate,
-  onBuilder,
-  onEmployees,
-  onReports,
-  onPeriod,
-}: Props) {
+/** Hisobotlar va davr — pastki paneldagi tab. Bu yerda takrorlanmaydi. */
+export function HomeScreen({ auth, onOpen, onCreate, onBuilder, onEmployees }: Props) {
   const kind = auth.employee.role.kind;
   const isReporter = kind === 'reporter' || kind === 'admin';
   const seesAll = kind === 'admin' || kind === 'accountant';
@@ -83,8 +74,8 @@ export function HomeScreen({
                 <Row label={t('requested')} value={money(board.proposed_total)} />
                 <Row label={t('approved_sum')} value={money(board.approved_total)} />
                 <Row
-                  label={`💰 ${t('savings')}`}
-                  value={`${money(board.saved)} (${percent(board.saved_pct)})`}
+                  label={t('savings')}
+                  value={`${money(board.saved)} · ${percent(board.saved_pct)}`}
                 />
                 <Row label={t('parts_total')} value={money(board.parts_total)} />
                 {board.auto_approved_count > 0 ? (
@@ -124,17 +115,8 @@ export function HomeScreen({
             )}
           </Card>
 
-          <div className="btn-row" style={{ marginBottom: 12 }}>
-            <button type="button" className="btn-secondary" onClick={onReports}>
-              {t('all_reports')}
-            </button>
-            <button type="button" className="btn-secondary" onClick={onPeriod}>
-              {t('period')}
-            </button>
-          </div>
-
           {kind === 'admin' ? (
-            <div className="btn-row" style={{ marginBottom: 12 }}>
+            <div className="btn-row">
               <button type="button" className="btn-secondary" onClick={onEmployees}>
                 {t('employees')}
               </button>
@@ -184,7 +166,7 @@ export function HomeScreen({
               ))}
             </Card>
           ) : (
-            <button type="button" onClick={startReport} style={{ marginBottom: 12 }}>
+            <button type="button" onClick={startReport} style={{ marginBottom: 'var(--gap)' }}>
               {t('car_arrived')}
             </button>
           )}
