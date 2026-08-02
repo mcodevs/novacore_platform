@@ -87,6 +87,8 @@ body {
 
 .row strong {
   font-variant-numeric: tabular-nums;
+  /* Tor ekranda summa ikki qatorga sinsa ham o'ng chetga tekislangan qolsin */
+  text-align: right;
 }
 
 .grid {
@@ -94,6 +96,9 @@ body {
   grid-template-columns: repeat(2, 1fr);
   align-items: start;
   gap: var(--gap);
+  /* Keyingi karta bilan yopishmasin: foni bir xil bo'lgani uchun ular
+     qo'shilib ko'rinib, ustunlar orasidagi bo'shliq «qora xanjar» bo'lardi. */
+  margin-bottom: var(--gap);
 }
 
 .tile {
@@ -113,6 +118,8 @@ body {
 .tile .value {
   font-size: 24px;
   font-weight: 700;
+  /* Katta raqamda body'ning 1.45 leading'i ortiqcha bo'shliq beradi */
+  line-height: 1.15;
 }
 
 .tile .label {
