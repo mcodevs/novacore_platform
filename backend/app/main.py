@@ -12,6 +12,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.types import Scope
 
 from app.api.v1 import api_router
 from app.bot.bot import get_bot, get_dispatcher
@@ -97,8 +98,30 @@ app.include_router(api_router, prefix="/api/v1")
 
 # Mini App shu domendan beriladi (HTTPS — Telegram talabi): https://<host>/app
 MINIAPP_DIST = Path(__file__).resolve().parent.parent / "miniapp_dist"
+
+
+class _MiniAppStatic(StaticFiles):
+    """HTML (index.html) keshlanmaydi, hash'langan assetlar uzoq keshda.
+
+    Telegram WebView `index.html` ni keshlab, eski (hash'i o'zgargan) CSS/JS
+    fayllariga ishora qilib qolardi → deploy chiqsa ham eski ko'rinish. HTML'ni
+    `no-cache` bilan berish har ochilganda yangi bundle'ni kafolatlaydi;
+    `/assets/*` fayllari nomida hash bo'lgani uchun bemalol immutable keshlanadi.
+    """
+
+    async def get_response(self, path: str, scope: Scope):  # type: ignore[override]
+        resp = await super().get_response(path, scope)
+        content_type = resp.headers.get("content-type", "")
+        if content_type.startswith("text/html"):
+            resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+        elif path.startswith("assets/"):
+            # Vite hash'langan fayllar — nomi o'zgarganda yangilanadi
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return resp
+
+
 if MINIAPP_DIST.is_dir():
-    app.mount("/app", StaticFiles(directory=MINIAPP_DIST, html=True), name="miniapp")
+    app.mount("/app", _MiniAppStatic(directory=MINIAPP_DIST, html=True), name="miniapp")
     if not settings.miniapp_url:
         settings.miniapp_url = f"{settings.base_url.rstrip('/')}/app"
     log.info("miniapp_mounted", url=settings.miniapp_url)
