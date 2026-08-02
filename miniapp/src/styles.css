@@ -92,10 +92,14 @@ body {
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  align-items: start;
   gap: var(--gap);
 }
 
 .tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   background: var(--bg-secondary);
   border-radius: var(--radius);
   padding: 12px;
