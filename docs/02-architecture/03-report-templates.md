@@ -39,7 +39,6 @@ Yangi rol = yangi JSON, yangi kod emas.
     "vehicle":       "plate",
     "labor_amount":  "@lines.labor",
     "parts_amount":  "@lines.part",
-    "odometer":      "odometer_value",
     "started_at":    "@auto.first_save",
     "finished_at":   "@auto.submit"
   },
@@ -66,22 +65,6 @@ Yangi rol = yangi JSON, yangi kod emas.
       "type": "photo",
       "required": true,
       "options": { "min": 1, "max": 2, "camera_only": true }
-    },
-    {
-      "code": "odometer_photo",
-      "section": "before",
-      "label": { "uz": "Panel (probeg)" },
-      "type": "photo",
-      "required": true,
-      "options": { "min": 1, "max": 1, "camera_only": true }
-    },
-    {
-      "code": "odometer_value",
-      "section": "before",
-      "label": { "uz": "Probeg (km)" },
-      "type": "number",
-      "required": true,
-      "validation": { "min": 0, "max": 999999, "monotonic_for_vehicle": true }
     },
     {
       "code": "category",
@@ -161,7 +144,7 @@ Yangi rol = yangi JSON, yangi kod emas.
 |---|---|---|
 | `text` | `max_length` | `"matn"` |
 | `textarea` | `min_length`, `max_length` | `"uzun matn"` |
-| `number` | `min`, `max`, `step`, `monotonic_for_vehicle` | `48250` |
+| `number` | `min`, `max`, `step` | `48250` |
 | `money` | `min`, `max` | `150000.00` |
 | `bool` | — | `true` |
 | `select` | `choices[]` yoki `source: "catalog:xxx"` | `"brakes"` |
@@ -203,7 +186,6 @@ Yechim: shablon o'z maydonlaridan qaysi biri **yadro tushunchasi** ekanini aytad
 | **Tasdiqlangan ish haqi** | `labor_amount` | `submissions.labor_amount` |
 | Material xarajati | `parts_amount` | `submissions.parts_amount` |
 | Umumiy summa | `total_amount` | `submissions.total_amount` |
-| Probeg | `odometer` | `submissions.odometer_km` |
 | Boshlanish/tugash | `started_at` / `finished_at` | shu nomdagi ustunlar |
 
 Maxsus qiymatlar:
@@ -262,14 +244,28 @@ Klient (Mini App)          Server (FastAPI)
  shu qoidalar               SHU QOIDALAR + qo'shimcha:
                               • rol ruxsati
                               • mashina reyestrda bormi
-                              • davr ochiqmi
-                              • probeg kamaymadimi
                               • foto haqiqatan yuklanganmi
+                              • ⭐ chek fotosi (F5a, pastda)
                               • narx chetlanishi bayrog'i
 ```
 
 **Hech qachon** klient hisoblagan summaga ishonilmaydi — server `submission_lines`dan
 qayta hisoblaydi.
+
+### 6a. Chek fotosi — «o'z hisobimdan» qismi uchun ⭐
+
+Hisobotda `self_funded` va narxi noldan katta **qism qatori** bo'lsa, chek
+fotosi **majburiy** bo'ladi (`receipt_required`). Bu — ADR-0016 ochgan F5a
+teshigining yagona to'sig'i.
+
+Qoida **maydonning `required` bayrog'iga emas, qatorlarga** bog'langan:
+chek maydoni shablonda ixtiyoriy turadi va faqat kerak bo'lganda talab
+qilinadi. Chek borligi **maydon** bo'yicha aniqlanadi (`options.kind =
+"receipt"` bo'lgan `photo` maydoni) — media `kind` i klientdan keladi va
+unga ishonilmaydi (R7).
+
+Shablonda chek maydoni bo'lmasa — media turiga qaytadi va xato qism
+qatorlari maydonida ko'rsatiladi.
 
 ## 7. Shablon konstruktori (admin UI)
 

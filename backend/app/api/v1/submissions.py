@@ -17,6 +17,7 @@ from app.db.models import (
     Vehicle,
 )
 from app.domain.approval import service as approval_service
+from app.domain.payment import service as payment_service
 from app.domain.pricing import service as pricing_service
 from app.domain.submission import service as submission_service
 from app.domain.template import engine
@@ -30,8 +31,8 @@ async def list_submissions(
     employee: EmployeeDep,
     status: str | None = None,
     author_id: str | None = None,
-    period_id: int | None = None,
     vehicle_id: int | None = None,
+    payment: str | None = Query(None, pattern="^(debt|paid)$"),
     limit: int = Query(20, le=100),
     offset: int = Query(0, ge=0),
 ):
@@ -48,8 +49,13 @@ async def list_submissions(
         # vergul bilan bir nechta holat: `?status=submitted,in_review`
         wanted = [SubmissionStatus(code.strip()) for code in status.split(",") if code.strip()]
         stmt = stmt.where(Submission.status.in_(wanted))
-    if period_id:
-        stmt = stmt.where(Submission.period_id == period_id)
+    if payment == "debt":  # buxgalter «Qarzlar» tabi
+        stmt = stmt.where(
+            Submission.status.in_(payment_service.PAYABLE),
+            Submission.payable_amount > Submission.paid_amount,
+        )
+    elif payment == "paid":  # «To'langanlar» tabi
+        stmt = stmt.where(Submission.status == SubmissionStatus.PAID)
     if vehicle_id:
         stmt = stmt.where(Submission.subject_vehicle_id == vehicle_id)
 
@@ -159,6 +165,7 @@ async def replace_lines(
             unit_price=item.unit_price,
             catalog_id=item.catalog_id,
             supplier_name=item.supplier_name,
+            self_funded=item.self_funded,
         )
     await session.refresh(submission)
     return serializers.submission_out(submission)
@@ -323,10 +330,10 @@ async def price_history(submission_id: int, session: SessionDep, employee: Emplo
 
 
 @router.get("/me/price-stats", response_model=schemas.PriceStatsOut)
-async def my_price_stats(session: SessionDep, employee: EmployeeDep, period_id: int | None = None):
+async def my_price_stats(session: SessionDep, employee: EmployeeDep):
     """⭐ Xodim **o'z** statistikasini ko'radi (A-24)."""
     stats = await pricing_service.employee_price_stats(
-        session, employee.id, period_id=period_id
+        session, employee.id
     )
     return schemas.PriceStatsOut(
         lines_total=stats.lines_total,

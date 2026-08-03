@@ -68,7 +68,7 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 | [02. Ma'lumotlar modeli (ER)](docs/02-architecture/02-data-model.md) | ~15 jadval, filialsiz, zayavkasiz |
 | [03. Hisobot shablonlari](docs/02-architecture/03-report-templates.md) | Form konstruktor — yadro abstraksiya |
 | [04. API dizayni](docs/02-architecture/04-api-design.md) | REST endpointlar, xatolar |
-| [05. Holat mashinalari](docs/02-architecture/05-state-machines.md) | Hisobot, mashina, davr |
+| [05. Holat mashinalari](docs/02-architecture/05-state-machines.md) | Hisobot, mashina, qarz va to'lov |
 | [06. Xavfsizlik](docs/02-architecture/06-security.md) | initData auth, `role.kind`, audit |
 
 ### 🔌 03. Integratsiyalar
@@ -83,7 +83,7 @@ Ta'minotchi, Elektrik, Yuvuvchi…), kod yozmasdan.
 |---|---|
 | [01. Ta'mir hayotiy sikli](docs/04-flows/01-repair-lifecycle.md) | Mashina keldi → to'lovgacha |
 | [02. Firibgarlikka qarshi nazorat](docs/04-flows/02-antifraud.md) | Qaysi teshiklarni yopamiz |
-| [03. Hisob-kitob va analitika](docs/04-flows/03-payroll-and-reports.md) | Oy yopilishi, to'lovlar, hisobotlar |
+| [03. Hisob-kitob va analitika](docs/04-flows/03-payroll-and-reports.md) | Qarz daftari, to'lovlar, hisobotlar |
 | [**04. Narx kelishuvi**](docs/04-flows/04-price-negotiation.md) ⭐ | **Asosiy nazorat mexanizmi** |
 
 ### 🚀 05. Yetkazib berish
@@ -165,8 +165,9 @@ Telegram temasi, BackButton, haptic, offline qoralama, foto siqish.
 Kod yozmasdan yangi shablon qo'shilsa — Mini App uni **o'zi chizadi**.
 Bildirishnomadagi «Ochish» → `?submission=<id>` → o'sha kartochka darhol ochiladi.
 
-⭐ **Davr (admin va buxgalter):** yopishdan oldingi tekshiruv, oyni yopish,
-to'lov varaqalari (`approved_amount` bo'yicha, R5) va Excel eksport —
+⭐ **Qarzlar (admin va buxgalter):** «kimga qancha qarzmiz» bitta ekranda —
+qarzdorlar → xodimning to'lanmagan hisobotlari → to'lov (belgilab, summa
+kiritib **FIFO**, yoki qisman). Oy yopish yo'q (ADR-0015). Excel eksport —
 uchala hisobot ham botga hujjat bo'lib keladi.
 
 ⭐ **Hisobotlar arxivi (admin va buxgalter):** barcha hisobotlar holat bo'yicha
@@ -193,7 +194,7 @@ ko'rinmaydi; nashr etilgan versiya **o'zgarmas** — eski hisobotlar buzilmaydi.
 | **Bosqich** | Deploy qilingan (fly.io, webhook) · real ma'lumot va pilot navbatda |
 | **Sana** | 2026-08-01 |
 | **Kodni kim yozadi** | **AI** (egasi yo'naltiradi va tekshiradi) |
-| **Testlar** | 212 ta (CI: har push va PR'da avtomatik) (pricing · approval · period · template · builder · **fleet** · role · submission · bot e2e · API e2e · konfiguratsiya) |
+| **Testlar** | 245 ta (CI: har push va PR'da avtomatik) (pricing · approval · **payment** · template · builder · **fleet** · role · submission · bot e2e · API e2e · konfiguratsiya) |
 
 > ⚠️ **Bu hujjatlar to'plami — texnik topshiriq.** Kodni AI yozgani uchun
 > kontekst hujjatlarda bo'lishi shart: noaniq hujjat → noto'g'ri kod.

@@ -17,7 +17,7 @@ sequenceDiagram
 
     U->>P: 2. Mashina raqami
     Note over P: Fleet'dan marka/model/haydovchi<br/>o'zi to'ladi (Faza 3, faqat o'qish)
-    U->>P: 3. Foto (oldin), probeg, muammo
+    U->>P: 3. Foto (oldin), muammo
 
     opt Ehtiyot qism kerak
         T->>P: 3a. Qism xaridi hisoboti (narx + chek)
@@ -43,7 +43,7 @@ sequenceDiagram
     end
     P->>U: "Hisobotingiz tasdiqlandi"
 
-    Note over P: 9. Oy oxiri → davr yopiladi → to'lov varaqasi
+    Note over P: 9. Hisobot qarzga aylanadi → buxgalter to'laydi (to'liq / qisman)
 ```
 
 > 📌 **MVP (Faza 1):** ta'minotchi qadami (3a) yo'q — usta qismni narxsiz
@@ -59,7 +59,7 @@ sequenceDiagram
 | 8a | Narx taklif qilindi | `approvals(price_proposed)` | Admin | Admin reaksiyasi |
 | 8b | Narx kelishildi | `line.mechanic_accepted_at` | Usta | Kelishuv vaqti |
 | 8 | Tasdiqlandi | `approvals(approved)` | Admin | Tasdiqlash vaqti |
-| 9 | To'landi | `period.closed_at` | Admin / buxgalter | |
+| 9 | To'landi | `payments.created_at` | Buxgalter / admin | Qarzning yashash muddati |
 
 Bu vaqt belgilari butun analitikaning asosi:
 - **Downtime** = (6) − (1)
@@ -164,7 +164,7 @@ Ustaning `rework_rate` — uning eng muhim sifat ko'rsatkichi.
 ## 7. Planli texnik ko'rik (TO) — Faza 4
 
 ```
-Mashina probegi TO chegarasiga yetdi (masalan har 15 000 km)
+Oxirgi TO'dan belgilangan muddat o'tdi (masalan har 6 oyda)
         ↓
 Tizim adminga eslatma yuboradi
         ↓

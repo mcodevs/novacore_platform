@@ -1,7 +1,11 @@
 /** `lines` maydoni — ishlar va qismlar.
  *
  * ⚠️ Tayanch narx bu yerda KO'RSATILMAYDI (R3): usta o'z narxini erkin qo'yadi.
- * Qism qatorlarida narx maydoni yo'q — uni ta'minotchi kiritadi.
+ *
+ * ⭐ Qism qatorida narx **faqat «o'z hisobimdan» belgisi bilan** ochiladi
+ * (ADR-0016): belgi qo'yilsa — usta o'z puliga olgan, unga qaytariladi va
+ * **chek fotosi majburiy** (F5a). Belgisiz qism kompaniyaniki — narxsiz
+ * qayd etiladi va qarzga kirmaydi.
  */
 
 import { useEffect, useState } from 'react';
@@ -30,7 +34,11 @@ export function LinesField({ field, lines, error, onSave }: Props) {
   const [picked, setPicked] = useState<{ name: string; catalog_id: number | null } | null>(null);
   const [price, setPrice] = useState('');
   const [qty, setQty] = useState('1');
+  const [selfFunded, setSelfFunded] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // Qismda narx maydoni belgi bilan ochiladi; ish haqida — doim (ADR-0016)
+  const priceOpen = kind === 'part' ? selfFunded : withPrice;
 
   const mine = lines.filter((line) => line.kind === kind);
   const total = mine.reduce((sum, line) => sum + Number(line.proposed_amount), 0);
@@ -44,6 +52,8 @@ export function LinesField({ field, lines, error, onSave }: Props) {
     return () => clearTimeout(timer);
   }, [adding, query, kind]);
 
+  /** ⚠️ `self_funded` ni saqlash SHART: server qatorlarni o'chirib qayta
+   *  yaratadi, belgi tushib qolsa qarz yo'qoladi. */
   function toInput(line: Line): LineInput {
     return {
       kind: line.kind,
@@ -51,6 +61,7 @@ export function LinesField({ field, lines, error, onSave }: Props) {
       qty: Number(line.qty),
       unit_price: Number(line.qty) ? Number(line.proposed_amount) / Number(line.qty) : 0,
       catalog_id: null,
+      self_funded: line.self_funded,
     };
   }
 
@@ -63,8 +74,9 @@ export function LinesField({ field, lines, error, onSave }: Props) {
         kind,
         name: picked.name,
         qty: Number(qty) || 1,
-        unit_price: withPrice ? Number(price) || 0 : 0,
+        unit_price: priceOpen ? Number(price) || 0 : 0,
         catalog_id: picked.catalog_id,
+        self_funded: kind === 'part' ? selfFunded : false,
       },
     ];
     await onSave(next);
@@ -73,6 +85,7 @@ export function LinesField({ field, lines, error, onSave }: Props) {
     setPicked(null);
     setPrice('');
     setQty('1');
+    setSelfFunded(false);
     setQuery('');
   }
 
@@ -99,9 +112,12 @@ export function LinesField({ field, lines, error, onSave }: Props) {
           <span>
             {kind === 'labor' ? '🔧' : '📦'} {line.name}
             {Number(line.qty) !== 1 ? ` ×${line.qty}` : ''}
+            {line.self_funded ? <small className="row-hint">💳 {t('self_funded')}</small> : null}
           </span>
           <span>
-            {withPrice ? <strong>{money(line.proposed_amount)}</strong> : null}{' '}
+            {withPrice || Number(line.proposed_amount) > 0 ? (
+              <strong>{money(line.proposed_amount)}</strong>
+            ) : null}{' '}
             <button
               type="button"
               className="btn-danger"
@@ -115,9 +131,9 @@ export function LinesField({ field, lines, error, onSave }: Props) {
         </div>
       ))}
 
-      {withPrice && mine.length ? (
+      {mine.length && (withPrice || total > 0) ? (
         <div className="row">
-          <span className="muted">{t('total_labor')}</span>
+          <span className="muted">{kind === 'labor' ? t('total_labor') : t('total_own_parts')}</span>
           <strong>{money(total)}</strong>
         </div>
       ) : null}
@@ -171,7 +187,25 @@ export function LinesField({ field, lines, error, onSave }: Props) {
             />
           ) : null}
 
-          {picked && withPrice ? (
+          {/* ⭐ ADR-0016 — belgi narx maydonini ochadi */}
+          {picked && kind === 'part' ? (
+            <label className="check-row" style={{ marginTop: 10 }}>
+              <input
+                type="checkbox"
+                checked={selfFunded}
+                onChange={(e) => {
+                  setSelfFunded(e.target.checked);
+                  if (!e.target.checked) setPrice('');
+                }}
+              />
+              <span>
+                {t('self_funded')}
+                <small className="row-hint">{t('self_funded_hint')}</small>
+              </span>
+            </label>
+          ) : null}
+
+          {picked && priceOpen ? (
             <>
               <label className="field" style={{ marginTop: 10 }}>
                 {t('my_price')}
@@ -190,7 +224,7 @@ export function LinesField({ field, lines, error, onSave }: Props) {
             <button
               type="button"
               onClick={() => void addLine()}
-              disabled={busy || !picked || (withPrice && !price)}
+              disabled={busy || !picked || (priceOpen && !price)}
             >
               {t('add')}
             </button>

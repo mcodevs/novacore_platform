@@ -12,9 +12,9 @@ import type {
   LinkableSubmission,
   ExportKind,
   MediaItem,
-  Payout,
-  Period,
-  Precheck,
+  DebtItem,
+  DebtSummary,
+  Payment,
   PriceContext,
   PriceStats,
   RoleKind,
@@ -179,6 +179,8 @@ export interface LineInput {
   qty: number;
   unit_price: number;
   catalog_id?: number | null;
+  /** ⭐ «O'z hisobimdan» (ADR-0016) — narx bor = qarz bor. */
+  self_funded?: boolean;
 }
 
 export const replaceLines = (id: number, lines: LineInput[]) =>
@@ -276,30 +278,35 @@ export async function uploadMedia(
 
 export const dashboard = () => request<Dashboard>('/reports/dashboard');
 
-// --- Davr, to'lovlar, eksport (admin/buxgalter) ---
+// --- Qarz daftari, to'lovlar, eksport (admin/buxgalter) — ADR-0015 ---
 
-export const periods = () => request<Period[]>('/periods');
+export const debts = () => request<DebtSummary>('/debts');
 
-export const currentPeriod = () => request<Period>('/periods/current');
+export const employeeDebts = (employeeId: number) =>
+  request<DebtItem[]>(`/debts/${employeeId}`);
 
-export const precheck = (periodId: number) =>
-  request<Precheck>(`/periods/${periodId}/precheck`);
+/** Uch rejim: `submission_ids` (chekbox) · `amount` (FIFO) · ikkalasi (qisman). */
+export const createPayment = (body: {
+  employee_id: number;
+  submission_ids?: number[];
+  amount?: number;
+  note?: string;
+}) => request<Payment>('/payments', { method: 'POST', body: JSON.stringify(body) });
 
-export const closePeriod = (periodId: number) =>
-  request<Period>(`/periods/${periodId}/close`, { method: 'POST' });
+export const payments = (employeeId?: number) =>
+  request<Payment[]>(`/payments${employeeId ? `?employee_id=${employeeId}` : ''}`);
 
-export const payouts = (periodId: number) =>
-  request<Payout[]>(`/payouts?period_id=${periodId}`);
-
-export const markPayoutPaid = (payoutId: number) =>
-  request<Payout>(`/payouts/${payoutId}/mark-paid`, { method: 'POST' });
+export const voidPayment = (paymentId: number, reason: string) =>
+  request<Payment>(`/payments/${paymentId}/void`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
 
 /** Excel **bot orqali** keladi — WebView'da fayl yuklash ishonchsiz. */
-export const exportToTelegram = (kind: ExportKind, periodId?: number) =>
-  request<{ ok: boolean; filename: string }>(
-    `/reports/export?kind=${kind}${periodId ? `&period_id=${periodId}` : ''}`,
-    { method: 'POST' },
-  );
+export const exportToTelegram = (kind: ExportKind) =>
+  request<{ ok: boolean; filename: string }>(`/reports/export?kind=${kind}`, {
+    method: 'POST',
+  });
 
 // --- Konstruktorlar (Faza 2, faqat admin) ---
 

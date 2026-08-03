@@ -58,10 +58,17 @@ class InvalidStateTransition(DomainError):
     http_status = 409
 
 
-class PeriodClosed(DomainError):
-    """R4 — yopilgan davrga yozuv qo'shilmaydi va o'zgarmaydi."""
+class SubmissionNotPayable(DomainError):
+    """P1 — to'lov faqat `APPROVED` hisobotga qo'llanadi."""
 
-    code = "period_closed"
+    code = "submission_not_payable"
+    http_status = 409
+
+
+class PaymentAlreadyVoided(DomainError):
+    """Bekor qilingan to'lovni qayta bekor qilib bo'lmaydi."""
+
+    code = "payment_already_voided"
     http_status = 409
 
 

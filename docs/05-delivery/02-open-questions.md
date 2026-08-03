@@ -263,7 +263,7 @@ hisoboti **avtomatik tasdiqlanadi**. Unga tasdiqlovchi kerak emas.
 
 ⚠️ **Shaffoflik chorasi:** bu — nazorat halqasidagi yagona ochiq joy. Shuning
 uchun avtomatik tasdiqlangan hisobotlar **alohida belgilanadi** va oylik
-hisobotda hamda buxgalterning oy yopish ekranida ayrim satr sifatida
+hisobotda hamda buxgalterning qarzlar ekranida ayrim satr sifatida
 ko'rsatiladi ("avtomatik tasdiqlangan: N ta, X so'm").
 
 ---

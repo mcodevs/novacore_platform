@@ -252,16 +252,16 @@ export function PhotoField({
   onMediaChange,
 }: FieldProps) {
   const cameraRef = useRef<HTMLInputElement>(null);
-  const galleryRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState('');
 
   const max = Number(field.options?.max ?? 5);
   const min = Number(field.options?.min ?? (field.required ? 1 : 0));
   const kind = String(field.options?.kind ?? 'other');
-  const cameraOnly = Boolean(field.options?.camera_only);
   const items = media.filter((m) => m.field_code === field.code);
 
+  // ⚠️ Galereya YO'Q (2026-08-03 qarori) — foto faqat kameradan olinadi,
+  // shu bilan foto-dalil kuchini saqlaydi.
   async function upload(files: FileList | null, source: 'camera' | 'gallery') {
     if (!files?.length) return;
     setBusy(true);
@@ -283,8 +283,7 @@ export function PhotoField({
     <div className="card">
       <Label field={field} />
       <p className="hint">
-        {t('photo_count', { n: items.length, max })}
-        {cameraOnly ? ` · ${t('photo_hint')}` : ''}
+        {t('photo_count', { n: items.length, max })} · {t('photo_hint')}
       </p>
 
       <div className="photos">
@@ -303,17 +302,10 @@ export function PhotoField({
         >
           {busy ? t('uploading') : t('photo_take')}
         </button>
-        {/* Zaxira yo'l: Telegram WebView'da `capture` ishlamasa galereya */}
-        <button
-          type="button"
-          className="btn-secondary"
-          onClick={() => galleryRef.current?.click()}
-          disabled={busy || items.length >= max}
-        >
-          {t('photo_gallery')}
-        </button>
       </div>
 
+      {/* ⚠️ `capture="environment"` — galereya ochilmaydi, faqat kamera.
+          Zaxira tugma ataylab yo'q: foto «hozir olingan» bo'lishi shart. */}
       <input
         ref={cameraRef}
         type="file"
@@ -321,14 +313,6 @@ export function PhotoField({
         capture="environment"
         hidden
         onChange={(e) => void upload(e.target.files, 'camera')}
-      />
-      <input
-        ref={galleryRef}
-        type="file"
-        accept="image/*"
-        multiple
-        hidden
-        onChange={(e) => void upload(e.target.files, 'gallery')}
       />
 
       {failed ? <p className="error">{failed}</p> : null}

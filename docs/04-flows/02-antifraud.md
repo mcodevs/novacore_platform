@@ -28,17 +28,22 @@ e'tiborini yo'naltiradi. 100 ta hisobotning 95 tasi toza bo'lsa, admin
 | F2 | **Narxni shishirish** | ⭐ **Narx kelishuvi** — admin har narxni ko'rib chiqadi va tarixiy statistikaga tayanib kamaytiradi |
 | F3 | Eski/boshqa mashinadan foto qo'yish | pHash, sha256, EXIF sanasi |
 | F4 | Bir ishni ikki marta yozish | Dublikat aniqlash (mashina + kategoriya + vaqt) |
-| F5 | **Qismni qimmatroq ko'rsatish** | ⭐ **Tuzilmaviy yechim:** usta qism narxini umuman kiritmaydi — ta'minotchi kiritadi |
+| F5 | **Qismni qimmatroq ko'rsatish** | ⭐ **Tuzilmaviy yechim:** kompaniya olgan qismga usta narx **umuman kirita olmaydi** — ta'minotchi kiritadi |
+| F5a | **Kompaniya olgan qismga «o'z hisobimdan» belgisini qo'yish** | ⚠️ ADR-0016 ochgan teshik. **Chek fotosi majburiy** + admin ko'rigi. Yagona to'siq — shuning uchun admin buni alohida tekshiradi |
 | F6 | Qismni almashtirmasdan yozish | "Keyin" fotosi, kafolat, rework kuzatuvi |
 | F7 | Admin bilan til biriktirish | **Admin narxni oshira olmaydi (R2)**, audit log, buxgalter ko'rinishi |
 | F8 | O'z hisobotini o'zi tasdiqlash | `approver ≠ author` (R1). ⚠️ **Admin hisoboti avtomatik tasdiqlanadi** — bu yerda nazorat yo'q, faqat shaffoflik (`auto_approved` belgisi + oylik hisobotda alohida satr) |
-| F9 | Oy yopilgach o'zgartirish | Davr qulfi, audit log |
+| F9 | To'langan hisobotni o'zgartirish | To'langan hisobot qayta ochilmaydi, audit log |
 | F10 | Kelishilgan tashqi servis | Kontragent, chek, narx solishtirish |
 | F11 | Ta'minotchi qism narxini shishirishi | Chek fotosi, 90 kunlik narx tarixi, yetkazib beruvchi diversifikatsiyasi |
 
 > ⭐ **NovaCore modelida ikkita eng katta teshik tuzilmaviy hal qilingan:**
 > narxni admin kelishadi (F2) va qism narxini usta kiritmaydi (F5). Bu
 > algoritmik bayroqlardan ko'ra kuchliroq — chunki imkoniyatning o'zi yo'q.
+>
+> ⚠️ **Istisno — F5a:** usta qismni o'z hisobidan olsa, narx kirita oladi
+> ([ADR-0016](../05-delivery/03-decisions.md#adr-0016--usta-oz-hisobidan-olgan-qism-ham-qarzga-kiradi)).
+> Bu yerda tuzilmaviy himoya yo'q — faqat **chek fotosi** va admin ko'rigi.
 
 ## 3. Bayroqlar katalogi
 
@@ -56,7 +61,6 @@ e'tiborini yo'naltiradi. 100 ta hisobotning 95 tasi toza bo'lsa, admin
 | `rework` | Qayta ta'mir | Shu mashina + kategoriya, 30 kun ichida | 🟡 warning |
 | `rework_warranty` | Kafolat ichida qayta | Kafolat muddati ichida | 🔴 critical |
 | `frequent_repair` | Tez-tez ta'mir | Bir mashina oyiga > 3 marta | 🟡 warning |
-| `odometer_anomaly` | Probeg anomaliyasi | Kamaygan yoki mantiqsiz oshgan | 🔴 critical |
 | `high_amount` | Katta summa | Chegaradan yuqori | 🟡 warning |
 | `geo_mismatch` | Joylashuv mos emas | Ustaxona koordinatasidan > 2 km | 🟡 warning |
 | `geo_missing` | Joylashuv yo'q | Geo ruxsati berilmagan | 🔵 info |
@@ -77,7 +81,6 @@ Shuning uchun foto talablari qattiq:
 | Talab | Sabab |
 |---|---|
 | Mashina umumiy ko'rinishi **raqam bilan** | Bu ayni o'sha mashina ekanligi |
-| Odometr paneli fotosi | Probegni tasdiqlaydi, vaqtni bog'laydi |
 | Muammo fotosi (yaqindan) | Nosozlik haqiqatan bor |
 | "Keyin" fotosi **shu rakursda** | Solishtirish mumkin |
 | Chek/nakladnoy fotosi | Qism narxi haqiqiy |

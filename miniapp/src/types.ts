@@ -75,6 +75,8 @@ export interface Line {
   price_change_reason: string | null;
   mechanic_accepted_at: string | null;
   mechanic_accept_mode: string | null;
+  /** ⭐ «O'z hisobimdan» olingan qism — qarzga kiradi (ADR-0016). */
+  self_funded: boolean;
 }
 
 export interface MediaItem {
@@ -154,6 +156,7 @@ export interface PriceStats {
 }
 
 export interface Dashboard {
+  /** Sana oralig'i yorlig'i (davr tushunchasi yo'q — ADR-0015). */
   period: string;
   total_submissions: number;
   approved_count: number;
@@ -167,6 +170,9 @@ export interface Dashboard {
   pending_review: number;
   in_negotiation: number;
   vehicles_in_service: number;
+  /** ⭐ Qarz daftari (ADR-0015) */
+  debt_total: number;
+  paid_total: number;
 }
 
 export interface WorkCatalogItem {
@@ -268,38 +274,53 @@ export interface LinkableSubmission {
   submitted_at: string | null;
 }
 
-// --- Davr va to'lovlar (admin/buxgalter) -------------------------------------
+// --- Qarz daftari (admin/buxgalter) — ADR-0015 -------------------------------
 
-export interface Period {
-  id: number;
-  year: number;
-  month: number;
-  status: 'open' | 'locking' | 'closed';
-  closed_at: string | null;
+export interface EmployeeDebt {
+  employee_id: number;
+  full_name: string;
+  debt: number;
+  count: number;
+  /** Ishlatilmagan avans — qarzdan ortiq to'langan pul (P7). */
+  advance: number;
 }
 
-export interface Precheck {
-  can_close: boolean;
-  /** `[{code, params}]` — i18n kaliti va o'rniga qo'yiladigan qiymatlar. */
-  blockers: Record<string, unknown>[];
-  warnings: Record<string, unknown>[];
+export interface DebtSummary {
+  total: number;
+  advance_total: number;
+  employees: EmployeeDebt[];
 }
 
-export interface Payout {
+/** Qarz ro'yxatidagi bitta hisobot — eng eskisidan (FIFO tartibi). */
+export interface DebtItem {
+  submission_id: number;
+  number: string;
+  vehicle: string | null;
+  submitted_at: string | null;
+  payable_amount: number;
+  paid_amount: number;
+  debt: number;
+}
+
+export interface Allocation {
+  submission_id: number;
+  amount: number;
+  fully_paid: boolean;
+}
+
+export interface Payment {
   id: number;
   employee_id: number;
   employee_name: string;
-  submissions_count: number;
-  proposed_total: number;
-  labor_total: number;
-  reduction_total: number;
-  bonus: number;
-  penalty: number;
-  total: number;
-  status: 'draft' | 'approved' | 'paid';
+  amount: number;
+  note: string | null;
+  created_at: string;
+  voided_at: string | null;
+  void_reason: string | null;
+  allocations: Allocation[];
 }
 
-export type ExportKind = 'submissions' | 'payouts' | 'savings';
+export type ExportKind = 'submissions' | 'debts' | 'savings';
 
 // --- E'lonlar (faqat admin) --------------------------------------------------
 

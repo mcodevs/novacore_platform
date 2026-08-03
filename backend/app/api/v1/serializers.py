@@ -100,6 +100,7 @@ def line_out(line: SubmissionLine) -> schemas.LineOut:
         mechanic_accept_mode=(
             line.mechanic_accept_mode.value if line.mechanic_accept_mode else None
         ),
+        self_funded=line.self_funded,
     )
 
 
@@ -145,6 +146,9 @@ def submission_out(submission: Submission) -> schemas.SubmissionOut:
         labor_amount=submission.labor_amount,
         parts_amount=submission.parts_amount,
         total_amount=submission.total_amount,
+        payable_amount=submission.payable_amount,
+        paid_amount=submission.paid_amount,
+        debt=submission.debt,
         auto_approved=submission.auto_approved,
         price_negotiated=submission.price_negotiated,
         arrived_at=submission.arrived_at,

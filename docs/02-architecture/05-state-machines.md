@@ -27,8 +27,9 @@ stateDiagram-v2
     IN_REVIEW --> REOPENED
     IN_REVIEW --> REJECTED: rad etildi
     REOPENED --> SUBMITTED: muallif tuzatib qayta yubordi
-    APPROVED --> PAID: davr yopildi
-    APPROVED --> REOPENED: admin qaytardi (davr ochiq, audit bilan)
+    APPROVED --> PAID: qarz to'liq to'landi
+    PAID --> APPROVED: to'lov void qilindi
+    APPROVED --> REOPENED: admin qaytardi (to'lanmagan, audit bilan)
     REJECTED --> [*]
     PAID --> [*]
 ```
@@ -50,18 +51,19 @@ stateDiagram-v2
 | O'tish | Kim | Shartlar | Yon ta'sirlar |
 |---|---|---|---|
 | `→ DRAFT` | Muallif | — | `arrived_at = now()`, mashina `in_service` |
-| `DRAFT → SUBMITTED` | Muallif (`reporter`) | Validatsiya o'tdi, davr ochiq, `left_at` to'ldirilgan | Bayroq hisoblash, `period_id`, adminga bildirishnoma, `proposed_*` qulflanadi |
+| `DRAFT → SUBMITTED` | Muallif (`reporter`) | Validatsiya o'tdi, `left_at` to'ldirilgan | Bayroq hisoblash, adminga bildirishnoma, `proposed_*` qulflanadi |
 | **`DRAFT → APPROVED`** ⭐ | Muallif (`admin`) | Shu shartlar | **Avtomatik tasdiq (R1a):** `approved = proposed`, `auto_approved = true`, `approvals(decision='auto_approved', actor_id=NULL)`. Bildirishnoma yo'q, kelishuv yo'q |
 | `SUBMITTED → IN_REVIEW` | Admin | Ruxsat bor | "Ko'rilmoqda" belgisi |
-| `→ APPROVED` (narx o'zgarishsiz) | Admin | **R1: `approver ≠ author`**, davr ochiq | `approved = proposed`, `approvals`, muallifga bildirishnoma |
+| `→ APPROVED` (narx o'zgarishsiz) | Admin | **R1: `approver ≠ author`** | `approved = proposed`, `payable_amount` hisoblanadi (R5), `approvals`, muallifga bildirishnoma |
 | **`IN_REVIEW → PRICE_NEGOTIATION`** | Admin | `new < proposed`, **sabab majburiy** | `approvals(price_proposed)`, bildirishnoma, 48 soatlik taymer |
 | **`PRICE_NEGOTIATION → APPROVED`** | Muallif yoki tizim | Rozilik yoki 48 soat sukut | `mechanic_accept_mode = manual / auto_48h` |
 | **`PRICE_NEGOTIATION → PRICE_DISPUTED`** | Muallif | Izoh majburiy | Adminga bildirishnoma |
 | **`PRICE_DISPUTED → APPROVED`** | Admin | **Yakuniy qaror adminda**, izoh majburiy | Muallifga bildirishnoma |
 | `→ REOPENED` | Admin | Izoh majburiy | Tahrirlash ochiladi |
 | `→ REJECTED` | Admin | Izoh majburiy | To'lovdan chiqadi |
-| `APPROVED → PAID` | Tizim | Davr yopildi | To'lov varaqasiga `approved_amount` |
-| `APPROVED → REOPENED` | Admin | Davr **ochiq**, sabab majburiy | Audit log |
+| `APPROVED → PAID` | Tizim | `paid_amount == payable_amount` | To'lov qayd etilganda avtomatik |
+| `PAID → APPROVED` | Tizim | To'lov `void` qilindi | `paid_amount` qayta hisoblanadi, qarz qayta ochiladi |
+| `APPROVED → REOPENED` | Admin | **To'lanmagan** (`paid_amount = 0`), sabab majburiy | Audit log |
 
 > ❗ **Qattiq cheklovlar:**
 > - `approved_amount ≤ proposed_amount` — admin narxni **oshira olmaydi** (R2)
@@ -115,28 +117,32 @@ stateDiagram-v2
 > Avvalgi g'oya: ta'mir boshlanganda mashinani Fleet'da `repairing` qilish zakaz kelmasligini
 > ta'minlaydi — [Fleet integratsiyasi](../03-integrations/01-yandex-fleet-api.md).
 
-## 3. Davr (`periods`)
+## 3. Qarz va to'lov
+
+> ⚠️ **Davr (`periods`) holat mashinasi YO'Q** — oy yopish tushunchasi olib
+> tashlangan ([ADR-0015](../05-delivery/03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)).
+
+Qarz — alohida holat emas, hisobotning **hisoblanadigan xususiyati**:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> OPEN: oy boshlandi
-    OPEN --> LOCKING: yopish boshlandi
-    LOCKING --> OPEN: to'siqlar topildi / bekor qilindi
-    LOCKING --> CLOSED: barcha tekshiruvlar o'tdi
-    CLOSED --> OPEN: admin qayta ochdi (sabab + audit)
-    CLOSED --> [*]
+    [*] --> QARZ: APPROVED bo'ldi (paid_amount = 0)
+    QARZ --> QISMAN: qisman to'lov
+    QISMAN --> QISMAN: yana qisman to'lov
+    QARZ --> PAID: to'liq to'lov
+    QISMAN --> PAID: qoldiq to'landi
+    PAID --> QISMAN: to'lov void qilindi
+    QISMAN --> QARZ: to'lov void qilindi
 ```
 
-`LOCKING` bosqichida tizim tekshiradi:
+| Ko'rinish | Shart |
+|---|---|
+| **Qarz** | `status = APPROVED` va `paid_amount < payable_amount` |
+| **Qisman** | `0 < paid_amount < payable_amount` — «Qarzlar» tabida qoldiq bilan |
+| **To'langan** | `paid_amount == payable_amount` → `status = PAID` |
 
-```
-❌ 3 ta hisobot SUBMITTED / IN_REVIEW (tasdiqlanmagan)
-❌ 2 ta hisobot PRICE_NEGOTIATION (muallif javob bermagan)
-❌ 1 ta hisobot REOPENED (muallif tuzatmagan)
-⚠️ 2 ta qoralama 10 kundan beri turibdi
-```
-
-Har biri uchun: **hal qilish** yoki **keyingi oyga ko'chirish**.
+To'lovning o'zi ikki holatda: **faol** yoki **`void`** (bekor qilingan, sabab
+majburiy). To'lov hech qachon tahrirlanmaydi — faqat `void` (P5).
 
 ## 4. Xodim (`employees.status`)
 

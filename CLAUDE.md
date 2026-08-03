@@ -34,8 +34,8 @@ Bular serverda tekshiriladi. Klientga hech qachon ishonilmaydi.
 | **R2a** | `proposed_*` — **immutable**. Yuborilgandan keyin hech qachon ustidan yozilmaydi |
 | **R2b** | `approved < proposed` bo'lsa `price_change_reason` NOT NULL |
 | **R3** | Tayanch narx (`work_catalog.reference_price`, `work_price_stats`) `reporter` roliga **API javobida ham** qaytarilmaydi — klientda yashirish yetarli emas |
-| **R4** | Yopilgan davrga (`period.status = closed`) yozuv qo'shilmaydi va o'zgarmaydi |
-| **R5** | To'lov varaqasi **faqat `approved_amount`** bo'yicha hisoblanadi |
+| **R4** | To'lov faqat `APPROVED` hisobotga. `paid_amount ≤ payable_amount` (DB `CHECK`). Qarzdan ortgani — **avans** (P7), xodim hisobida turadi va yangi qarzga avtomatik ishlatiladi |
+| **R5** | `payable_amount` = tasdiqlangan ish haqi + **`self_funded`** qismlar. Serverda `submission_lines`dan qayta hisoblanadi |
 | **R6** | `arrived_at` / `left_at` — **server vaqti** (tugma bosilgan lahza), klient yuborgan qiymat emas |
 | **R7** | Summalar serverda **qayta hisoblanadi** (`submission_lines`dan), klient hisobiga ishonilmaydi |
 | **R8** | Kamida bitta faol `kind='admin'` rolli xodim bo'lishi shart |
@@ -68,6 +68,9 @@ qo'shmang — har biri ADR bilan rad etilgan:
 | **Ma'lumot importi** | Faqat Excel **eksport** |
 | **Media avtomatik arxivlash** | Qo'lda (`media.deleted_at`) |
 | **Ko'p bosqichli tasdiqlash** | Bitta bosqich, direktorga ko'tarish yo'q |
+| **Oy yopish / davr (`periods`) / `payouts`** | ADR-0015. To'lov oyga emas, **hisobotga** bog'langan — qarz daftari |
+| **Probeg hisobotda** (`odometer_*`) | ADR-0018. Har hisobotda spidometr fotosi — eng qimmat, eng foydasiz maydon edi. `vehicles.odometer_km` (Fleet'dan) qoladi |
+| **Foto galereyadan** | ADR-0017. Faqat kamera (`capture`). Serverda ham `source=gallery` rad etiladi |
 
 ## Stack
 
@@ -89,7 +92,7 @@ Kodni AI yozgani uchun domen testlarisiz ishonch yo'q. Eng kam qamrov:
 | Modul | Nima tekshiriladi |
 |---|---|
 | `pricing` | R2, R2a, R2b · 48 soat avtomatik rozilik · nizo oqimi · R1a (admin → avtomatik tasdiq, kelishuvsiz) |
-| `period` | R4 · precheck to'siqlari · to'lov `approved_amount` bo'yicha (R5) |
+| `payment` | R4/P2 · R5 (`payable_amount` hisobi) · FIFO taqsimot · qisman to'lov · **avans (P7)**: ortiqcha to'lov → avans → yangi qarzga avtomatik · `void` → qarz va avans qaytadi · daftar balansi |
 | `approval` | R1 · holat o'tishlari |
 | `template` | Majburiy maydonlar · foto min/max · versiyalash (eski hisobot buzilmasin) |
 | `role` | R3 (tayanch narx yopiqligi) · `kind` bo'yicha ruxsatlar · R8 |
@@ -150,10 +153,12 @@ qilish odamni chalkashtiradi.»*
 ## Ochiq texnik xavf
 
 `<input type="file" accept="image/*" capture="environment">` Telegram
-WebView'ida (ayniqsa **iOS**) galereyani bloklaydimi — **hali sinalmagan**.
-Ishlamasa foto-dalil g'oyasi zaiflashadi.
+WebView'ida (ayniqsa **iOS**) kamerani ochadimi — **hali sinalmagan**.
 
-⚠️ Zaxira **kamaydi**: botdagi foto oqimi yuqoridagi qaror bilan o'chdi. Qolgani
-— Mini App'dagi «🖼 Galereyadan» tugmasi va EXIF tekshiruvi (`photo_not_fresh`,
-`photo_no_exif`). Shuning uchun kamera sinovi **kechiktirib bo'lmaydigan**
-birinchi vazifa.
+🔴 **Zaxira yo'l umuman qolmadi.** Botdagi foto oqimi Mini App qarori bilan
+o'chgan edi; «🖼 Galereyadan» tugmasi esa ADR-0017 bilan **ataylab** olib
+tashlandi (foto faqat kameradan). Ya'ni `capture` ishlamasa — **foto umuman
+yuklab bo'lmaydi va ta'mir hisoboti yuborilmaydi**.
+
+Shuning uchun real iOS qurilmada kamera sinovi — **bloklovchi**, birinchi
+navbatdagi vazifa. Ishlamasa ADR-0017 qayta ko'rib chiqiladi.

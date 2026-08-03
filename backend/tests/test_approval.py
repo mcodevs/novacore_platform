@@ -117,7 +117,7 @@ async def test_reopen_resets_negotiation_and_allows_edit(session):
 
 async def test_reopened_can_be_resubmitted(session):
     mechanic, admin, _, submission = await _setup(session)
-    await approval_service.reopen(session, submission, admin, comment="Probeg noto'g'ri")
+    await approval_service.reopen(session, submission, admin, comment="Muammo fotosi aniq emas")
 
     await submission_service.submit(session, submission, mechanic)
     assert submission.status == SubmissionStatus.SUBMITTED

@@ -36,7 +36,7 @@ from app.db.models import (
 from app.domain import audit
 from app.domain import vehicle as vehicle_domain
 from app.domain.notify import service as notify
-from app.domain.period import service as period_service
+from app.domain.payment import service as payment_service
 from app.domain.role import permissions
 from app.domain.template import engine
 
@@ -183,7 +183,11 @@ class EmployeePriceStats:
 
 
 async def employee_price_stats(
-    session: AsyncSession, employee_id: int, *, period_id: int | None = None
+    session: AsyncSession,
+    employee_id: int,
+    *,
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
 ) -> EmployeePriceStats:
     stmt = (
         sa.select(SubmissionLine, Submission.status)
@@ -196,8 +200,10 @@ async def employee_price_stats(
             Submission.status.in_(APPROVED_STATUSES),
         )
     )
-    if period_id is not None:
-        stmt = stmt.where(Submission.period_id == period_id)
+    if frm is not None:
+        stmt = stmt.where(Submission.submitted_at >= frm)
+    if to is not None:
+        stmt = stmt.where(Submission.submitted_at <= to)
 
     stats = EmployeePriceStats()
     for line, _status in (await session.execute(stmt)).all():
@@ -234,7 +240,7 @@ async def propose_price(
     if not permissions.can_review(actor):
         raise Forbidden("Faqat admin narx taklif qiladi")
     permissions.ensure_not_self_approval(actor, submission)  # N8 bilan birga
-    await period_service.ensure_submission_period_open(session, submission)  # R4/N7
+    payment_service.ensure_not_paid(submission)  # N7 — to'lovdan keyin narx o'zgarmaydi
 
     allowed = (
         SubmissionStatus.SUBMITTED,
@@ -359,7 +365,6 @@ async def accept_price(
     if mode == AcceptMode.manual:
         if actor is None or not permissions.is_author(actor, submission):
             raise Forbidden("Faqat hisobot muallifi rozilik beradi")
-    await period_service.ensure_submission_period_open(session, submission)
 
     now = utcnow()
     for line in submission.lines:
@@ -407,6 +412,8 @@ async def accept_price(
         },
     )
     await session.flush()
+    # P7 — kelishuv tugadi va hisobot APPROVED bo'ldi: avans ishlatilsin
+    await payment_service.apply_advance(session, submission.author_id)
     return submission
 
 

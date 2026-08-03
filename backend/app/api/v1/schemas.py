@@ -96,6 +96,8 @@ class LineOut(BaseModel):
     price_change_reason: str | None
     mechanic_accepted_at: dt.datetime | None
     mechanic_accept_mode: str | None
+    #: ⭐ «O'z hisobimdan» olingan qism — qarzga kiradi (ADR-0016)
+    self_funded: bool = False
 
 
 class MediaOut(BaseModel):
@@ -120,6 +122,10 @@ class SubmissionOut(BaseModel):
     labor_amount: Decimal | None
     parts_amount: Decimal
     total_amount: Decimal
+    #: ⭐ Qarz daftari (ADR-0015)
+    payable_amount: Decimal
+    paid_amount: Decimal
+    debt: Decimal
     auto_approved: bool
     price_negotiated: bool
     arrived_at: dt.datetime | None
@@ -146,6 +152,8 @@ class LineIn(BaseModel):
     unit_price: Decimal = Decimal("0")
     catalog_id: int | None = None
     supplier_name: str | None = None
+    #: ⭐ «O'z hisobimdan» (ADR-0016) — faqat qism qatorida narx ochiladi
+    self_funded: bool = False
 
 
 class LinesRequest(BaseModel):
@@ -201,41 +209,64 @@ class ApprovalOut(BaseModel):
     created_at: dt.datetime
 
 
-class PeriodOut(BaseModel):
-    id: int
-    year: int
-    month: int
-    status: str
-    closed_at: dt.datetime | None
+# --- Qarz daftari (ADR-0015) --------------------------------------------------
 
 
-class PrecheckOut(BaseModel):
-    can_close: bool
-    blockers: list[dict]
-    warnings: list[dict]
+class EmployeeDebtOut(BaseModel):
+    employee_id: int
+    full_name: str
+    debt: Decimal
+    count: int
+    #: Ishlatilmagan avans — qarzdan ortiq to'langan pul (P7)
+    advance: Decimal = Decimal("0")
 
 
-class PayoutOut(BaseModel):
+class DebtSummaryOut(BaseModel):
+    total: Decimal
+    advance_total: Decimal = Decimal("0")
+    employees: list[EmployeeDebtOut]
+
+
+class DebtItemOut(BaseModel):
+    """Qarz ro'yxatidagi bitta hisobot — eng eskisidan tartiblanadi (FIFO)."""
+
+    submission_id: int
+    number: str
+    vehicle: str | None
+    submitted_at: dt.datetime | None
+    payable_amount: Decimal
+    paid_amount: Decimal
+    debt: Decimal
+
+
+class AllocationOut(BaseModel):
+    submission_id: int
+    amount: Decimal
+    fully_paid: bool
+
+
+class PaymentOut(BaseModel):
     id: int
     employee_id: int
     employee_name: str
-    submissions_count: int
-    proposed_total: Decimal
-    labor_total: Decimal
-    reduction_total: Decimal
-    bonus: Decimal
-    penalty: Decimal
-    total: Decimal
-    status: str
+    amount: Decimal
+    note: str | None
+    created_at: dt.datetime
+    voided_at: dt.datetime | None
+    void_reason: str | None
+    allocations: list[AllocationOut]
 
 
-class AdjustPayoutRequest(BaseModel):
-    bonus: Decimal | None = None
-    penalty: Decimal | None = None
-    reason: str
+class CreatePaymentRequest(BaseModel):
+    """Uch rejim: `submission_ids` (chekbox) · `amount` (FIFO) · ikkalasi (qisman)."""
+
+    employee_id: int
+    submission_ids: list[int] | None = None
+    amount: Decimal | None = None
+    note: str | None = None
 
 
-class ReopenPeriodRequest(BaseModel):
+class VoidPaymentRequest(BaseModel):
     reason: str
 
 
@@ -253,6 +284,8 @@ class DashboardOut(BaseModel):
     pending_review: int
     in_negotiation: int
     vehicles_in_service: int
+    debt_total: Decimal
+    paid_total: Decimal
 
 
 class VehicleIn(BaseModel):

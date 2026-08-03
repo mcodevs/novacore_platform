@@ -19,7 +19,7 @@ from app.db.models import (
 from app.domain import audit
 from app.domain import vehicle as vehicle_domain
 from app.domain.notify import service as notify
-from app.domain.period import service as period_service
+from app.domain.payment import service as payment_service
 from app.domain.role import permissions
 from app.domain.template import engine
 
@@ -73,7 +73,6 @@ async def approve(
     if not permissions.can_review(actor):
         raise Forbidden("Faqat admin tasdiqlaydi")
     permissions.ensure_not_self_approval(actor, submission)  # R1
-    await period_service.ensure_submission_period_open(session, submission)  # R4
 
     if submission.status not in REVIEWABLE:
         raise InvalidStateTransition(f"{submission.status.value} → approved mumkin emas")
@@ -118,6 +117,8 @@ async def approve(
         },
     )
     await session.flush()
+    # P7 — xodimda avans bo'lsa, yangi qarzga darhol ishlatiladi
+    await payment_service.apply_advance(session, submission.author_id)
     return submission
 
 
@@ -149,6 +150,7 @@ async def auto_approve(session: AsyncSession, submission: Submission) -> Submiss
         after={"labor_amount": str(submission.labor_amount)},
     )
     await session.flush()
+    await payment_service.apply_advance(session, submission.author_id)  # P7
     return submission
 
 
@@ -159,7 +161,6 @@ async def reject(
     if not permissions.can_review(actor):
         raise Forbidden("Faqat admin rad etadi")
     permissions.ensure_not_self_approval(actor, submission)
-    await period_service.ensure_submission_period_open(session, submission)
     if submission.status not in (SubmissionStatus.SUBMITTED, SubmissionStatus.IN_REVIEW):
         raise InvalidStateTransition(f"{submission.status.value} → rejected mumkin emas")
 
@@ -200,7 +201,7 @@ async def reopen(
     """Ma'lumot to'liq emas → muallifga qaytariladi, tarix saqlanadi."""
     if not permissions.can_review(actor):
         raise Forbidden("Faqat admin qaytaradi")
-    await period_service.ensure_submission_period_open(session, submission)  # R4
+    payment_service.ensure_not_paid(submission)  # F9 — to'langan hisobot qaytarilmaydi
     allowed = (
         SubmissionStatus.SUBMITTED,
         SubmissionStatus.IN_REVIEW,

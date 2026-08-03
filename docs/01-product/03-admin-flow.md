@@ -2,7 +2,7 @@
 
 Admin — tizimning **yagona nazorat nuqtasi**. Ko'p bosqichli tasdiqlash yo'q,
 direktorga ko'tarish yo'q: hisobotni admin ko'radi, narxni admin kelishadi,
-oxirgi so'z adminda. Buxgalter faqat ko'radi, eksport qiladi va oyni yopadi.
+oxirgi so'z adminda. Buxgalter ko'radi, eksport qiladi va to'lovlarni qayd etadi.
 
 ## 1. Asosiy ekran (dashboard)
 
@@ -44,7 +44,6 @@ shuning uchun u tez va ma'lumotga boy bo'lishi kerak.
 │  Mashina:  01 A 123 BC · BYD Chazor   │
 │  Keldi:    29.07 09:14                │
 │  Ketdi:    29.07 12:40 (3 s 26 daq)   │
-│  Probeg:   48 250 km                  │
 ├───────────────────────────────────────┤
 │  📷 OLDIN        📷 MUAMMO   📷 KEYIN  │
 │  [ ▣ ][ ▣ ]      [ ▣ ][ ▣ ]   [ ▣ ]   │
@@ -166,30 +165,50 @@ Shablon konstruktori: [04-roles-and-templates.md](04-roles-and-templates.md)
 | Xodim samaradorligi (narx xulqi bilan) | xodim × oy | jadval + Excel |
 | Downtime | mashina × sabab | jadval |
 | Ehtiyot qism xarajati | qism × yetkazib beruvchi | Excel |
-| To'lov varaqasi | xodim × davr | Excel (buxgalteriyaga) |
+| Qarzlar va to'lovlar | xodim × sana oralig'i | Excel (buxgalteriyaga) |
 
 Import **kerak emas** — faqat eksport.
 Batafsil: [04-flows/03-payroll-and-reports.md](../04-flows/03-payroll-and-reports.md)
 
-## 6. Oy yopilishi
+## 6. Qarz va to'lov
+
+⚠️ **Oy yopilishi yo'q.** Davr (`periods`) va to'lov varaqasi (`payouts`)
+tushunchalari olib tashlangan
+([ADR-0015](../05-delivery/03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)).
+Moliyaviy hisob kalendar oyga emas, **hisobotga** bog'langan: har bir
+tasdiqlangan hisobot — muallifga qarz, u to'langunicha ochiq turadi.
+
+To'lovni **buxgalter ham, admin ham** qayd eta oladi — ekran bir xil:
 
 ```
-1. Admin yoki buxgalter "Oyni yopish" tugmasini bosadi
+Hisobot APPROVED
         ↓
-2. Tizim tekshiradi:
-   ❌ 3 ta hisobot tasdiqlanmagan
-   ❌ 2 ta hisobot narx kelishuvida (usta javob bermagan)
-   ⚠️ 1 ta qoralama 10 kundan beri turibdi
+Qarz = payable_amount − paid_amount        ← 0 dan katta bo'lsa, qarzlar ro'yxatida
         ↓
-3. Har biri: [Hal qilish] yoki [Keyingi oyga ko'chirish]
+[ To'langanlar ]  [ Qarzlar ]
+        ↓  Qarzlar → qarzdor xodim → uning to'lanmagan hisobotlari
         ↓
-4. Davr CLOSED:
-   • Yozuvlar qulflanadi
-   • To'lov varaqalari generatsiya qilinadi
-   • Excel paket eksport qilinadi
+Uch usul:
+   ☑ belgilab       — tanlangan hisobotlarning qolgan qarzi to'liq yopiladi
+   💰 summa kiritib — FIFO: eng eski qarzdan, oxirgisi qisman yopiladi
+   📄 kartochkadan  — bitta hisobot, to'liq yoki qisman
         ↓
-5. Qayta ochish — faqat admin, sabab bilan, audit log'ga yozilib
+paid_amount == payable_amount  →  status PAID
 ```
+
+| Qoida | Tafsilot |
+|---|---|
+| Faqat **`APPROVED`** hisobot to'lanadi | Kelishuvda turgan hisobot qarz emas |
+| `paid_amount ≤ payable_amount` | Ortiqcha to'lov qabul qilinmaydi (DB `CHECK`) |
+| To'lov **o'zgarmas** | Xato bo'lsa — `void` (sabab majburiy): qarz qayta ochiladi, `audit_log`ga yoziladi |
+| Platforma pul **o'tkazmaydi** | Faqat **qayd etadi** |
+| Oylik kesim kerak bo'lsa | `submitted_at` sanasi bo'yicha filtr — alohida davr jadvali yo'q |
+
+⭐ Ustaning qarzi ish haqidan tashqari **o'z hisobidan olgan qismlar**ni ham
+o'z ichiga oladi (chek fotosi majburiy) —
+[ADR-0016](../05-delivery/03-decisions.md#adr-0016--usta-oz-hisobidan-olgan-qism-ham-qarzga-kiradi).
+
+To'liq mexanizm: [04-flows/03-payroll-and-reports.md](../04-flows/03-payroll-and-reports.md)
 
 ## 7. Admin ham hisobot yozadi — avtomatik tasdiqlanadi
 
@@ -220,11 +239,12 @@ Bu — nazorat halqasidagi yagona ochiq joy, shuning uchun u **yashirilmaydi**:
 | Chora | Qayerda ko'rinadi |
 |---|---|
 | `auto_approved` belgisi | Hisobot kartochkasida |
-| "Avtomatik tasdiqlangan: N ta, X so'm" | Oylik hisobot va oy yopish ekrani |
+| "Avtomatik tasdiqlangan: N ta, X so'm" | Oylik hisobot va buxgalterning qarzlar ekrani |
 | `approvals` yozuvi (`actor_id = NULL`) | Audit log |
-| Buxgalter hammasini ko'radi | Oy yopilishida |
+| Buxgalter hammasini ko'radi | To'lovni qayd etishda |
 
-Buxgalter — de-fakto kuzatuvchi: u barcha hisobotlarni ko'radi va oyni yopadi.
+Buxgalter — de-fakto kuzatuvchi: u barcha hisobotlarni ko'radi va to'lovni
+o'zi qayd etadi.
 
 ## 8. E'lon (broadcast)
 

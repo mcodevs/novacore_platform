@@ -19,15 +19,21 @@ export function Row({
   label,
   value,
   tone,
+  hint,
 }: {
   label: ReactNode;
   value: ReactNode;
   /** Qiymatni rang bilan ajratadi (masalan tejamkorlik — yashil). */
   tone?: 'good' | 'accent';
+  /** Yorliq ostidagi mayda izoh (sana, qisman to'lov…). */
+  hint?: ReactNode;
 }) {
   return (
     <div className="row">
-      <span className="muted">{label}</span>
+      <span className="muted">
+        {label}
+        {hint ? <small className="row-hint">{hint}</small> : null}
+      </span>
       <strong className={tone}>{value}</strong>
     </div>
   );

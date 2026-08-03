@@ -97,9 +97,6 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
           label={t('left')}
           value={`${dateTime(submission.left_at)} (${duration(submission.downtime_seconds)})`}
         />
-        {submission.data.odometer_value ? (
-          <Row label={t('odometer')} value={`${submission.data.odometer_value} km`} />
-        ) : null}
         {submission.auto_approved ? <p className="hint">⚙️ {t('auto_approved_line')}</p> : null}
       </Card>
 

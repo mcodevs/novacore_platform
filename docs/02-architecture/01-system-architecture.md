@@ -44,7 +44,7 @@
       ║  │  Domain                                       │     ║
       ║  │  ⭐ pricing (narx kelishuvi)                   │     ║
       ║  │  submission · template · role · approval      │     ║
-      ║  │  period · payout · media · antifraud          │     ║
+      ║  │  payment (qarz daftari) · media · antifraud   │     ║
       ║  └───────────────────┬───────────────────────────┘     ║
       ║                      │                                 ║
       ║  ┌───────────────────▼───────────────────────────┐     ║
@@ -109,8 +109,7 @@ novacore-platform/
 │   │   │   ├── role/          # rol = nom modeli
 │   │   │   ├── approval/
 │   │   │   ├── antifraud/
-│   │   │   ├── period/
-│   │   │   ├── payout/
+│   │   │   ├── payment/      # qarz daftari: to'lov, FIFO, void
 │   │   │   └── media/
 │   │   ├── api/v1/        # FastAPI routerlar
 │   │   ├── bot/           # aiogram handlerlar

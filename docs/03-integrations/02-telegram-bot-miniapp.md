@@ -11,7 +11,7 @@
 | Ro'yxatdan o'tish (`/start`, telefon) | Hisobot yozish, foto, narx qo'yish |
 | **Bildirishnomalar** (+ «Ochish» tugmasi) | Ko'rib chiqish, tasdiqlash, narxni kamaytirish |
 | Til, yordam | Narxga rozilik / nizo |
-| Excel'ni **hujjat sifatida yetkazish** | Davr, oy yopilishi, to'lov varaqalari |
+| Excel'ni **hujjat sifatida yetkazish** | Qarzlar, to'lovni qayd etish |
 | Mini App'ni ochish tugmasi | Arxiv, statistika, xodimlar, konstruktor |
 
 **Nima uchun kirish botda qoladi:** Telegram `initData` da telefon raqami
@@ -63,7 +63,7 @@ kartochkani ochadi (`?submission=<id>`). Tez tugmalar (`✅ Roziman`,
 | Hisobotda kritik bayroq (Faza 3) | Admin |
 | Mashina 24 soatdan beri ustaxonada | Admin |
 | Qoralama 24 soat turdi | Muallif |
-| Oy yopilishiga 3 kun | Admin, buxgalter |
+| **To'lov qayd etildi** (to'liq / qisman) | Muallif |
 | Fleet sinxroni (yangi/yo'qolgan mashina yoki xato) | Admin |
 | **📢 E'lon (admin yozgan)** ⭐ | **Barcha faol xodimlar** |
 

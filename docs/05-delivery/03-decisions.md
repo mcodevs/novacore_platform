@@ -50,7 +50,7 @@ kerak.
 ### Qaror
 Barcha qiymatlar `submissions.data` (JSONB)da, **shu bilan birga** shablonning
 `field_mapping` tavsifiga ko'ra muhim qiymatlar alohida ustunlarga ham yoziladi:
-`subject_vehicle_id`, `total_amount`, `labor_amount`, `odometer_km`, ...
+`subject_vehicle_id`, `total_amount`, `labor_amount`, `payable_amount`, ...
 
 ### Sabab
 - Analitika oddiy SQL bilan, GIN indeks va JSONB operatorlarisiz
@@ -274,7 +274,11 @@ Qo'shimcha qarorlar:
 
 ## ADR-0010 — Ehtiyot qism narxini faqat ta'minotchi kiritadi
 
-**Sana:** 2026-07-31 · **Holat:** ✅ Qabul qilindi ([A-05](02-open-questions.md) javobi)
+**Sana:** 2026-07-31 · **Holat:** ♻️ Qabul qilindi, [ADR-0016](#adr-0016--usta-oz-hisobidan-olgan-qism-ham-qarzga-kiradi) bilan yumshatilgan ([A-05](02-open-questions.md) javobi)
+
+> ♻️ **2026-08-03:** endi bitta istisno bor — usta qismni **o'z hisobidan**
+> to'lasa, «o'z hisobimdan» belgisi orqali narx kirita oladi (chek fotosi
+> majburiy). Kompaniya to'lagan qismga narx kiritish esa avvalgidek yopiq.
 
 ### Kontekst
 NovaCore'da ehtiyot qismni **alohida ta'minotchi xodim** sotib oladi.
@@ -439,6 +443,244 @@ Narx kelishuvi ham bo'lmaydi — kelishadigan ikkinchi tomon mavjud emas.
 | Buxgalter tasdiqlaydi | Uning roli faqat ko'rish va oy yopish — o'zgartirish kerak bo'lardi |
 | Admin umuman hisobot yozmaydi | ADR-0012 ga zid (hammada bir xil imkoniyat) |
 | `SUBMITTED` holatida qoldirish | Oy yopilishini bloklaydi |
+
+---
+
+## ADR-0015 — Qarz daftari: oy yopish o'rniga hisobot bo'yicha to'lov ⭐
+
+**Sana:** 2026-08-03 · **Holat:** ✅ Qabul qilindi (♻️ davr/`payouts` modelini almashtiradi)
+
+### Kontekst
+Dastlabki model kalendar oyga bog'langan edi: oy yopiladi → `payouts`
+(oy × xodim) generatsiya bo'ladi → butun varaqa bir marta "to'landi" deb
+belgilanadi.
+
+Real parkda (2026-08) bu model sinovdan o'tmadi:
+
+- **Oy yopilib qolsa, ortga qaytarish og'ir.** R4 barcha yozuvni qulflaydi;
+  egasi tasodifan yopib qo'yib, ishlay olmay qoldi
+- **To'lov oy chegarasiga bo'ysunmaydi.** Ustaga hafta o'rtasida, qisman,
+  bir nechta ish uchun birdan pul beriladi — kalendar oy bunga aloqasiz
+- **Asosiy savolga model javob bermaydi.** Buxgalterning yagona savoli —
+  *"kimga qancha qarzmiz?"* — davr modelida umuman hisoblanmaydi
+- **`payouts` all-or-nothing.** Qisman to'lovni yozib bo'lmaydi, holbuki
+  amalda to'lovlarning ko'pi qisman
+
+### Qaror
+Davr (`periods`) va to'lov varaqasi (`payouts`) tushunchalari **butunlay
+olib tashlanadi** (jadvallar, `submissions.period_id`, precheck, R4 bilan
+birga). O'rniga — **qarz daftari**:
+
+- Har bir `APPROVED` hisobot = muallifga qarz. Summasi — `payable_amount`
+- To'lov ikki jadvalga yoziladi: `payments` (kimga, qancha, kim kiritdi) va
+  `payment_allocations` (qaysi hisobotlarga, qanchadan)
+- Qarz **hisobot darajasida**: `payable_amount − paid_amount`
+- Buxgalter uch usulda to'laydi:
+  1. hisobotlarni chekbox bilan belgilab — aynan ularga
+  2. summa kiritib — **FIFO**: eng eski qarzdan boshlab, oxirgisi qisman yopiladi
+  3. bitta hisobot kartochkasidan — to'liq yoki qisman
+- To'lov **o'zgarmas**; xato → `void` (sabab majburiy, audit log'ga)
+
+### Sabab
+- Qarz — bu **hisobot xususiyati**, davr xususiyati emas. Modelni realga
+  yaqinlashtirish murakkablikni kamaytiradi: bitta tushuncha o'rniga uchtasi
+  (`periods` + `payouts` + status) — endi bittasi (`paid_amount`)
+- FIFO taqsimoti buxgalterning haqiqiy ish uslubi: "Karimovga 2 mln berdim"
+  — qaysi ishlarga tushgani mashinaning ishi bo'lishi kerak, odamning emas
+- Daftar (`payments` + allocations) audit'ni saqlaydi: har so'm qayerdan
+  kelib qayerga ketgani ko'rinadi. Bu R9 ruhiga mos
+- Oylik analitika yo'qolmaydi — `submitted_at` bo'yicha filtrlanadi, buning
+  uchun alohida jadval kerak emas
+
+### Oqibatlar
+- ➕ Buxgalter ekrani asosiy savolga javob beradi: **to'langanlar / qarzlar**
+- ➕ Qisman to'lov tabiiy ifodalanadi
+- ➕ "Oy yopilib qoldi" degan holat printsipial yo'qoladi
+- ➕ `periods`, `payouts`, precheck, R4 — **~katta hajmdagi kod o'chadi**
+- ➖ Oylik "yopiq" kesim yo'q: hisobot keyin tahrirlansa, o'tgan oy raqami
+  o'zgarishi mumkin. Yumshatish: `APPROVED` hisobot allaqachon tahrirlanmaydi
+  (R3), to'lov esa `void` orqali izli bekor qilinadi
+- ➖ Excel eksport endi sana oralig'i bo'yicha, davr bo'yicha emas
+
+> ♻️ **2026-08-03 qo'shimcha — avans (P7).** Qarzdan **ortiq** to'lov rad
+> etilmaydi: ortiqcha summa xodim hisobida **avans** bo'lib turadi va yangi
+> qarz paydo bo'lishi bilan avtomatik (FIFO) ishlatiladi. Avans alohida jadval
+> emas — `Σ(to'lovlar) − Σ(allokatsiyalar)`. Allokatsiya o'sha to'lov yozuviga
+> biriktirilgani uchun `void` avansni ham izsiz qaytaradi. Qarzi yo'q xodimga
+> to'lov ham mumkin — bu sof avans. P2 buzilmaydi: bitta hisobot hech qachon
+> o'z qarzidan ortiq yopilmaydi.
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Davrni qoldirib, faqat yopishni olib tashlash | `period_id` va `payouts` baribir qoladi — foydasiz murakkablik |
+| Ortiqcha to'lovni **rad etish** | Real hayotda avans beriladi; buxgalter tizimdan tashqarida hisob yuritishga majbur bo'lardi |
+| Avans uchun alohida `advances` jadvali | Daftardan hosila qilib olinadi — ikkinchi haqiqat manbai xavfli |
+| `payouts`ga `paid_amount` qo'shish | Qarz baribir oy × xodim darajasida qolardi; "qaysi ish to'landi" bilinmaydi |
+| To'lovni faqat hisobot statusi bilan (`PAID`) | Qisman to'lov ifodalanmaydi |
+| Davrni yopishni admin uchun qoldirish | Ikki xil model bir vaqtda — chalkashlik manbai |
+
+---
+
+## ADR-0016 — Usta o'z hisobidan olgan qism ham qarzga kiradi
+
+**Sana:** 2026-08-03 · **Holat:** ✅ Qabul qilindi (♻️ [ADR-0010](#adr-0010--ehtiyot-qism-narxini-faqat-taminotchi-kiritadi) ni yumshatadi)
+
+### Kontekst
+ADR-0010 bo'yicha qism narxini **faqat ta'minotchi** kiritadi — usta narx
+maydonini umuman ko'rmaydi. Bu F5 (qism narxini shishirish) teshigini
+tuzilmaviy yopgan edi.
+
+Amalda esa usta **o'z cho'ntagidan** qism sotib olishi mumkin: mayda sarf,
+shoshilinch ish, ta'minotchi yo'q payt. Bunda o'rtada ta'minotchi turmaydi va
+hisobotda qism narxi umuman qayd etilmaydi → **kompaniya ustaga qarzdor bo'lib
+qoladi, lekin tizimda bu ko'rinmaydi.**
+
+### Qaror
+Qism qatorida **«o'z hisobimdan»** belgisi bo'ladi va u narx maydonini ochadi:
+
+| Belgi | Narx maydoni | Qarzga kiradi | Ma'nosi |
+|---|---|---|---|
+| ✅ qo'yilgan | ochiladi, **chek fotosi majburiy** | ✅ ha | Usta o'z puliga oldi → qaytariladi |
+| ⬜ qo'yilmagan | **yopiq** (narx kiritilmaydi) | ❌ yo'q | Kompaniya oldi → ta'minotchi hisobotida |
+
+Ya'ni **narx bor = qarz bor**. Belgi va pul — bitta harakat.
+
+**Serverda belgi narxdan kelib chiqadi** (klientga ishonilmaydi, R7):
+
+```python
+self_funded = kind == part and (belgi qo'yilgan yoki narx > 0)
+narx        = 0 if (kind == part and not self_funded) else narx
+```
+
+Shu sababli holat **zid bo'lishi mumkin emas**: narxli qism doim qarzga kiradi,
+belgisiz qism doim narxsiz qoladi.
+
+**Ta'minotchiga ham shu qoida qo'llanadi** (2026-08-03): u qismni **o'z puliga**
+oladi va kompaniya unga qaytaradi. Uning xaridi doim narx bilan kiritilgani
+uchun avtomatik `self_funded` bo'ladi — ya'ni ta'minotchi ham qarzdorlar
+ro'yxatida ko'rinadi. Alohida qoida yozilmadi: bitta qoida ikkala rolni ham
+qamrab oladi.
+
+### Sabab
+- Belgi va summa ajralmas: "belgi yo'q, lekin qarz bor" holati **printsipial
+  imkonsiz** bo'ladi. Ikki maydonni bir-biriga zid sozlab bo'lmaydi
+- ADR-0010 ning asosiy himoyasi saqlanadi: kompaniya to'lagan qismga usta
+  narx **umuman kirita olmaydi**
+- Ochilib qolgan teshik (usta soxta belgi qo'yib narx yozishi) **chek fotosi**
+  bilan yopiladi — ta'minotchida allaqachon shu talab bor
+- Narxsiz qism qatori kelishuvga (`proposed_amount = 0`) kirmaydi → R2
+  `CHECK` buzilmaydi: admin keyin narx "oshira" olmaydi
+
+### Oqibatlar
+- ➕ Ustaga real qarz to'liq hisoblanadi — ish haqi + o'z puliga olingan qism
+- ➕ Ta'minotchisiz mayda xaridlar ham hujjatlashadi
+- ➖ F5 teshigi qisman qayta ochiladi: chek fotosi — yagona to'siq. Admin
+  ko'rikda buni tekshirishi shart
+
+> ✅ **Amalga oshirildi (2026-08-03):** chek talabi serverda majburiy —
+> `self_funded` va narxli qism qatori bo'lsa `receipt_required` xatosi
+> beriladi va hisobot **yuborilmaydi**. Qoida qatorlarga bog'langan, shablon
+> maydonining `required` bayrog'iga emas
+> ([03-report-templates §6a](../02-architecture/03-report-templates.md#6a-chek-fotosi--oz-hisobimdan-qismi-uchun-)).
+- ➖ Mashina xarajati analitikasida kompaniya olgan qism narxi shu hisobotda
+  yo'q — u ta'minotchi hisobotidan keladi (`related_submission_id`)
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Butun hisobotga bitta chekbox | Aralash holat ifodalanmaydi: qimmat qismni kompaniya, maydasini usta olgan |
+| Qism qatori bor ekan — doim usta to'lagan | Kompaniya olgan qismni yozib bo'lmaydi |
+| Belgi va narxni ajratish | Zid holat mumkin bo'lardi: belgi yo'q, narx bor |
+
+---
+
+## ADR-0017 — Foto faqat kameradan, galereya yo'q
+
+**Sana:** 2026-08-03 · **Holat:** ✅ Qabul qilindi (egasining qarori)
+
+### Kontekst
+Mini App'da foto maydonida ikki tugma bor edi: **«📷 Suratga olish»**
+(`capture="environment"`) va **«🖼 Galereyadan»**. Ikkinchisi — Telegram
+WebView'da (ayniqsa iOS) `capture` ishlamay qolsa degan **zaxira yo'l** edi
+(CLAUDE.md dagi «ochiq texnik xavf»).
+
+Muammo: galereya tugmasi turgan ekan, foto-dalil g'oyasi kuchsiz. Usta eski
+yoki boshqa mashinaning suratini qo'yishi mumkin — F3 vektori ochiq qoladi.
+
+### Qaror
+**Galereya tugmasi butunlay olib tashlanadi.** Foto faqat kameradan olinadi:
+bitta tugma, bitta `<input capture="environment">`.
+
+### Sabab
+- Foto-dalilning ma'nosi — **hozir, shu joyda** olingani. Galereya buni yo'qotadi
+- EXIF tekshiruvi (`photo_not_fresh`, `photo_no_exif`) — bu keyingi qatlam;
+  birinchi qatlam imkoniyatning **o'zini yopish** bo'lishi kerak (ADR-0006 ruhi)
+- Zaxira yo'lni qoldirish = amalda hamma undan foydalanadi
+
+### Oqibatlar
+- ➕ F3 (eski/boshqa mashina fotosi) tuzilmaviy susayadi
+- ➕ UI soddalashadi: bitta tugma
+- ➖ ⚠️ **Xavf realga aylandi:** agar Telegram WebView'da (iOS) `capture`
+  galereyani ochsa yoki umuman ishlamasa — **zaxira yo'l qolmadi**, foto
+  yuklab bo'lmaydi. Kamera sinovi endi **bloklovchi** vazifa
+- ➖ Bir nechta fotoni birdan tanlash yo'q (`multiple` faqat galereyada edi)
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Galereyani qoldirib, EXIF bilan tekshirish | Tekshiruv keyin ishlaydi; imkoniyatni yopish kuchliroq |
+| Galereyani faqat admin uchun ochish | Hisobotni admin emas, usta yozadi |
+| Shablon opsiyasi (`camera_only`) bilan boshqarish | Opsiya bor edi, lekin baribir zaxira tugma ko'rinardi |
+
+---
+
+## ADR-0018 — Probeg hisobotdan olib tashlandi
+
+**Sana:** 2026-08-03 · **Holat:** ✅ Qabul qilindi (egasining qarori)
+
+### Kontekst
+`car_repair` shablonida ikkita probeg maydoni bor edi: `odometer_value` (raqam)
+va `odometer_photo` (spidometr fotosi, majburiy). Ular
+`submissions.odometer_km` promoted ustuniga tushardi va `monotonic_for_vehicle`
+tekshiruvi probeg kamayib ketmasligini nazorat qilardi.
+
+Amalda probeg ishlatilmadi: analitikada 1 km ga xarajat hisobi hali yo'q, lekin
+usta **har hisobotda** spidometrni suratga olishga va raqam kiritishga majbur
+edi — bu formadagi eng ko'p e'tiroz tug'diradigan qadam.
+
+### Qaror
+Probeg **hisobot shablonidan** butunlay olib tashlanadi: ikkala maydon,
+`field_mapping.odometer`, `submissions.odometer_km` ustuni va
+`monotonic_for_vehicle` tekshiruvi.
+
+⚠️ **`vehicles.odometer_km` saqlanadi** — u avtopark reyestriga tegishli va
+Yandex Fleet sinxronidan keladi, hisobotga aloqasi yo'q.
+
+### Sabab
+- Har hisobotda majburiy qo'shimcha foto + raqam — **eng qimmat maydon**,
+  foydasi esa nolga yaqin
+- Kerak bo'lgan yagona hisob (1 km ga xarajat) `vehicles.odometer_km` bilan
+  ham qilinadi — Fleet uni o'zi yangilaydi, usta ishtirokisiz
+- Ataylab olib tashlangan narsalar ro'yxati (CLAUDE.md) — bir maydon kam
+  bo'lgani model uchun yutuq
+
+### Oqibatlar
+- ➕ Ta'mir formasi bir foto va bir maydonga qisqardi
+- ➕ `monotonic_for_vehicle` yo'qolgani bilan `_business_checks` soddalashdi
+- ➖ Hisobot vaqtidagi **aniq** probeg endi qayd etilmaydi; Fleet ma'lumoti
+  esa kechikishi mumkin
+- ➖ `odometer_anomaly` bayrog'i g'oyasi bekor bo'ldi (u hech qachon kodda
+  amalga oshirilmagan edi)
+- ⓘ `MediaKind.odometer` enum qiymati **saqlandi** — prodda `kind='odometer'`
+  bo'lgan eski media yozuvlari o'qilishi kerak
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Maydonni ixtiyoriy qilish | Ixtiyoriy maydon to'ldirilmaydi — ma'lumot baribir yo'q, lekin kod qoladi |
+| Faqat fotoni olib tashlab, raqamni qoldirish | Fotosiz raqamga ishonib bo'lmaydi — yarim yechim |
+| Ustunni qoldirib, shablondan olib tashlash | O'lik ustun va `field_mapping` chalkashligi |
 
 ---
 

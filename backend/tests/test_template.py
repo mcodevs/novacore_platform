@@ -57,13 +57,14 @@ async def test_photo_max_enforced(session):
     submission = await submission_service.create_draft(session, mechanic, template)
     await fill_valid_repair(session, submission, mechanic, vehicle)
 
-    # odometer_photo: max = 1, ikkinchisini qo'shamiz
-    await add_photo(session, submission, mechanic, "odometer_photo", payload=b"second")
+    # photo_car_before: max = 2, uchinchisini qo'shamiz
+    await add_photo(session, submission, mechanic, "photo_car_before", payload=b"second")
+    await add_photo(session, submission, mechanic, "photo_car_before", payload=b"third")
     await session.flush()
 
     with pytest.raises(ValidationFailed) as excinfo:
         await submission_service.submit(session, submission, mechanic)
-    assert excinfo.value.fields["odometer_photo"] == "photo_max_reached"
+    assert excinfo.value.fields["photo_car_before"] == "photo_max_reached"
 
 
 async def test_textarea_min_length(session):
@@ -109,7 +110,6 @@ async def test_field_mapping_promotes_columns(session):
     await submission_service.submit(session, submission, mechanic)
 
     assert submission.subject_vehicle_id == vehicle.id
-    assert submission.odometer_km == 48250
     assert submission.proposed_labor_amount == Decimal("250000.00")
     assert submission.parts_amount == Decimal("0.00")
     assert submission.total_amount == Decimal("250000.00")

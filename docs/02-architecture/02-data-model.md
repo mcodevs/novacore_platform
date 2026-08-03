@@ -26,13 +26,13 @@ erDiagram
     SUBMISSIONS ||--o{ MEDIA : "fotolar"
     SUBMISSIONS ||--o{ APPROVALS : "tasdiqlash + narx kelishuvi"
     SUBMISSIONS ||--o{ FLAGS : "bayroqlar"
-    SUBMISSIONS }o--|| PERIODS : "davr"
+    SUBMISSIONS ||--o{ PAYMENT_ALLOCATIONS : "qarz yopilishi"
     SUBMISSIONS }o--o| SUBMISSIONS : "bog'liq (qism xaridi ↔ ta'mir)"
 
     WORK_CATALOG ||--o{ SUBMISSION_LINES : "tayanch narx"
     PARTS_CATALOG ||--o{ SUBMISSION_LINES : ""
-    PERIODS ||--o{ PAYOUTS : ""
-    EMPLOYEES ||--o{ PAYOUTS : ""
+    EMPLOYEES ||--o{ PAYMENTS : "kimga to'landi"
+    PAYMENTS ||--o{ PAYMENT_ALLOCATIONS : "taqsimot"
     EMPLOYEES ||--o{ AUDIT_LOG : "aktor"
 ```
 
@@ -188,11 +188,11 @@ Ta'mir hisoboti, qism xaridi, yuvish — **hammasi shu jadvalda**.
 | **`auto_approved`** | bool | ⭐ `admin` muallifi → tizim avtomatik tasdiqlagan (R1a) |
 | **`arrived_at`** | timestamptz null | ⭐ "Mashina keldi" tugmasi |
 | **`left_at`** | timestamptz null | ⭐ "Mashina ketdi" tugmasi |
-| `odometer_km` | int null | *promoted* |
 | `resolution` | enum null | `repaired` / `no_defect` / `external` |
 | `is_external` | bool | Tashqi servisda bajarilgan |
 | `submitted_at` | timestamptz null | |
-| `period_id` | FK → periods null | **Yuborilganda** belgilanadi |
+| **`payable_amount`** | numeric(14,2) | ⭐ Qarz asosi: tasdiqlangan ish haqi + o'z hisobidan olingan qismlar. **Serverda** qayta hisoblanadi (P3) |
+| **`paid_amount`** | numeric(14,2) | ⭐ To'langani. `CHECK (paid_amount BETWEEN 0 AND payable_amount)` (P2) |
 | `geo_lat`, `geo_lon` | numeric(9,6) null | Yuborish joyi (ixtiyoriy) |
 | `flags_count` | int | Ro'yxatda tez ko'rsatish |
 
@@ -207,7 +207,8 @@ ko'chiriladi. Analitika faqat shu ustunlar bilan ishlaydi
 ```sql
 CREATE INDEX ON submissions (status, submitted_at DESC);
 CREATE INDEX ON submissions (subject_vehicle_id, submitted_at DESC);
-CREATE INDEX ON submissions (author_id, period_id);
+-- qarz ro'yxati: kim, qancha qarz, eng eskisidan (FIFO)
+CREATE INDEX ON submissions (author_id, status, submitted_at);
 CREATE INDEX ON submissions USING GIN (data jsonb_path_ops);
 ```
 
@@ -232,8 +233,24 @@ CREATE INDEX ON submissions USING GIN (data jsonb_path_ops);
 | `reference_amount` | numeric(14,2) null | Tasdiqlash paytidagi tarixiy o'rtacha (snapshot) |
 | `deviation_pct` | numeric(6,2) null | `proposed` vs `reference` |
 | `supplier_name` | text null | Qism qatorlari uchun |
+| **`self_funded`** | bool | ⭐ «O'z hisobimdan» — faqat `kind='part'` uchun. `true` → narx kiritiladi va **qarzga kiradi**; `false` → narx `0`, qarzga kirmaydi ([ADR-0016](../05-delivery/03-decisions.md#adr-0016--usta-oz-hisobidan-olgan-qism-ham-qarzga-kiradi)) |
 | `is_original` | bool null | Original / analog |
 | `warranty_days` | int null | |
+
+**`self_funded` cheklovlari:**
+
+```sql
+-- kompaniya to'lagan qismda narx bo'lmaydi (P6 — R2 CHECK buzilmasin)
+CHECK (kind = 'labor' OR self_funded OR proposed_amount = 0)
+```
+
+Belgi **serverda narxdan kelib chiqadi** (R7 — klientga ishonilmaydi):
+`self_funded = kind == part AND (belgi qo'yilgan OR narx > 0)`; belgisiz qism
+narxi `0` ga tushiriladi. Shu sababli zid holat imkonsiz.
+
+`self_funded = true` bo'lsa — **chek fotosi majburiy** (shablon validatsiyasi).
+Ta'minotchining xaridi doim narx bilan kiritilgani uchun avtomatik
+`self_funded` bo'ladi → u ham qarzdorlar ro'yxatiga tushadi.
 
 **Narx qoidalari:**
 
@@ -326,30 +343,46 @@ parts_catalog(id, code, name, article, category,
 
 ⚠️ Bu **ombor emas** — qoldiq hisoblanmaydi (qism omborga tushmaydi).
 
-## 6. Davr, to'lov, audit
+## 6. To'lov (qarz daftari), audit
 
-### `periods` — hisobot davrlari
+> ⚠️ **`periods` va `payouts` jadvallari YO'Q** — olib tashlangan
+> ([ADR-0015](../05-delivery/03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)).
+> Qarz hisobot darajasida yuritiladi, oylik kesim `submitted_at` bo'yicha
+> filtrlanadi.
 
-```
-periods(id, year, month, status enum(open|locking|closed),
-        closed_by, closed_at, reopened_by, reopened_at, reopen_reason)
-UNIQUE(year, month)
-```
-
-Hisobot **yuborilgan** sanaga qarab davrga biriktiriladi.
-
-### `payouts` — to'lov varaqalari
+### `payments` — to'lov yozuvi (daftar boshi)
 
 | Ustun | Tur | Izoh |
 |---|---|---|
-| `id`, `period_id`, `employee_id` | | unique(period_id, employee_id) |
-| `submissions_count` | int | |
-| `proposed_total` | numeric(14,2) | So'ralgan jami (statistika) |
-| `labor_total` | numeric(14,2) | **`approved_amount` yig'indisi** — to'lov asosi |
-| `reduction_total` | numeric(14,2) | Kelishuv tejamkorligi |
-| `bonus`, `penalty` | numeric(14,2) | Qo'lda, sabab majburiy |
-| `total` | numeric(14,2) | |
-| `status` | enum: `draft` / `approved` / `paid` | |
+| `id` | bigint PK | |
+| `employee_id` | FK → employees | **Kimga** to'landi |
+| `amount` | numeric(14,2) | Jami summa, `> 0` |
+| `actor_id` | FK → employees | Kim kiritdi (buxgalter/admin) |
+| `note` | text null | Izoh (ixtiyoriy) |
+| `created_at` | timestamptz | |
+| `voided_at` | timestamptz null | Bekor qilingan bo'lsa |
+| `voided_by` | FK → employees null | |
+| `void_reason` | text null | **Bekor qilinsa majburiy** (P5) |
+
+To'lov **tahrirlanmaydi** — faqat `void` qilinadi.
+
+### `payment_allocations` — to'lov qaysi hisobotlarga tushdi
+
+| Ustun | Tur | Izoh |
+|---|---|---|
+| `id` | bigint PK | |
+| `payment_id` | FK → payments (CASCADE) | |
+| `submission_id` | FK → submissions | |
+| `amount` | numeric(14,2) | `> 0` (`CHECK`) |
+
+```sql
+CREATE INDEX ON payment_allocations (submission_id);
+CREATE INDEX ON payments (employee_id, created_at DESC);
+```
+
+**P4:** `sum(allocations.amount) == payments.amount` — serverda tekshiriladi.
+`void` qilinganda allokatsiyalar saqlanadi (tarix), lekin
+`submissions.paid_amount` qayta hisoblanadi.
 
 ### `audit_log`
 

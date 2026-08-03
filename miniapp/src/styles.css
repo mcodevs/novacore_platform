@@ -384,6 +384,68 @@ body::before {
   text-align: right;
 }
 
+/* Yorliq ostidagi mayda izoh — sana, qisman to'lov holati */
+.row-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* --- Qarz daftari ekranlari --------------------------------------------- */
+
+/* Chekboxli qator: belgi + `Row` yonma-yon, butun qator bosiladi */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.check-row + .check-row {
+  border-top: 1px solid var(--border);
+}
+
+.check-row input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.check-row .row,
+.check-row > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.check-row + .check-row .row {
+  border-top: none;
+}
+
+/* Bosiladigan qator (qarzdor → uning hisobotlari) — tugma, lekin qator ko'rinishida */
+.link-row {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link-row + .link-row {
+  border-top: 1px solid var(--border);
+}
+
+.link-row:active {
+  opacity: 0.6;
+}
+
 /* --- Statistika plitkalari ---------------------------------------------- */
 
 .grid {

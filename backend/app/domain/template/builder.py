@@ -44,7 +44,6 @@ MAPPING_KEYS = {
     "vehicle",
     "employee",
     "related_submission",
-    "odometer",
     "proposed_labor_amount",
     "labor_amount",
     "parts_amount",

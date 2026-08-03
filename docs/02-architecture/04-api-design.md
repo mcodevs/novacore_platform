@@ -53,7 +53,7 @@ Batafsil: [06-security.md](06-security.md)
 
 | Metod | Yo'l | Tavsif |
 |---|---|---|
-| `GET` | `/submissions` | `?status=&author_id=me&period_id=&vehicle_id=&limit=&offset=`. `status` vergulli bo'lishi mumkin: `submitted,in_review` |
+| `GET` | `/submissions` | `?status=&author_id=me&vehicle_id=&payment=&from=&to=&limit=&offset=`. `status` vergulli bo'lishi mumkin: `submitted,in_review`. `payment=debt\|paid` — buxgalter tablari |
 | `POST` | `/submissions` | Yangi qoralama: `{ template_code, vehicle_id? }` → **`arrived_at` server vaqti bilan yoziladi** |
 | `GET` | `/submissions/{id}` | Sxema + qiymatlar + media + bayroqlar + kelishuv tarixi |
 | `PATCH` | `/submissions/{id}` | Qoralamani qisman saqlash `{ data: {...} }` |
@@ -184,17 +184,51 @@ status hisobi; ular vaqt o'tishi bilan o'zgaradi (outbox sikli).
 ⚠️ E'lonni **o'chirish yoki tahrirlash endpointi yo'q** — yuborilgan xabar
 qaytarilmaydi, tarix o'zgarmaydi (R9).
 
-## 8. Davr va to'lovlar
+## 8. Qarz va to'lovlar
+
+> ⚠️ `/periods` va `/payouts` endpointlari **yo'q** — olib tashlangan
+> ([ADR-0015](../05-delivery/03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)).
 
 | Metod | Yo'l | Tavsif |
 |---|---|---|
-| `GET` | `/periods` | Davrlar |
-| `GET` | `/periods/{id}/precheck` | Yopishga to'sqinlik qiluvchilar ro'yxati |
-| `POST` | `/periods/{id}/close` | Yopish |
-| `POST` | `/periods/{id}/reopen` | `{ reason }` — faqat admin |
-| `GET` | `/payouts?period_id=` | To'lov varaqalari |
-| `POST` | `/payouts/{id}/adjust` | `{ bonus, penalty, reason }` |
-| `POST` | `/payouts/{id}/mark-paid` | |
+| `GET` | `/debts` | Qarzdorlar: `{ total_debt, employees: [{ id, name, debt, count }] }` |
+| `GET` | `/debts/{employee_id}` | Shu xodimning to'lanmagan hisobotlari, **eng eskisidan** (FIFO tartibi) |
+| `POST` | `/payments` | To'lov qayd etish — pastdagi uch rejim |
+| `GET` | `/payments?employee_id=&from=&to=` | To'lovlar tarixi |
+| `POST` | `/payments/{id}/void` | `{ reason }` — bekor qilish, sabab **majburiy** |
+
+### `POST /payments` — uch rejim, bitta endpoint
+
+```jsonc
+// 1) Chekbox: belgilangan hisobotlar to'liq yopiladi
+{ "employee_id": 7, "submission_ids": [124, 131] }
+
+// 2) FIFO: summa kiritiladi, eng eski qarzdan taqsimlanadi
+{ "employee_id": 7, "amount": "1500000.00" }
+
+// 3) Bitta hisobot, qisman
+{ "employee_id": 7, "submission_ids": [138], "amount": "160000.00" }
+```
+
+Javob — yaratilgan to'lov va taqsimoti:
+
+```jsonc
+{ "data": {
+    "id": 42, "employee_id": 7, "amount": "1500000.00",
+    "allocations": [
+      { "submission_id": 124, "amount": "450000.00", "fully_paid": true  },
+      { "submission_id": 131, "amount": "890000.00", "fully_paid": true  },
+      { "submission_id": 138, "amount": "160000.00", "fully_paid": false }
+    ] } }
+```
+
+**Xatolar:**
+
+| Kod | Qachon |
+|---|---|
+| `submission_not_payable` | Hisobot `APPROVED` emas (P1), yoki to'langan hisobotni qaytarish (F9) |
+| `payment_already_voided` | Bekor qilingan to'lovni qayta bekor qilish |
+| `void_reason_required` | `void` da sabab yo'q (P5) |
 
 ## 9. Analitika va eksport
 
@@ -202,8 +236,8 @@ qaytarilmaydi, tarix o'zgarmaydi (R9).
 |---|---|---|
 | `GET` | `/reports/dashboard` | Asosiy ko'rsatkichlar |
 | `GET` | `/reports/negotiation-savings` | ⭐ Kelishuv tejamkorligi |
-| `GET` | `/reports/vehicle-costs` | Mashina × davr |
-| `GET` | `/reports/employee-performance` | Xodim × davr (narx xulqi bilan) |
+| `GET` | `/reports/vehicle-costs` | Mashina × sana oralig'i (`?from=&to=`) |
+| `GET` | `/reports/employee-performance` | Xodim × sana oralig'i (narx xulqi bilan) |
 | `GET` | `/reports/downtime` | `left_at − arrived_at` bo'yicha |
 | `POST` | `/reports/export` | Excel generatsiya → `task_id` |
 | `GET` | `/reports/export/{task_id}` | Tayyor faylni olish |
@@ -236,12 +270,12 @@ Import endpointi **yo'q** — faqat eksport.
 | 403 | `price_reference_hidden` | `reporter` tayanch narxni so'radi |
 | 404 | `not_found` | |
 | 409 | `invalid_state_transition` | Holat o'tishi mumkin emas |
-| 409 | `period_closed` | Davr yopilgan |
+| 409 | `submission_not_payable` | Hisobot `APPROVED` emas (P1) |
 | 409 | `self_approval_forbidden` | O'z hisobotini tasdiqlash (R1) |
 | 409 | `last_admin_required` | Oxirgi adminni o'chirish (R8) |
 | 413 | `file_too_large` | |
 | 422 | `price_increase_forbidden` | Admin narxni oshirmoqchi (R2) |
-| 422 | `business_rule_violated` | Probeg kamaygan, `left_at < arrived_at` va h.k. |
+| 422 | `business_rule_violated` | `left_at < arrived_at` va h.k. |
 | 429 | `rate_limited` | |
 
 ## 11. Hisobot yuborish — batafsil oqim
@@ -255,7 +289,7 @@ POST /submissions/{id}/submit
 3. Davr:    joriy davr ochiqmi ?
 4. left_at to'ldirilganmi ? (mashina ketgan bo'lishi kerak)
 5. Shablon validatsiyasi: majburiy maydonlar, foto min/max, lines bo'sh emas
-6. Biznes tekshiruvlar: probeg kamaymadimi, left_at > arrived_at
+6. Biznes tekshiruvlar: left_at > arrived_at
 7. Summalar QAYTA hisoblanadi (klientga ishonilmaydi)
 8. Promoted ustunlar to'ldiriladi (field_mapping)
 9. Bayroqlar hisoblanadi → flags
@@ -265,7 +299,7 @@ POST /submissions/{id}/submit
                   approved_* = proposed_*, auto_approved = true,
                   approvals(decision='auto_approved', actor_id=NULL)
                   ⓘ bildirishnoma yo'q, narx kelishuvi yo'q
-11. submitted_at = now(), period_id belgilanadi
+11. submitted_at = now()
 12. Fon: pHash hisoblash, Fleet status (Faza 3)
 13. audit_log
 ```

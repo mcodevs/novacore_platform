@@ -29,7 +29,7 @@ export const T: Dict = {
   // Pastki navigatsiya — qisqa yorliqlar (emoji alohida beriladi)
   nav_home: { uz: 'Asosiy', ru: 'Главная' },
   nav_reports: { uz: 'Hisobotlar', ru: 'Отчёты' },
-  nav_period: { uz: 'Davr', ru: 'Период' },
+  nav_debts: { uz: 'Qarzlar', ru: 'Долги' },
   nav_team: { uz: 'Xodimlar', ru: 'Сотрудники' },
   nav_profile: { uz: 'Profil', ru: 'Профиль' },
 
@@ -117,49 +117,51 @@ export const T: Dict = {
     ru: 'текст · число · сумма · да/нет · выбор · фото · машина · строки · геолокация',
   },
 
-  // Davr, to'lovlar, eksport (admin/buxgalter)
-  period: { uz: '📅 Davr', ru: '📅 Период' },
-  period_open: { uz: 'Ochiq', ru: 'Открыт' },
-  period_closed: { uz: 'Yopilgan', ru: 'Закрыт' },
-  precheck: { uz: 'Yopishdan oldin', ru: 'Перед закрытием' },
-  precheck_clean: { uz: 'To‘siq yo‘q', ru: 'Препятствий нет' },
-  precheck_unapproved: { uz: '{n} ta hisobot tasdiqlanmagan', ru: '{n} отчётов не подтверждено' },
-  precheck_negotiation: {
-    uz: '{n} ta hisobot narx kelishuvida',
-    ru: '{n} отчётов в согласовании цены',
+  // Qarz daftari, to'lovlar, eksport (admin/buxgalter) — ADR-0015
+  tab_debts: { uz: 'Qarzlar', ru: 'Долги' },
+  tab_paid: { uz: 'To‘langanlar', ru: 'Выплаченные' },
+  total_debt: { uz: 'Umumiy qarz', ru: 'Общий долг' },
+  total_advance: { uz: 'Umumiy avans', ru: 'Общий аванс' },
+  advance: { uz: 'Avans', ru: 'Аванс' },
+  advance_hint: {
+    uz: 'Yangi ish tasdiqlanganda avansdan avtomatik ushlab qolinadi.',
+    ru: 'При подтверждении новой работы аванс списывается автоматически.',
   },
-  precheck_reopened: {
-    uz: '{n} ta hisobot qaytarilgan (tuzatilmagan)',
-    ru: '{n} отчётов возвращено (не исправлены)',
+  advance_only_hint: {
+    uz: 'Qarz yo‘q — kiritilgan summa to‘liq avans bo‘lib qoladi.',
+    ru: 'Долга нет — введённая сумма полностью останется авансом.',
   },
-  precheck_drafts: {
-    uz: '{n} ta qoralama {days} kundan beri turibdi',
-    ru: '{n} черновиков висят более {days} дн.',
+  overpay_hint: {
+    uz: 'Qarzdan ortiq summa avans sifatida xodim hisobida qoladi.',
+    ru: 'Сумма сверх долга останется авансом на счёте сотрудника.',
   },
-  close_period: { uz: '🔒 Oyni yopish', ru: '🔒 Закрыть месяц' },
-  confirm_close: { uz: 'Ha, yopilsin', ru: 'Да, закрыть' },
-  close_blocked: {
-    uz: 'To‘siqlar hal qilinmaguncha yopib bo‘lmaydi.',
-    ru: 'Пока препятствия не сняты, закрыть нельзя.',
+  debtors: { uz: 'Qarzdorlar', ru: 'Должники' },
+  no_debt: { uz: 'Qarz yo‘q', ru: 'Долгов нет' },
+  debt_reports: { uz: 'To‘lanmagan hisobotlar', ru: 'Неоплаченные отчёты' },
+  reports_count: { uz: 'ta ish', ru: 'работ' },
+  partly_paid: { uz: 'qisman to‘langan', ru: 'частично оплачено' },
+  make_payment: { uz: 'To‘lov qilish', ru: 'Выплатить' },
+  pay_selected: { uz: 'Belgilanganlarni to‘lash', ru: 'Оплатить выбранные' },
+  pay_amount: { uz: 'Summa', ru: 'Сумма' },
+  pay_by_amount: { uz: 'To‘lovni qayd etish', ru: 'Записать выплату' },
+  fifo_hint: {
+    uz: 'Summa eng eski qarzdan boshlab taqsimlanadi; yetmasa oxirgisi qisman yopiladi.',
+    ru: 'Сумма распределяется с самого старого долга; при нехватке последний закрывается частично.',
   },
-  period_closed_ok: { uz: 'Davr yopildi', ru: 'Период закрыт' },
-  payouts: { uz: 'To‘lov varaqalari', ru: 'Ведомости' },
-  payouts_after_close: {
-    uz: 'Varaqalar oy yopilganda hosil bo‘ladi.',
-    ru: 'Ведомости формируются при закрытии месяца.',
-  },
-  mark_paid: { uz: 'To‘landi deb belgilash', ru: 'Отметить выплаченным' },
-  marked_paid: { uz: 'To‘landi deb belgilandi', ru: 'Отмечено как выплачено' },
+  payment_saved: { uz: 'To‘lov qayd etildi', ru: 'Выплата записана' },
+  payment_history: { uz: 'To‘lovlar tarixi', ru: 'История выплат' },
+  no_payments: { uz: 'Hozircha to‘lov yo‘q', ru: 'Выплат пока нет' },
+  voided: { uz: 'bekor qilingan', ru: 'отменено' },
   paid: { uz: 'To‘langan', ru: 'Выплачено' },
   total: { uz: 'Jami', ru: 'Итого' },
   export: { uz: '📥 Eksport', ru: '📥 Экспорт' },
-  export_via_bot: {
+  export_hint: {
     uz: 'Excel botga hujjat bo‘lib keladi.',
     ru: 'Excel придёт документом в бот.',
   },
   export_sent: { uz: 'Excel botga yuborildi', ru: 'Excel отправлен в бот' },
   export_submissions: { uz: 'Hisobotlar', ru: 'Отчёты' },
-  export_payouts: { uz: 'To‘lovlar', ru: 'Выплаты' },
+  export_debts: { uz: 'Qarzlar va to‘lovlar', ru: 'Долги и выплаты' },
   export_savings: { uz: 'Kelishuv tejamkorligi', ru: 'Экономия согласования' },
 
   // Hisobotlar arxivi (admin/buxgalter)
@@ -257,7 +259,6 @@ export const T: Dict = {
   form_title: { uz: 'Hisobot', ru: 'Отчёт' },
   step: { uz: 'Qadam', ru: 'Шаг' },
   photo_take: { uz: '📷 Suratga olish', ru: '📷 Сделать снимок' },
-  photo_gallery: { uz: '🖼 Galereyadan', ru: '🖼 Из галереи' },
   photo_hint: {
     uz: 'Foto shu yerda kamerada olinishi kerak',
     ru: 'Фото нужно снять камерой прямо сейчас',
@@ -274,12 +275,22 @@ export const T: Dict = {
     ru: 'Цену указываете вы — админ рассмотрит',
   },
   part_price_note: {
-    uz: 'ⓘ Qism narxini ta‘minotchi kiritadi',
-    ru: 'ⓘ Цену запчасти вносит снабженец',
+    uz: 'ⓘ Narxni faqat o‘z hisobingizdan olgan qism uchun kiritasiz',
+    ru: 'ⓘ Цену указываете только для запчастей, купленных за свой счёт',
+  },
+  self_funded: { uz: 'O‘z hisobimdan oldim', ru: 'Купил за свой счёт' },
+  self_funded_hint: {
+    uz: 'Narx kiritiladi va sizga qaytariladi. Chek fotosi majburiy.',
+    ru: 'Укажете цену, деньги вернут. Фото чека обязательно.',
+  },
+  receipt_required: {
+    uz: 'O‘z hisobingizdan olingan qism bor — chek fotosi majburiy',
+    ru: 'Есть запчасть за свой счёт — фото чека обязательно',
   },
   add_work: { uz: '➕ Ish qo‘shish', ru: '➕ Добавить работу' },
   add_part: { uz: '➕ Qism qo‘shish', ru: '➕ Добавить запчасть' },
   total_labor: { uz: 'Mening ish haqim', ru: 'Моя оплата' },
+  total_own_parts: { uz: 'O‘z hisobimdan', ru: 'За свой счёт' },
   car_left: { uz: '🚙 Mashina ketdi', ru: '🚙 Машина уехала' },
   submit: { uz: '📤 Yuborish', ru: '📤 Отправить' },
   submit_after_left: {
@@ -301,7 +312,6 @@ export const T: Dict = {
   arrived: { uz: 'Keldi', ru: 'Приехала' },
   left: { uz: 'Ketdi', ru: 'Уехала' },
   downtime: { uz: 'Ustaxonada', ru: 'В сервисе' },
-  odometer: { uz: 'Probeg', ru: 'Пробег' },
   author: { uz: 'Xodim', ru: 'Сотрудник' },
   photos: { uz: 'Fotolar', ru: 'Фото' },
   comment: { uz: 'Izoh', ru: 'Комментарий' },

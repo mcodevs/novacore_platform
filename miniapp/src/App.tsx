@@ -18,7 +18,7 @@ import { DetailScreen } from './screens/DetailScreen';
 import { EmployeesScreen } from './screens/EmployeesScreen';
 import { FormScreen } from './screens/FormScreen';
 import { HomeScreen } from './screens/HomeScreen';
-import { PeriodScreen } from './screens/PeriodScreen';
+import { DebtScreen } from './screens/DebtScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { RoleEditScreen } from './screens/RoleEditScreen';
@@ -37,7 +37,7 @@ type Route =
   | { name: 'employees' }
   | { name: 'broadcast' }
   | { name: 'reports' }
-  | { name: 'period' }
+  | { name: 'debts' }
   | { name: 'template'; id: number | null }
   | { name: 'role'; id: number | null };
 
@@ -50,7 +50,7 @@ function tabsFor(kind: RoleKind): Tab[] {
   return [
     home,
     { key: 'reports', icon: 'reports', label: t('nav_reports') },
-    { key: 'period', icon: 'period', label: t('nav_period') },
+    { key: 'debts', icon: 'period', label: t('nav_debts') },
     profile,
   ];
 }
@@ -181,8 +181,8 @@ export function App() {
         />
       ) : null}
 
-      {route.name === 'period' ? (
-        <PeriodScreen onDone={(message) => showToast(message)} />
+      {route.name === 'debts' ? (
+        <DebtScreen onDone={(message) => showToast(message)} />
       ) : null}
 
       {route.name === 'reports' ? (

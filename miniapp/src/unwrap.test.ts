@@ -11,10 +11,10 @@ test('sof konvert ochiladi', () => {
 });
 
 test('hisobot obyekti ochilmaydi — unda `data` maydoni bor', () => {
-  const submission = { id: 42, number: 'WO-2026-000042', data: { odometer_value: 48250 } };
+  const submission = { id: 42, number: 'WO-2026-000042', data: { category: 'brakes' } };
   const result = unwrap<typeof submission>(submission);
   assert.equal(result.id, 42, 'id yo‘qolmasligi kerak');
-  assert.deepEqual(result.data, { odometer_value: 48250 });
+  assert.deepEqual(result.data, { category: 'brakes' });
 });
 
 test('massiv va oddiy qiymatlar o‘zgarmaydi', () => {

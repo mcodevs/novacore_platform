@@ -17,6 +17,7 @@ from app.db.base import ZERO, money
 from app.db.models import (
     LineKind,
     Media,
+    MediaKind,
     Submission,
     SubmissionLine,
     Template,
@@ -393,7 +394,49 @@ def validate(
             if not isinstance(value, dict) or not value.get("submission_id"):
                 issues.append(ValidationIssue(spec.code, "field_required", {}))
 
+    issues.extend(_receipt_issues(schema, data, media, lines))
     return issues
+
+
+def _receipt_issues(
+    schema: TemplateSchema, data: dict, media: list[Media], lines: list[SubmissionLine]
+) -> list[ValidationIssue]:
+    """F5a — «o'z hisobimdan» olingan qism uchun **chek fotosi majburiy**.
+
+    ADR-0016 ADR-0010 ning tuzilmaviy himoyasini yumshatdi: usta endi qismga
+    narx kirita oladi. Yagona to'siq — chek. Shuning uchun tekshiruv maydonning
+    `required` bayrog'iga emas, **qatorlarga** bog'langan: chek faqat o'z
+    hisobidan olingan qism bo'lsa talab qilinadi.
+
+    Chek borligini **maydon** bo'yicha aniqlaymiz (media `kind` klientdan
+    keladi — unga ishonilmaydi, R7).
+    """
+    own_parts = [
+        ln
+        for ln in lines
+        if ln.kind == LineKind.part and ln.self_funded and (ln.proposed_amount or ZERO) > ZERO
+    ]
+    if not own_parts:
+        return []
+
+    live = {m.id for m in media if m.deleted_at is None}
+    receipt_spec = next(
+        (s for s in schema.fields if s.type == "photo" and s.options.get("kind") == "receipt"),
+        None,
+    )
+
+    if receipt_spec is not None:
+        attached = [i for i in (data.get(receipt_spec.code) or []) if i in live]
+        target = receipt_spec.code
+    else:
+        # Shablonda chek maydoni yo'q — media turiga qaytamiz, xato qatorlarda
+        attached = [m.id for m in media if m.deleted_at is None and m.kind == MediaKind.receipt]
+        fallback = schema.field_for_line_kind(LineKind.part)
+        target = fallback.code if fallback else "parts"
+
+    if attached:
+        return []
+    return [ValidationIssue(target, "receipt_required", {"n": len(own_parts)})]
 
 
 # --- Promoted ustunlar (field_mapping) --------------------------------------
@@ -435,6 +478,29 @@ def recalculate_amounts(submission: Submission, lines: list[SubmissionLine] | No
         else submission.proposed_labor_amount
     )
     submission.total_amount = money(labor + submission.parts_amount)
+    submission.payable_amount = payable_from_lines(lines, labor=submission.labor_amount)
+
+
+def payable_from_lines(
+    lines: list[SubmissionLine], *, labor: Decimal | None = None
+) -> Decimal:
+    """R5/P3 — qarz asosi: tasdiqlangan ish haqi + **`self_funded`** qismlar.
+
+    Kompaniya to'lagan qism (`self_funded = False`) qarzga kirmaydi — uning
+    narxi ham yo'q (P6). Hisobot hali tasdiqlanmagan bo'lsa (`labor is None`)
+    qarz nolga teng: to'lov faqat `APPROVED` hisobotga qo'llanadi (P1).
+    """
+    if labor is None:
+        return ZERO
+
+    own_parts = ZERO
+    for line in lines:
+        if line.kind != LineKind.part or not line.self_funded:
+            continue
+        own_parts += (
+            line.approved_amount if line.approved_amount is not None else line.proposed_amount
+        ) or ZERO
+    return money(labor + own_parts)
 
 
 def apply_field_mapping(
@@ -461,12 +527,5 @@ def apply_field_mapping(
         value = data.get(related_field)
         if isinstance(value, dict) and value.get("submission_id"):
             submission.related_submission_id = int(value["submission_id"])
-
-    odometer_field = mapping.get("odometer")
-    if odometer_field:
-        raw = data.get(odometer_field)
-        number = _parse_number(raw)
-        if number is not None:
-            submission.odometer_km = int(number)
 
     recalculate_amounts(submission, lines)

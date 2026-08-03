@@ -49,7 +49,7 @@ Haydovchilar tizimda **rolga ega emas**. Mashinaning kelgani va ketgani —
         ↓  arrived_at = hozir  ·  mashina statusi: TA'MIRDA
 Qadam 1 — Mashina raqami
         ↓
-Qadam 2 — Ta'mirgacha (foto, probeg, muammo)
+Qadam 2 — Ta'mirgacha (foto, muammo)
         ↓
 Qadam 3 — Bajarilgan ishlar + o'z narxi
         ↓
@@ -90,7 +90,6 @@ shundan chiqadi.
 | Maydon | Turi | Majburiy | Izoh |
 |---|---|---|---|
 | Mashina umumiy ko'rinishi | 📷 foto | ✅ | Raqam ko'rinsin — bu ayni o'sha mashina |
-| Odometr paneli | 📷 foto + son | ✅ | Probegni tasdiqlaydi |
 | Muammo fotosi | 📷 1–5 ta | ✅ | Nosozlik joyi |
 | Muammo tavsifi | matn | ✅ | |
 | Nosozlik kategoriyasi | tanlov | ✅ | Tormoz / Xodovoy / Elektr / Kuzov / Salon / Shina / Batareya / Boshqa |

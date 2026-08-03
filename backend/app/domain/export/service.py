@@ -1,8 +1,16 @@
-"""Excel eksport — import YO'Q, faqat eksport (docs/04-flows/03-payroll-and-reports.md §6)."""
+"""Excel eksport — import YO'Q, faqat eksport (docs/04-flows/03-payroll-and-reports.md §6).
+
+⚠️ `periods` / `payouts` yo'q (ADR-0015). Eksport **sana oralig'i** bo'yicha
+ishlaydi (`frm` … `to`), pul kesimi esa qarz daftaridan olinadi:
+`submissions.payable_amount − submissions.paid_amount`.
+"""
 
 from __future__ import annotations
 
+import datetime as dt
 import io
+from dataclasses import dataclass
+from decimal import Decimal
 
 import sqlalchemy as sa
 from openpyxl import Workbook
@@ -11,20 +19,22 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import TASHKENT
-from app.db.base import ZERO, as_utc
+from app.db.base import ZERO, as_utc, money, utcnow
 from app.db.models import (
+    Approval,
+    ApprovalDecision,
     Employee,
-    Payout,
-    Period,
     Submission,
     SubmissionLine,
-    SubmissionStatus,
     Vehicle,
 )
-from app.domain.payout import service as payout_service
+from app.domain.payment import service as payment_service
+from app.domain.stats import service as stats_service
 
 HEADER_FONT = Font(bold=True)
 MONEY_FMT = "#,##0"
+#: To'lovlar tarixida ko'rsatiladigan eng ko'p yozuv
+PAYMENTS_LIMIT = 1000
 
 
 def _autosize(ws) -> None:  # noqa: ANN001
@@ -47,8 +57,34 @@ def _fmt_dt(value) -> str:  # noqa: ANN001
     return as_utc(value).astimezone(TASHKENT).strftime("%d.%m.%Y %H:%M")
 
 
-async def export_submissions(session: AsyncSession, period: Period) -> tuple[str, bytes]:
-    """`tamirlar_YYYY_MM.xlsx` — barcha hisobotlar, to'liq ma'lumot."""
+def _date_slug(value: dt.datetime | None, *, fallback: str) -> str:
+    """Fayl nomi uchun `YYYYMMDD` (Toshkent vaqti) yoki mazmunli chegara."""
+    if value is None:
+        return fallback
+    return as_utc(value).astimezone(TASHKENT).strftime("%Y%m%d")
+
+
+def _range_slug(frm: dt.datetime | None, to: dt.datetime | None) -> str:
+    left = _date_slug(frm, fallback="boshidan")
+    right = _date_slug(to, fallback="hozirgacha")
+    return f"{left}_{right}"
+
+
+def _save(wb: Workbook) -> bytes:
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    return buffer.getvalue()
+
+
+# --- Ta'mirlar ----------------------------------------------------------------
+
+
+async def export_submissions(
+    session: AsyncSession,
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
+) -> tuple[str, bytes]:
+    """`tamirlar_<from>_<to>.xlsx` — hisobotlar, to'liq ma'lumot + qarz holati."""
     wb = Workbook()
     ws = wb.active
     ws.title = "Ta'mirlar"
@@ -62,12 +98,14 @@ async def export_submissions(session: AsyncSession, period: Period) -> tuple[str
             "Keldi",
             "Ketdi",
             "Downtime (soat)",
-            "Probeg",
             "So'ralgan ish haqi",
             "Tasdiqlangan ish haqi",
             "Kamaytirildi",
             "Qismlar",
             "Jami",
+            "Qarz asosi",
+            "To'langan",
+            "Qolgan qarz",
             "Avtomatik tasdiq",
             "Yuborilgan",
         ],
@@ -75,7 +113,7 @@ async def export_submissions(session: AsyncSession, period: Period) -> tuple[str
 
     stmt = (
         sa.select(Submission)
-        .where(Submission.period_id == period.id, Submission.deleted_at.is_(None))
+        .where(*stats_service.in_range(frm, to))
         .order_by(Submission.submitted_at)
     )
     for sub in (await session.execute(stmt)).scalars().all():
@@ -96,7 +134,6 @@ async def export_submissions(session: AsyncSession, period: Period) -> tuple[str
                 _fmt_dt(sub.arrived_at),
                 _fmt_dt(sub.left_at),
                 round(downtime / 3600, 1) if downtime is not None else "",
-                sub.odometer_km or "",
                 float(sub.proposed_labor_amount),
                 float(approved) if approved is not None else "",
                 float(sub.proposed_labor_amount - (approved or ZERO))
@@ -104,12 +141,15 @@ async def export_submissions(session: AsyncSession, period: Period) -> tuple[str
                 else "",
                 float(sub.parts_amount),
                 float(sub.total_amount),
+                float(sub.payable_amount),
+                float(sub.paid_amount),
+                float(sub.debt),
                 "ha" if sub.auto_approved else "",
                 _fmt_dt(sub.submitted_at),
             ]
         )
 
-    for row in ws.iter_rows(min_row=2, min_col=9, max_col=13):
+    for row in ws.iter_rows(min_row=2, min_col=9, max_col=16):
         for cell in row:
             cell.number_format = MONEY_FMT
     _autosize(ws)
@@ -126,6 +166,7 @@ async def export_submissions(session: AsyncSession, period: Period) -> tuple[str
             "Soni",
             "So'ralgan",
             "Tasdiqlangan",
+            "O'z hisobidan",
             "Kamaytirish sababi",
             "Rozilik",
         ],
@@ -133,7 +174,7 @@ async def export_submissions(session: AsyncSession, period: Period) -> tuple[str
     line_stmt = (
         sa.select(SubmissionLine, Submission)
         .join(Submission, Submission.id == SubmissionLine.submission_id)
-        .where(Submission.period_id == period.id, Submission.deleted_at.is_(None))
+        .where(*stats_service.in_range(frm, to))
         .order_by(Submission.number)
     )
     for line, sub in (await session.execute(line_stmt)).all():
@@ -147,143 +188,269 @@ async def export_submissions(session: AsyncSession, period: Period) -> tuple[str
                 float(line.qty),
                 float(line.proposed_amount),
                 float(line.approved_amount) if line.approved_amount is not None else "",
+                "ha" if line.self_funded else "",
                 line.price_change_reason or "",
                 line.mechanic_accept_mode.value if line.mechanic_accept_mode else "",
             ]
         )
+    for row in ws2.iter_rows(min_row=2, min_col=6, max_col=7):
+        for cell in row:
+            cell.number_format = MONEY_FMT
     _autosize(ws2)
 
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    return f"tamirlar_{period.year}_{period.month:02d}.xlsx", buffer.getvalue()
+    return f"tamirlar_{_range_slug(frm, to)}.xlsx", _save(wb)
 
 
-async def export_payouts(session: AsyncSession, period: Period) -> tuple[str, bytes]:
-    """`tolovlar_YYYY_MM.xlsx` — buxgalteriyaga."""
+# --- Qarzlar ------------------------------------------------------------------
+
+
+async def export_debts(
+    session: AsyncSession,
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
+) -> tuple[str, bytes]:
+    """`qarzlar_<sana>.xlsx` — buxgalteriyaga.
+
+    Birinchi varaq — **hozirgi** qarz holati (sana oralig'iga bog'liq emas:
+    qarz yopilmaguncha ochiq turadi). Ikkinchi varaq — to'lovlar tarixi;
+    oraliq berilgan bo'lsa, faqat shu oraliqdagi to'lovlar.
+    """
     wb = Workbook()
     ws = wb.active
-    ws.title = "To'lovlar"
-    _write_header(
-        ws,
-        [
-            "Xodim",
-            "Rol",
-            "Ishlar soni",
-            "So'ralgan",
-            "Tasdiqlangan (to'lov asosi)",
-            "Kelishuvda kamaydi",
-            "Bonus",
-            "Jarima",
-            "JAMI",
-            "Status",
-        ],
-    )
+    ws.title = "Qarzlar"
+    ws.append(["Qarzdorlar — hozirgi holat"])
+    ws["A1"].font = Font(bold=True, size=14)
+    ws.append([])
+    ws.append(["Xodim", "Ishlar soni", "Qarz"])
+    for cell in ws[3]:
+        cell.font = HEADER_FONT
+        cell.alignment = Alignment(horizontal="center")
 
-    stmt = sa.select(Payout).where(Payout.period_id == period.id)
-    for payout in (await session.execute(stmt)).scalars().all():
-        employee = payout.employee
-        ws.append(
-            [
-                employee.full_name,
-                employee.role.name_uz,
-                payout.submissions_count,
-                float(payout.proposed_total),
-                float(payout.labor_total),
-                float(payout.reduction_total),
-                float(payout.bonus),
-                float(payout.penalty),
-                float(payout.total),
-                payout.status.value,
-            ]
-        )
-    for row in ws.iter_rows(min_row=2, min_col=4, max_col=9):
+    summary = await payment_service.debt_summary(session)
+    for entry in summary.employees:
+        ws.append([entry.full_name, entry.count, float(entry.debt)])
+    ws.append([])
+    ws.append(["JAMI", "", float(summary.total)])
+    ws[f"A{ws.max_row}"].font = HEADER_FONT
+    for row in ws.iter_rows(min_row=4, min_col=3, max_col=3):
         for cell in row:
             cell.number_format = MONEY_FMT
     _autosize(ws)
 
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    return f"tolovlar_{period.year}_{period.month:02d}.xlsx", buffer.getvalue()
+    # To'lovlar tarixi
+    ws2 = wb.create_sheet("To'lovlar")
+    _write_header(
+        ws2,
+        [
+            "Sana",
+            "Xodim",
+            "Summa",
+            "Izoh",
+            "Hisobotlar",
+            "Kiritdi",
+            "Bekor qilingan",
+            "Bekor sababi",
+        ],
+    )
+
+    payments = await payment_service.payments_of(session, limit=PAYMENTS_LIMIT)
+    if frm is not None:
+        payments = [p for p in payments if as_utc(p.created_at) >= frm]
+    if to is not None:
+        payments = [p for p in payments if as_utc(p.created_at) <= to]
+
+    # Allokatsiyalardagi hisobot raqamlari — bitta so'rovda
+    numbers: dict[int, str] = {}
+    ids = {alloc.submission_id for payment in payments for alloc in payment.allocations}
+    if ids:
+        rows = (
+            await session.execute(
+                sa.select(Submission.id, Submission.number).where(Submission.id.in_(ids))
+            )
+        ).all()
+        numbers = {sub_id: number for sub_id, number in rows}
+
+    total_paid = ZERO
+    for payment in payments:
+        if not payment.is_voided:
+            total_paid = money(total_paid + payment.amount)
+        actor = await session.get(Employee, payment.actor_id)
+        ws2.append(
+            [
+                _fmt_dt(payment.created_at),
+                payment.employee.full_name if payment.employee else "",
+                float(payment.amount),
+                payment.note or "",
+                ", ".join(
+                    numbers.get(alloc.submission_id, str(alloc.submission_id))
+                    for alloc in payment.allocations
+                ),
+                actor.full_name if actor else "",
+                "ha" if payment.is_voided else "",
+                payment.void_reason or "",
+            ]
+        )
+    ws2.append([])
+    ws2.append(["JAMI (bekor qilinmagan)", "", float(total_paid)])
+    ws2[f"A{ws2.max_row}"].font = HEADER_FONT
+    for row in ws2.iter_rows(min_row=2, min_col=3, max_col=3):
+        for cell in row:
+            cell.number_format = MONEY_FMT
+    _autosize(ws2)
+
+    today = _date_slug(utcnow(), fallback="")
+    return f"qarzlar_{today}.xlsx", _save(wb)
 
 
-async def export_savings(session: AsyncSession, period: Period) -> tuple[str, bytes]:
-    """⭐ `kelishuv_YYYY_MM.xlsx` — narx kelishuvi tejamkorligi."""
-    summary = await payout_service.period_summary(session, period.id)
+# --- Kelishuv tejamkorligi ----------------------------------------------------
+
+
+@dataclass
+class _AuthorStat:
+    """Xodim kesimi — `export_savings` ikkinchi varag'i."""
+
+    full_name: str
+    count: int = 0
+    proposed: Decimal = ZERO
+    approved: Decimal = ZERO
+    debt: Decimal = ZERO
+    paid: Decimal = ZERO
+    disputes: int = 0
+
+    @property
+    def reduction_pct(self) -> Decimal:
+        if self.proposed <= ZERO:
+            return ZERO
+        return money((self.proposed - self.approved) * 100 / self.proposed)
+
+
+async def _author_breakdown(
+    session: AsyncSession, frm: dt.datetime | None, to: dt.datetime | None
+) -> list[_AuthorStat]:
+    """Tasdiqlangan hisobotlarni muallif bo'yicha yig'adi (RPS past — Python'da)."""
+    stmt = sa.select(Submission).where(
+        *stats_service.in_range(frm, to),
+        Submission.status.in_(stats_service.PAYABLE),
+    )
+    stats: dict[int, _AuthorStat] = {}
+    for sub in (await session.execute(stmt)).scalars().all():
+        stat = stats.get(sub.author_id)
+        if stat is None:
+            author = await session.get(Employee, sub.author_id)
+            stat = _AuthorStat(
+                full_name=author.full_name if author else str(sub.author_id)
+            )
+            stats[sub.author_id] = stat
+        stat.count += 1
+        stat.proposed = money(stat.proposed + sub.proposed_labor_amount)
+        stat.approved = money(stat.approved + (sub.labor_amount or ZERO))
+        stat.paid = money(stat.paid + sub.paid_amount)
+        stat.debt = money(stat.debt + (sub.payable_amount - sub.paid_amount))
+
+    disputes_stmt = (
+        sa.select(Submission.author_id, sa.func.count(Approval.id))
+        .join(Approval, Approval.submission_id == Submission.id)
+        .where(
+            *stats_service.in_range(frm, to),
+            Approval.decision == ApprovalDecision.price_disputed,
+        )
+        .group_by(Submission.author_id)
+    )
+    for author_id, count in (await session.execute(disputes_stmt)).all():
+        if author_id in stats:
+            stats[author_id].disputes = int(count)
+
+    return sorted(stats.values(), key=lambda item: item.approved, reverse=True)
+
+
+async def export_savings(
+    session: AsyncSession,
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
+) -> tuple[str, bytes]:
+    """⭐ `kelishuv_<from>_<to>.xlsx` — narx kelishuvi tejamkorligi."""
+    summary = await stats_service.range_summary(session, frm=frm, to=to)
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Kelishuv"
-    ws.append([f"Narx kelishuvi — {period.year}-{period.month:02d}"])
+    ws.append([f"Narx kelishuvi — {summary.title}"])
     ws["A1"].font = Font(bold=True, size=14)
     ws.append([])
-    ws.append(["Ustalar so'radi", float(summary.proposed_total)])
-    ws.append(["Tasdiqlandi", float(summary.approved_total)])
-    ws.append(["TEJALDI", float(summary.saved)])
-    ws.append(["Tejamkorlik %", float(summary.saved_pct)])
-    ws.append(["Tasdiqlangan hisobotlar", summary.approved_count])
-    ws.append(["Avtomatik tasdiqlangan (admin)", summary.auto_approved_count])
-    ws.append(["Avtomatik tasdiqlangan summa", float(summary.auto_approved_total)])
-    for row in ws.iter_rows(min_row=3, max_row=9, min_col=2, max_col=2):
-        for cell in row:
-            cell.number_format = MONEY_FMT
+
+    rows: list[tuple[str, object, bool]] = [
+        ("Ustalar so'radi", float(summary.proposed_total), True),
+        ("Tasdiqlandi", float(summary.approved_total), True),
+        ("TEJALDI", float(summary.saved), True),
+        ("Tejamkorlik %", float(summary.saved_pct), False),
+        ("Qismlar", float(summary.parts_total), True),
+        ("Jami hisobotlar", summary.total_submissions, False),
+        ("Tasdiqlangan hisobotlar", summary.approved_count, False),
+        ("Avtomatik tasdiqlangan (admin)", summary.auto_approved_count, False),
+        ("Avtomatik tasdiqlangan summa", float(summary.auto_approved_total), True),
+        ("To'langan", float(summary.paid_total), True),
+        ("Qolgan qarz", float(summary.debt_total), True),
+    ]
+    for label, value, is_money in rows:
+        ws.append([label, value])
+        if is_money:
+            ws.cell(row=ws.max_row, column=2).number_format = MONEY_FMT
+    _autosize(ws)
 
     ws2 = wb.create_sheet("Xodimlar kesimi")
     _write_header(
         ws2,
-        ["Xodim", "Ishlar", "So'radi", "Tasdiqlandi", "Kamaytirish %", "Nizolar"],
+        [
+            "Xodim",
+            "Ishlar",
+            "So'radi",
+            "Tasdiqlandi",
+            "Kamaytirish %",
+            "To'langan",
+            "Qolgan qarz",
+            "Nizolar",
+        ],
     )
-    stmt = (
-        sa.select(Submission.author_id)
-        .where(Submission.period_id == period.id, Submission.deleted_at.is_(None))
-        .group_by(Submission.author_id)
-    )
-    from app.domain.pricing import service as pricing_service
-
-    for (employee_id,) in (await session.execute(stmt)).all():
-        employee = await session.get(Employee, employee_id)
-        stats = await pricing_service.employee_price_stats(
-            session, employee_id, period_id=period.id
-        )
-        count = (
-            await session.execute(
-                sa.select(sa.func.count(Submission.id)).where(
-                    Submission.period_id == period.id,
-                    Submission.author_id == employee_id,
-                    Submission.deleted_at.is_(None),
-                    Submission.status.in_(
-                        [SubmissionStatus.APPROVED, SubmissionStatus.PAID]
-                    ),
-                )
-            )
-        ).scalar_one()
+    for stat in await _author_breakdown(session, frm, to):
         ws2.append(
             [
-                employee.full_name if employee else str(employee_id),
-                int(count),
-                float(stats.proposed_total),
-                float(stats.approved_total),
-                float(stats.avg_reduction_pct),
-                stats.disputes,
+                stat.full_name,
+                stat.count,
+                float(stat.proposed),
+                float(stat.approved),
+                float(stat.reduction_pct),
+                float(stat.paid),
+                float(stat.debt),
+                stat.disputes,
             ]
         )
+    for row in ws2.iter_rows(min_row=2, min_col=3, max_col=4):
+        for cell in row:
+            cell.number_format = MONEY_FMT
+    for row in ws2.iter_rows(min_row=2, min_col=6, max_col=7):
+        for cell in row:
+            cell.number_format = MONEY_FMT
     _autosize(ws2)
 
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    return f"kelishuv_{period.year}_{period.month:02d}.xlsx", buffer.getvalue()
+    return f"kelishuv_{_range_slug(frm, to)}.xlsx", _save(wb)
 
 
 EXPORTS = {
     "submissions": export_submissions,
-    "payouts": export_payouts,
+    "debts": export_debts,
     "savings": export_savings,
 }
 
 
-async def build(session: AsyncSession, kind: str, period: Period) -> tuple[str, bytes]:
+async def build(
+    session: AsyncSession,
+    kind: str,
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
+) -> tuple[str, bytes]:
     if kind not in EXPORTS:
         raise ValueError(f"unknown export: {kind}")
-    return await EXPORTS[kind](session, period)
+    return await EXPORTS[kind](session, frm=frm, to=to)
 
 
-__all__ = ["build", "export_payouts", "export_savings", "export_submissions"]
+__all__ = ["build", "export_debts", "export_savings", "export_submissions"]

@@ -124,18 +124,6 @@ class FlagResolution(str, enum.Enum):
     confirmed_fraud = "confirmed_fraud"
 
 
-class PeriodStatus(str, enum.Enum):
-    open = "open"
-    locking = "locking"
-    closed = "closed"
-
-
-class PayoutStatus(str, enum.Enum):
-    draft = "draft"
-    approved = "approved"
-    paid = "paid"
-
-
 class NotificationStatus(str, enum.Enum):
     pending = "pending"
     sent = "sent"
@@ -378,7 +366,6 @@ class Submission(Base, TimestampMixin, SoftDeleteMixin):
 
     arrived_at: Mapped[dt.datetime | None] = mapped_column(default=None)  # server vaqti
     left_at: Mapped[dt.datetime | None] = mapped_column(default=None)  # server vaqti
-    odometer_km: Mapped[int | None] = mapped_column(default=None)
     resolution: Mapped[Resolution | None] = mapped_column(
         py_enum(Resolution, "submission_resolution"), default=None
     )
@@ -387,7 +374,13 @@ class Submission(Base, TimestampMixin, SoftDeleteMixin):
     reviewed_at: Mapped[dt.datetime | None] = mapped_column(default=None)
     decided_at: Mapped[dt.datetime | None] = mapped_column(default=None)
     price_proposed_at: Mapped[dt.datetime | None] = mapped_column(default=None)
-    period_id: Mapped[int | None] = mapped_column(sa.ForeignKey("periods.id"), default=None)
+
+    # --- qarz daftari (ADR-0015) ---
+    #: Qarz asosi: tasdiqlangan ish haqi + `self_funded` qismlar. Serverda hisoblanadi (R5/P3)
+    payable_amount: Mapped[Money] = mapped_column(default=Decimal("0.00"))
+    #: To'langani. P2 — hech qachon `payable_amount` dan oshmaydi
+    paid_amount: Mapped[Money] = mapped_column(default=Decimal("0.00"))
+
     geo_lat: Mapped[Coord | None] = mapped_column(default=None)
     geo_lon: Mapped[Coord | None] = mapped_column(default=None)
     flags_count: Mapped[int] = mapped_column(default=0)
@@ -406,10 +399,23 @@ class Submission(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     __table_args__ = (
+        # P2 — ortiqcha to'lov yo'q
+        sa.CheckConstraint(
+            "paid_amount >= 0 AND paid_amount <= payable_amount",
+            name="ck_submission_paid_le_payable",
+        ),
         sa.Index("ix_submissions_status_submitted", "status", "submitted_at"),
         sa.Index("ix_submissions_vehicle", "subject_vehicle_id", "submitted_at"),
-        sa.Index("ix_submissions_author_period", "author_id", "period_id"),
+        # qarz ro'yxati: kim, qancha qarz, eng eskisidan (FIFO)
+        sa.Index("ix_submissions_author_status", "author_id", "status", "submitted_at"),
     )
+
+    @property
+    def debt(self) -> Decimal:
+        """Qolgan qarz. `APPROVED` bo'lmasa — 0."""
+        if self.status not in PAYABLE_STATUSES:
+            return Decimal("0.00")
+        return self.payable_amount - self.paid_amount
 
     @property
     def downtime_seconds(self) -> int | None:
@@ -449,6 +455,10 @@ class SubmissionLine(Base, TimestampMixin):
     reference_amount: Mapped[Money | None] = mapped_column(default=None)
     deviation_pct: Mapped[Decimal | None] = mapped_column(sa.Numeric(6, 2), default=None)
     supplier_name: Mapped[str | None] = mapped_column(sa.Text, default=None)
+    #: ⭐ «O'z hisobimdan» — faqat `kind='part'` uchun ma'noli (ADR-0016).
+    #: True → muallif o'z puliga oldi, narx kiritadi, qarzga kiradi (chek fotosi majburiy).
+    #: False → kompaniya oldi, narx 0, qarzga kirmaydi.
+    self_funded: Mapped[bool] = mapped_column(default=False)
     is_original: Mapped[bool | None] = mapped_column(default=None)
     warranty_days: Mapped[int | None] = mapped_column(default=None)
 
@@ -459,6 +469,11 @@ class SubmissionLine(Base, TimestampMixin):
         sa.CheckConstraint(
             "approved_amount IS NULL OR approved_amount <= proposed_amount",
             name="ck_line_approved_le_proposed",
+        ),
+        # P6 — kompaniya to'lagan qismda narx bo'lmaydi (R2 CHECK buzilmasin)
+        sa.CheckConstraint(
+            "kind = 'labor' OR self_funded OR proposed_amount = 0",
+            name="ck_line_company_part_no_price",
         ),
         # R2b — kamaytirilsa sabab majburiy
         sa.CheckConstraint(
@@ -612,54 +627,65 @@ class CatalogItem(Base):
         return self.name_ru if lang == "ru" else self.name_uz
 
 
-# --- Davr, to'lov, audit -----------------------------------------------------
+# --- To'lov (qarz daftari), audit --------------------------------------------
+#
+# ⚠️ `periods` va `payouts` YO'Q — ADR-0015. Qarz hisobot darajasida yuritiladi:
+# `submissions.payable_amount − submissions.paid_amount`.
 
 
-class Period(Base, TimestampMixin):
-    __tablename__ = "periods"
+class Payment(Base):
+    """To'lov yozuvi. Tahrirlanmaydi — xato bo'lsa faqat `void` (P5)."""
 
-    id: Mapped[int] = mapped_column(PKType, primary_key=True, autoincrement=True)
-    year: Mapped[int]
-    month: Mapped[int]
-    status: Mapped[PeriodStatus] = mapped_column(
-        py_enum(PeriodStatus, "period_status"), default=PeriodStatus.open
-    )
-    closed_by: Mapped[int | None] = mapped_column(sa.ForeignKey("employees.id"), default=None)
-    closed_at: Mapped[dt.datetime | None] = mapped_column(default=None)
-    reopened_by: Mapped[int | None] = mapped_column(sa.ForeignKey("employees.id"), default=None)
-    reopened_at: Mapped[dt.datetime | None] = mapped_column(default=None)
-    reopen_reason: Mapped[str | None] = mapped_column(sa.Text, default=None)
-
-    __table_args__ = (sa.UniqueConstraint("year", "month", name="uq_period_year_month"),)
-
-    @property
-    def title(self) -> str:
-        return f"{self.year}-{self.month:02d}"
-
-
-class Payout(Base, TimestampMixin):
-    __tablename__ = "payouts"
+    __tablename__ = "payments"
 
     id: Mapped[int] = mapped_column(PKType, primary_key=True, autoincrement=True)
-    period_id: Mapped[int] = mapped_column(sa.ForeignKey("periods.id"))
-    employee_id: Mapped[int] = mapped_column(sa.ForeignKey("employees.id"))
-    submissions_count: Mapped[int] = mapped_column(default=0)
-    proposed_total: Mapped[Money] = mapped_column(default=Decimal("0.00"))
-    labor_total: Mapped[Money] = mapped_column(default=Decimal("0.00"))  # R5 — approved
-    reduction_total: Mapped[Money] = mapped_column(default=Decimal("0.00"))
-    bonus: Mapped[Money] = mapped_column(default=Decimal("0.00"))
-    penalty: Mapped[Money] = mapped_column(default=Decimal("0.00"))
-    adjust_reason: Mapped[str | None] = mapped_column(sa.Text, default=None)
-    total: Mapped[Money] = mapped_column(default=Decimal("0.00"))
-    status: Mapped[PayoutStatus] = mapped_column(
-        py_enum(PayoutStatus, "payout_status"), default=PayoutStatus.draft
-    )
-    paid_at: Mapped[dt.datetime | None] = mapped_column(default=None)
+    employee_id: Mapped[int] = mapped_column(sa.ForeignKey("employees.id"))  # kimga
+    amount: Mapped[Money]
+    actor_id: Mapped[int] = mapped_column(sa.ForeignKey("employees.id"))  # kim kiritdi
+    note: Mapped[str | None] = mapped_column(sa.Text, default=None)
+    created_at: Mapped[dt.datetime] = mapped_column(default=utcnow)
 
-    employee: Mapped[Employee] = relationship(lazy="selectin")
+    voided_at: Mapped[dt.datetime | None] = mapped_column(default=None)
+    voided_by: Mapped[int | None] = mapped_column(sa.ForeignKey("employees.id"), default=None)
+    void_reason: Mapped[str | None] = mapped_column(sa.Text, default=None)
+
+    employee: Mapped[Employee] = relationship(foreign_keys=[employee_id], lazy="selectin")
+    allocations: Mapped[list[PaymentAllocation]] = relationship(
+        back_populates="payment", cascade="all, delete-orphan", lazy="selectin"
+    )
 
     __table_args__ = (
-        sa.UniqueConstraint("period_id", "employee_id", name="uq_payout_period_employee"),
+        sa.CheckConstraint("amount > 0", name="ck_payment_amount_positive"),
+        # P5 — bekor qilinsa sabab majburiy
+        sa.CheckConstraint(
+            "voided_at IS NULL OR void_reason IS NOT NULL",
+            name="ck_payment_void_reason",
+        ),
+        sa.Index("ix_payments_employee", "employee_id", "created_at"),
+    )
+
+    @property
+    def is_voided(self) -> bool:
+        return self.voided_at is not None
+
+
+class PaymentAllocation(Base):
+    """To'lov qaysi hisobotga qancha tushdi. P4: yig'indi = `payment.amount`."""
+
+    __tablename__ = "payment_allocations"
+
+    id: Mapped[int] = mapped_column(PKType, primary_key=True, autoincrement=True)
+    payment_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("payments.id", ondelete="CASCADE")
+    )
+    submission_id: Mapped[int] = mapped_column(sa.ForeignKey("submissions.id"))
+    amount: Mapped[Money]
+
+    payment: Mapped[Payment] = relationship(back_populates="allocations")
+
+    __table_args__ = (
+        sa.CheckConstraint("amount > 0", name="ck_allocation_amount_positive"),
+        sa.Index("ix_allocations_submission", "submission_id"),
     )
 
 

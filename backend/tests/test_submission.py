@@ -11,7 +11,6 @@ from app.core.errors import Forbidden, InvalidStateTransition, ValidationFailed
 from app.db.base import as_utc, utcnow
 from app.db.models import SubmissionStatus, VehicleStatus
 from app.domain.submission import service as submission_service
-from app.domain.template import engine
 from tests.conftest import (
     create_ready_submission,
     fill_valid_repair,
@@ -90,23 +89,6 @@ async def test_submit_requires_left_at(session):
     await submission_service.submit(session, submission, mechanic)
     assert submission.status == SubmissionStatus.SUBMITTED
     assert submission.submitted_at is not None
-    assert submission.period_id is not None
-
-
-async def test_odometer_cannot_decrease(session):
-    mechanic = await make_employee(session, role_code="mechanic")
-    vehicle = await make_vehicle(session)
-
-    first = await create_ready_submission(session, mechanic, vehicle)
-    await submission_service.submit(session, first, mechanic)
-
-    second = await create_ready_submission(session, mechanic, vehicle)
-    engine.set_value(second, "odometer_value", 40000)  # kamaygan
-    await session.flush()
-
-    with pytest.raises(ValidationFailed) as excinfo:
-        await submission_service.submit(session, second, mechanic)
-    assert excinfo.value.fields["odometer_value"] == "odometer_decreased"
 
 
 async def test_only_author_can_submit_and_edit(session):

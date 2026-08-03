@@ -43,7 +43,7 @@ Bundan kelib chiqadigan muammolar:
 
 | # | Muammo | Oqibati |
 |---|---|---|
-| P1 | Hisobot **chat'da tarqoq** — qidirish qiyin, yo'qoladi | Oy yopilishi 1–3 kun qo'lda ish |
+| P1 | Hisobot **chat'da tarqoq** — qidirish qiyin, yo'qoladi | "Kimga qancha qarzmiz" 1–3 kun qo'lda yig'iladi |
 | P2 | Ish **haqiqatan bajarilganini tekshirib bo'lmaydi** | Yo'q ishga to'lov |
 | P3 | **Narx og'zaki kelishiladi** va hech qayerda qolmaydi | Nizolar; kim qancha so'ragani va qancha kelishilgani bilinmaydi |
 | P3a | Har admin har xil kelishadi, oldingi narxlar esda qolmaydi | Bir xil ish har xil narxda |
@@ -72,7 +72,7 @@ Uchta darajali maqsad:
 | Tizimda rasmiylashtirilgan ta'mirlar ulushi | ~0% | **> 95%** |
 | **Tizimda kelishilgan narxlar ulushi** | 0% (og'zaki) | **100%** |
 | **Narx kelishuvi tejamkorligi** | o'lchanmaydi | **oyiga aniq raqam** |
-| Oy yopish vaqti | 1–3 kun | **< 2 soat** |
+| **Qarz holati ko'rinishi** ("kimga qancha qarzmiz") | 1–3 kun qo'lda yig'iladi | **real vaqtda, bitta ekranda** |
 | Bir mashinaga oylik ta'mir xarajati ko'rinishi | yo'q | **real vaqtda dashboard** |
 | O'rtacha downtime (ta'mir boshlanishidan tugashigacha) | o'lchanmaydi | **o'lchanadi + −20%** |
 | Rad etilgan / shubhali hisobotlar ulushi | o'lchanmaydi | **o'lchanadi, < 5%** |
@@ -83,7 +83,7 @@ Uchta darajali maqsad:
 ### ✅ Kiradi
 - Telegram bot + Mini App (bitta bot, hamma rollar uchun)
 - Ta'mir hisoboti (foto bilan) va **narx kelishuvi**
-- Tasdiqlash oqimi va oy yopilishi
+- Tasdiqlash oqimi va **qarz daftari** (hisobot bo'yicha to'lov)
 - Mashina reyestri va mashina bo'yicha to'liq tarix
 - **Universal shablon va rol konstruktori** (admin yangi rol yaratadi)
 - Ta'minotchi roli — ehtiyot qism xaridi
@@ -112,7 +112,11 @@ Uchta darajali maqsad:
   (`approved`) summa o'rtasidagi muzokara jarayoni.
 - **Shablon (Template)** — istalgan rol uchun hisobot formasi tavsifi (maydonlar ro'yxati).
 - **Tasdiqlash (Approval)** — hisobotni ko'rib chiqish natijasi.
-- **Davr (Period)** — hisobot oyi; yopilgach yozuvlar qulflanadi.
+- **Qarz (Debt)** — tasdiqlangan hisobotning to'lanmagan qoldig'i
+  (`payable_amount − paid_amount`). Oy yopish tushunchasi yo'q
+  ([ADR-0015](../05-delivery/03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)).
+- **To'lov (Payment)** — xodimga berilgan pul; bir yoki bir nechta hisobotga
+  taqsimlanadi. O'zgarmas — xato bo'lsa `void` qilinadi.
 - **Ustaxona** — ustaning o'z ish joyi (ixtiyoriy ma'lumot; filial tushunchasi yo'q).
 
 ## 7. Yuqori darajadagi oqim
@@ -137,7 +141,7 @@ Uchta darajali maqsad:
           │                         │                          │
           │                         │◄──── tasdiqlandi ────────┤
           │                         │                          │
-          │      Oy yopilishi → to'lov varaqasi → arxiv        │
+          │  Har tasdiqlangan hisobot → qarz → to'lov → arxiv  │
 ```
 
 ⚠️ **Haydovchi tizimda yo'q** — mashinaning kelgani va ketgani ustaning ikki
@@ -166,7 +170,8 @@ Batafsil: [04-flows/01-repair-lifecycle.md](../04-flows/01-repair-lifecycle.md)
 | **initData** | Telegram Mini App autentifikatsiya ma'lumoti |
 | **TO** | Texnik ko'rik (planli profilaktika) |
 | **SOH** | State of Health — akkumulyator holati (%) |
-| **Davr (Period)** | Hisobot oyi |
+| **Qarz** | Tasdiqlangan hisobotning to'lanmagan qoldig'i (`payable_amount − paid_amount`) |
+| **To'lov** | Xodimga berilgan pul; hisobotlarga taqsimlanadi (`payments`) |
 | **Rework** | Qayta ta'mir — yaqinda tuzatilgan joyning yana buzilishi |
 
 ---

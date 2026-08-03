@@ -82,8 +82,8 @@ tizimda kelishilsin.
 | **Tasdiqlash** | Tasdiqlash / qaytarish / rad etish |
 | **Bildirishnomalar** | Yuborildi · narx taklifi · tasdiqlandi · qaytarildi |
 | **Admin CRUD** | Mashina, xodim, ish turlari |
-| **Davr** | Oy yopilishi, qulflash, to'lov varaqasi |
-| **Eksport** | Excel: hisobotlar, to'lovlar, kelishuv tejamkorligi |
+| **To'lov (qarz daftari)** ⭐ | Qarz = `payable_amount − paid_amount`; belgilab / FIFO / qisman to'lash; `void` ([ADR-0015](03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)) |
+| **Eksport** | Excel: hisobotlar, to'lovlar, kelishuv tejamkorligi (sana oralig'i bo'yicha) |
 | **i18n** | uz + ru |
 
 ### Kirmaydi
@@ -97,7 +97,8 @@ tizimda kelishilsin.
 - ✅ 4–5 usta 2 hafta davomida faqat platformadan foydalanadi
 - ✅ Ta'mirlarning ≥ 90%i tizimda
 - ✅ Narxlarning 100%i tizimda kelishilgan (og'zaki kelishuv yo'q)
-- ✅ Admin oyni tizimdan yopadi, Excel buxgalterga mos keladi
+- ✅ Buxgalter "kimga qancha qarzmiz" ni tizimdan ko'radi va to'lovni qayd
+  etadi; Excel buxgalteriya raqamiga mos keladi
 - ✅ **"Bu oy kelishuv X so'm tejadi"** raqami ko'rsatiladi
 
 ---
@@ -143,7 +144,7 @@ tizimda kelishilsin.
 
 | Imkoniyat | Qiymati | Murakkabligi |
 |---|---|---|
-| Planli TO (probeg bo'yicha avtomatik) | 🔴 Yuqori | 🟡 O'rta |
+| Planli TO (muddat bo'yicha eslatma) | 🔴 Yuqori | 🟡 O'rta |
 | Statistik anomaliyalar (oylik avtomatik) | 🟡 O'rta | 🟡 O'rta |
 | Zayavka (ta'mir so'rovi) moduli | 🟡 O'rta | 🟡 O'rta |
 | Ombor (qism qoldig'i) | 🟢 Past | 🔴 Yuqori |
@@ -160,7 +161,7 @@ tizimda kelishilsin.
 | X1 | **Ustalar ishlatmaydi** | 🔴 Yuqori | 🔴 Katta | Pilot, sodda forma, **"hisobotsiz to'lov yo'q"** qoidasi |
 | X2 | **Ustalar narx kelishuvidan norozi** | 🟡 O'rta | 🔴 Katta | Kamaytirishda sabab majburiy, tarixga tayanish, nizo huquqi, og'zaki suhbat saqlanadi |
 | X3 | **Kamera majburlash ishlamaydi** | 🟡 O'rta | 🔴 Katta | Faza 0.1 da erta sinash, zaxira: EXIF tekshiruvi |
-| X4 | **AI kodi ko'rinishidan ishlaydi, aslida noto'g'ri** | 🔴 Yuqori | 🔴 Katta | Domain testlari majburiy; narx kelishuvi va davr yopilishi to'liq qoplanadi |
+| X4 | **AI kodi ko'rinishidan ishlaydi, aslida noto'g'ri** | 🔴 Yuqori | 🔴 Katta | Domain testlari majburiy; narx kelishuvi va to'lov taqsimoti to'liq qoplanadi |
 | X5 | Noaniq hujjat → noto'g'ri kod | 🟡 O'rta | 🟡 O'rta | Faza boshida hujjatni qayta o'qish, noaniqlikni avval hujjatda hal qilish |
 | X6 | Zaif internet ustaxonada | 🟡 O'rta | 🟡 O'rta | Offline qoralama, foto siqish, qayta urinish |
 | X7 | Ma'lumot lokalizatsiyasi (fly.io) | 🟡 O'rta | 🟡 O'rta | Minimal shaxsiy ma'lumot; ko'chirish oson bo'lishi uchun standart Docker/Postgres/S3 |
@@ -173,7 +174,7 @@ Bularsiz AI yozgan kodga ishonib bo'lmaydi:
 | Modul | Nima tekshiriladi |
 |---|---|
 | **`pricing`** ⭐ | `approved ≤ proposed`; sabab majburiyligi; 48 soat avtomatik rozilik; nizo oqimi; `proposed` o'zgarmasligi |
-| **`period`** | Yopilgan davrga yozuv kirmasligi; precheck to'sqinliklari; to'lov varaqasi `approved` bo'yicha hisoblanishi |
+| **`payment`** ⭐ | R4 — ortiqcha to'lov rad etilishi (`paid_amount ≤ payable_amount`); R5 — `payable_amount` hisobi (ish haqi + «o'z hisobimdan» qismlar); FIFO taqsimoti; qisman to'lov; `void` → qarzning qayta ochilishi; daftar balansi (`sum(allocations) == payment.amount`) |
 | **`approval`** | R1 — muallif o'z hisobotini qo'lda tasdiqlay olmasligi; **R1a — `admin` muallifi → avtomatik `APPROVED`, `approved = proposed`, kelishuvsiz** |
 | **`template`** | Majburiy maydonlar; foto min/max; versiyalash — eski hisobot buzilmasligi |
 | **`role`** | `reporter` tayanch narxni ko'ra olmasligi; `kind` bo'yicha ruxsatlar |

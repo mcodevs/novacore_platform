@@ -34,6 +34,9 @@ backend/miniapp_dist/
 /uploads/
 var/
 
+# ⚠️ Prod zaxiralari — real ism, telefon va fotolar (PII). Repoga TUSHMAYDI.
+/backups/
+
 # IDE va OS
 .DS_Store
 .idea/

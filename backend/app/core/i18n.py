@@ -123,7 +123,7 @@ T: dict[str, dict[str, str]] = {
             "<b>Qanday ishlaydi</b>\n\n"
             "Barcha ishlar <b>Mini App</b> ichida: <b>🧩 Mini App</b> tugmasini bosing.\n\n"
             "1️⃣ Mashina keldi → ilovada <b>🚗 Mashina keldi</b>\n"
-            "2️⃣ Forma ketma-ket so'raydi: raqam, foto, probeg, muammo\n"
+            "2️⃣ Forma ketma-ket so'raydi: raqam, foto, muammo\n"
             "3️⃣ Bajarilgan ishlar va <b>o'z narxingiz</b>\n"
             "4️⃣ Ish tugadi → <b>🚙 Mashina ketdi</b> → <b>📤 Yuborish</b>\n"
             "5️⃣ Admin narxni kamaytirsa — shu yerga xabar keladi, "
@@ -135,7 +135,7 @@ T: dict[str, dict[str, str]] = {
             "<b>Как это работает</b>\n\n"
             "Вся работа — внутри <b>Mini App</b>: нажмите <b>🧩 Mini App</b>.\n\n"
             "1️⃣ Машина приехала → в приложении <b>🚗 Машина приехала</b>\n"
-            "2️⃣ Форма спросит по шагам: номер, фото, пробег, проблема\n"
+            "2️⃣ Форма спросит по шагам: номер, фото, проблема\n"
             "3️⃣ Выполненные работы и <b>ваша цена</b>\n"
             "4️⃣ Работа окончена → <b>🚙 Машина уехала</b> → <b>📤 Отправить</b>\n"
             "5️⃣ Если админ снизит цену — уведомление придёт сюда, "
@@ -257,6 +257,10 @@ T: dict[str, dict[str, str]] = {
         "uz": "📷 Saqlandi ({n}/{max}).",
         "ru": "📷 Сохранено ({n}/{max}).",
     },
+    "receipt_required": {
+        "uz": "O‘z hisobingizdan olingan {n} ta qism bor — chek fotosi majburiy.",
+        "ru": "Есть {n} запчастей за свой счёт — фото чека обязательно.",
+    },
     "photo_need_more": {
         "uz": "Kamida {min} ta foto kerak (hozir {n} ta).",
         "ru": "Нужно минимум {min} фото (сейчас {n}).",
@@ -288,10 +292,6 @@ T: dict[str, dict[str, str]] = {
     "text_too_short": {
         "uz": "Kamida {min} ta belgi yozing (hozir {n}).",
         "ru": "Напишите минимум {min} символов (сейчас {n}).",
-    },
-    "odometer_decreased": {
-        "uz": "⚠️ Probeg oldingi qiymatdan kichik ({prev} km). Tekshirib qayta kiriting.",
-        "ru": "⚠️ Пробег меньше предыдущего ({prev} км). Проверьте и введите заново.",
     },
     # --- Qatorlar (lines) ---
     "lines_labor_title": {
@@ -419,7 +419,6 @@ T: dict[str, dict[str, str]] = {
         "uz": "🕓 Keldi: {arrived} · Ketdi: {left} ({downtime})",
         "ru": "🕓 Приехала: {arrived} · Уехала: {left} ({downtime})",
     },
-    "card_odometer": {"uz": "📊 Probeg: {km} km", "ru": "📊 Пробег: {km} км"},
     "card_labor": {"uz": "\n💰 <b>Ish haqi</b>", "ru": "\n💰 <b>Оплата работы</b>"},
     "card_parts": {"uz": "\n📦 <b>Qismlar</b>", "ru": "\n📦 <b>Запчасти</b>"},
     "card_comment": {"uz": "\n💬 {text}", "ru": "\n💬 {text}"},
@@ -777,7 +776,7 @@ T: dict[str, dict[str, str]] = {
     # --- Eksport ---
     "export_choose": {"uz": "Qaysi hisobotni yuklaymiz?", "ru": "Какой отчёт выгрузить?"},
     "export_submissions": {"uz": "📄 Ta'mirlar", "ru": "📄 Ремонты"},
-    "export_payouts": {"uz": "💵 To'lov varaqalari", "ru": "💵 Ведомости"},
+    "export_debts": {"uz": "💵 Qarzlar va to'lovlar", "ru": "💵 Долги и выплаты"},
     "export_savings": {"uz": "💰 Kelishuv tejamkorligi", "ru": "💰 Экономия согласования"},
     "export_building": {"uz": "⏳ Fayl tayyorlanmoqda…", "ru": "⏳ Файл готовится…"},
     "export_empty": {"uz": "Bu davr uchun ma'lumot yo'q.", "ru": "Нет данных за этот период."},

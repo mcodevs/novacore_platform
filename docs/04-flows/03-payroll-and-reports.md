@@ -1,95 +1,183 @@
 # 03. Hisob-kitob va analitika
 
-## 1. Davr (period) tushunchasi
+## 1. Qarz daftari — asosiy model
 
-Barcha moliyaviy hisob **kalendar oy** bo'yicha yuritiladi.
+> ⚠️ **Oy yopish tushunchasi YO'Q.** `periods`, `payouts`, precheck va R4 —
+> olib tashlangan ([ADR-0015](../05-delivery/03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)).
+> Moliyaviy hisob **kalendar oyga emas, hisobotga** bog'langan.
 
-```
-Hisobot yuborilganda → joriy ochiq davrga biriktiriladi (period_id)
-        ↓
-Oy tugadi → davr yopilishi boshlanadi
-        ↓
-Tekshiruvlar o'tdi → CLOSED
-        ↓
-• Yozuvlar qulflanadi
-• To'lov varaqalari generatsiya qilinadi
-• Excel paket eksport qilinadi
-```
-
-⚠️ Muhim nozik jihat: hisobot **yuborilgan** sanaga qarab davrga tushadi,
-ish **bajarilgan** sanaga emas. Aks holda yopilgan davrga yangi yozuv kelib
-qolishi mumkin. Agar ish 31-iyulda bajarilib, 2-avgustda yuborilsa — u
-**avgust davriga** tushadi, lekin `finished_at` iyulda qoladi (analitika uchun).
-
-✅ Bu qoida tasdiqlangan — [A-08](../05-delivery/02-open-questions.md).
-
-## 2. Oy yopilishi — qadamlar
+Har bir **tasdiqlangan** (`APPROVED`) hisobot — muallifga qarz:
 
 ```
-1. [Oyni yopish]
+Hisobot APPROVED bo'ldi
         ↓
-2. Precheck (GET /periods/{id}/precheck):
-
-   ❌ To'sqinlik qiluvchi (blocking)
-      • 3 ta hisobot SUBMITTED (tasdiqlanmagan)
-      • 1 ta hisobot REOPENED (usta tuzatmagan)
-      • 2 ta hisobot PRICE_NEGOTIATION / PRICE_DISPUTED (kelishuv ochiq)
-      • 2 ta kritik bayroq hal qilinmagan
-
-   ⚠️ Ogohlantirish (non-blocking)
-      • 5 ta qoralama 10 kundan beri turibdi
+payable_amount hisoblanadi  ← serverda, submission_lines'dan (R7)
         ↓
-3. Har biri uchun tanlov:
-   [Hal qilish] yoki [Keyingi oyga ko'chirish]
+Qarz = payable_amount − paid_amount        ← 0 dan katta bo'lsa, qarz
         ↓
-4. Yopish tasdiqlanadi → CLOSED
+Buxgalter to'laydi (to'liq yoki qisman)
         ↓
-5. Avtomatik:
-   • payouts generatsiya
-   • Excel paket (ta'mirlar, to'lovlar, mashina xarajatlari)
-   • direktorga oylik xulosa
+paid_amount == payable_amount  →  status = PAID
 ```
 
-## 3. To'lov varaqasi (payout)
+### 1.1. Qarz summasi nimadan iborat
 
 ```
-┌──────────────────────────────────────────┐
-│  To'lov varaqasi — Iyul 2026             │
-│  Usta: Karimov B.                        │
-├──────────────────────────────────────────┤
-│  Tasdiqlangan ishlar:            23 ta   │
-│  So'ralgan (jami):        3 850 000 so'm │
-│  Kelishuvda kamaydi:       −400 000 so'm │
-│  Ish haqi (tasdiqlangan): 3 450 000 so'm │
-├──────────────────────────────────────────┤
-│  Bonus (sifat)             +150 000 so'm │
-│    sabab: "rework 0%, baho 3.8"          │
-│  Jarima                    −100 000 so'm │
-│    sabab: "1 ta rad etilgan hisobot"     │
-├──────────────────────────────────────────┤
-│  JAMI:                    3 500 000 so'm │
-├──────────────────────────────────────────┤
-│  Status: [Qoralama] → [Tasdiqlangan]     │
-│          → [To'langan]                    │
-└──────────────────────────────────────────┘
+payable_amount  =  tasdiqlangan ish haqi          (labor qatorlari)
+                +  o'z hisobidan olingan qismlar  (part qatorlari, «o'z hisobimdan» ✅)
 ```
 
-Qoidalar:
-- Faqat **APPROVED** hisobotlar kiradi
-- To'lov **faqat `approved_amount`** bo'yicha — usta so'ragan summa emas
-- `PRICE_NEGOTIATION` holatidagilar kirmaydi — **davr yopilishida to'siq**:
-  yopilgandan keyin na usta rozilik bera oladi, na 48 soatlik avtomatik rozilik
-  ishlaydi (ikkalasi ham R4 bo'yicha rad etiladi), ya'ni hisobot to'lanmagan
-  holda osilib qolardi
-- `REJECTED` — kirmaydi
-- Bonus/jarima **qo'lda**, sabab majburiy, audit log'ga yoziladi
-- To'lov varaqasi Excel'ga eksport qilinadi (buxgalteriyaga)
-- ⚠️ Platforma **pul o'tkazmaydi** — faqat hisoblab beradi
+| Qator turi | «O'z hisobimdan» | Narx maydoni | Qarzga kiradi |
+|---|---|---|---|
+| `labor` (ish haqi) | — | ochiq | ✅ ha |
+| `part` (qism) | ✅ qo'yilgan | ochiq + **chek fotosi majburiy** | ✅ ha |
+| `part` (qism) | ⬜ qo'yilmagan | **yopiq** | ❌ yo'q |
+
+Ya'ni **narx bor = qarz bor**
+([ADR-0016](../05-delivery/03-decisions.md#adr-0016--usta-oz-hisobidan-olgan-qism-ham-qarzga-kiradi)).
+Kompaniya to'lagan qism hisobotda **nomi va soni bilan** qoladi (analitika
+uchun), lekin narxsiz — u ta'minotchi hisobotidan keladi.
+
+Belgi **serverda narxdan kelib chiqadi** (klientga ishonilmaydi, R7): narx
+kiritilgan qism doim `self_funded`, narxsiz qism doim kompaniyaniki.
+
+> **Ta'minotchi ham qarzdor.** U qismni o'z puliga oladi va kompaniya qaytaradi.
+> Uning xaridi narx bilan kiritilgani uchun avtomatik `self_funded` bo'ladi —
+> alohida qoida kerak emas, u ham qarzdorlar ro'yxatida ko'rinadi.
+
+### 1.2. Qat'iy qoidalar
+
+| # | Qoida |
+|---|---|
+| **P1** | To'lov faqat `APPROVED` hisobotga qo'llanadi |
+| **P2** | `paid_amount ≤ payable_amount` — **bitta hisobot** qarzidan ortiq yopilmaydi (DB `CHECK`) |
+| **P3** | `payable_amount` **serverda** `submission_lines`dan qayta hisoblanadi (R7) |
+| **P4** | `sum(payment_allocations.amount) ≤ payments.amount`; qoldiq — **avans** |
+| **P5** | To'lov **o'zgarmas**. Xato → `void` (sabab majburiy, `audit_log`) |
+| **P6** | Narxi yo'q qism qatori kelishuvga kirmaydi (`proposed_amount = 0`) → R2 buzilmaydi |
+| **P7** | Qarzdan ortiq to'langan pul — **avans**: xodim hisobida turadi va yangi qarz paydo bo'lishi bilan avtomatik ishlatiladi |
+
+Oylik kesim kerak bo'lsa — `submitted_at` sanasi bo'yicha filtrlanadi.
+Buning uchun alohida jadval kerak emas.
+
+## 2. Buxgalter ekrani — navigatsiya
+
+Buxgalter uchun hisobotlar **ikkita kesimda** ko'rinadi:
+
+```
+┌─────────────────────────────────────────────┐
+│  [ To'langanlar ]   [ Qarzlar ]             │   ← ikkita tab
+├─────────────────────────────────────────────┤
+│  💰 Umumiy qarz:            8 450 000 so'm  │   ← bosiladi
+└─────────────────────────────────────────────┘
+                    ↓  bosildi
+┌─────────────────────────────────────────────┐
+│  Qarzdorlar                                 │
+├─────────────────────────────────────────────┤
+│  Karimov B.  (7 ta ish)     3 450 000 so'm →│
+│  Sobirov A.  (5 ta ish)     2 900 000 so'm →│
+│  Yusupov D.  (3 ta ish)     2 100 000 so'm →│
+└─────────────────────────────────────────────┘
+                    ↓  usta tanlandi
+┌─────────────────────────────────────────────┐
+│  Karimov B. — qarz 3 450 000                │
+├─────────────────────────────────────────────┤
+│  ☐ #124  01 A 123 BC   12-avg   450 000     │
+│  ☐ #131  01 B 456 CD   14-avg   890 000     │
+│  ☐ #138  01 C 789 DE   16-avg   320 000 ⚠️  │  ← qisman: 180 000 to'langan
+│  …                                          │
+├─────────────────────────────────────────────┤
+│  [ Belgilanganlarni to'lash ]  [ Summa… ]   │
+└─────────────────────────────────────────────┘
+```
+
+- **Qarzlar** tab = `payable_amount − paid_amount > 0` (qisman to'langanlar ham
+  shu yerda, qolgan summasi bilan)
+- **To'langanlar** tab = `status = PAID` (to'liq yopilgan)
+- Ro'yxat **eng eskisidan** boshlab tartiblanadi (FIFO tartibi ko'rinib tursin)
+
+## 3. To'lov usullari — uchta
+
+Uchalasi ham bitta mexanizmga tushadi: `payment` yoziladi va u
+`payment_allocations` orqali hisobotlarga taqsimlanadi.
+
+### 3.1. Belgilab to'lash (chekbox)
+
+Buxgalter ro'yxatdan bir nechta hisobotni belgilaydi → belgilanganlarning
+qolgan qarzi **to'liq** yopiladi.
+
+```
+☑ #124  450 000        payment(amount = 1 340 000)
+☑ #131  890 000   →      ├→ #124 : 450 000
+☐ #138  320 000          └→ #131 : 890 000
+```
+
+### 3.2. Summa kiritib to'lash (FIFO) ⭐
+
+Buxgalter faqat summani kiritadi. Tizim **eng eski qarzdan** boshlab
+taqsimlaydi; pul yetmagan joyda oxirgi hisobot **qisman** yopiladi.
+
+```
+Kiritildi: 1 500 000
+
+#124 (12-avg)  450 000  →  to'liq   ✅  qoldi: 1 050 000
+#131 (14-avg)  890 000  →  to'liq   ✅  qoldi:   160 000
+#138 (16-avg)  320 000  →  qisman   ⚠️  160 000 to'landi, 160 000 qarz
+                            qoldi: 0
+```
+
+- Tartib — `submitted_at` bo'yicha **o'sish tartibida** (eng eskisi birinchi)
+- Pul ortib qolsa (barcha qarz yopilgach) → ortiqcha summa **avans** bo'ladi
+  (P7, §3.3a) — rad etilmaydi
+
+### 3.3. Bitta hisobot ichidan
+
+Har bir tasdiqlangan hisobot kartochkasida **«To'lov qilish»** tugmasi:
+to'liq summa taklif qilinadi, buxgalter uni **kamaytirib** qisman to'lay oladi.
+
+### 3.3a. Avans — qarzdan ortiq to'lov ⭐
+
+Buxgalter qarzdan **ko'proq** to'lasa (yoki qarzi yo'q xodimga to'lasa), ortiqcha
+summa **rad etilmaydi** — u xodim hisobida **avans** bo'lib turadi:
+
+```
+Qarz: 300 000        Kiritildi: 500 000
+        ↓
+#124  300 000  →  to'liq   ✅
+Avans:  200 000  ←  hech qaysi hisobotga biriktirilmaydi
+        ↓
+Usta yangi ish topshirdi va u tasdiqlandi (250 000)
+        ↓
+Avansdan 200 000 avtomatik ishlatiladi  →  qarz 50 000 bo'lib qoladi
+```
+
+- **Avans = `Σ(to'lovlar) − Σ(allokatsiyalar)`** — alohida jadval kerak emas
+- Yangi qarz paydo bo'lishi bilan **avtomatik** ishlatiladi (FIFO, eng eski qarzdan)
+- Avans allokatsiyasi **o'sha to'lov yozuviga** biriktiriladi → to'lov `void`
+  qilinsa, avans ham izsiz qaytadi
+- Qarzi umuman yo'q xodimga to'lov qilish mumkin — bu **sof avans**
+- ⚠️ P2 buzilmaydi: bitta hisobot hech qachon o'z qarzidan ortiq yopilmaydi;
+  ortiqcha pul hisobotga **umuman tegmaydi**
+
+### 3.4. Umumiy qoidalar
+
+- Faqat **`APPROVED`** hisobot to'lanadi (P1). `SUBMITTED`, `REOPENED`,
+  `PRICE_NEGOTIATION`, `PRICE_DISPUTED`, `REJECTED` — qarz ro'yxatiga tushmaydi
+- Qarzdan ortiq to'lov **rad etilmaydi** — u avansga aylanadi (P7, §3.3a)
+- To'lov asosi — **tasdiqlangan** summa (`payable_amount`), usta so'ragan emas
+- ⚠️ Platforma **pul o'tkazmaydi** — faqat qayd etadi
+- Xato to'lov → **`void`** (sabab majburiy): allokatsiyalar qaytariladi,
+  hisobot qarzi qayta ochiladi, `audit_log`ga yoziladi (P5)
+- Barcha to'lovlar Excel'ga eksport qilinadi (sana oralig'i bo'yicha)
 
 > ✅ **Tasdiqlangan model ([A-04](../05-delivery/02-open-questions.md)):**
 > usta **har ish uchun** to'lov oladi, narxni **o'zi taklif qiladi**, admin
-> **kelishib kamaytirishi** mumkin. Shu sababli to'lov varaqasida so'ralgan va
-> tasdiqlangan summa yonma-yon ko'rsatiladi.
+> **kelishib kamaytirishi** mumkin.
+
+> ❌ **Bonus / jarima YO'Q** (2026-08-03 qarori). Eski `payouts` modelida bu
+> maydonlar bor edi, lekin qarz daftarida qarz har doim **aniq hisobotga**
+> bog'lanadi — xodimga "shunchaki" pul qo'shish yoki ayirish uchun joy yo'q.
+> Kerak bo'lsa kelajakda alohida `adjustment` yozuvi sifatida qo'shiladi.
 
 ## 4. Analitika — asosiy hisobotlar
 
@@ -110,8 +198,9 @@ Qoidalar:
 ```
 
 **Qo'shimcha kesimlar:**
-- Mashina yoshi / probegi bo'yicha
-- 1 km ga xarajat (probeg ma'lum bo'lsa)
+- Mashina yoshi bo'yicha
+- 1 km ga xarajat — **faqat `vehicles.odometer_km`** ma'lum bo'lsa (Fleet
+  sinxronidan). Hisobotda probeg so'ralmaydi (ADR-0018)
 - Umr davomidagi jami xarajat (mashina sotilishi kerakmi degan savol uchun)
 
 > **Eng qimmatli savol:** *"Qaysi mashinani sotish kerak?"* Agar mashina yiliga
@@ -229,7 +318,7 @@ Telegram orqali fayl yuboriladi.
 
 | Imkoniyat | Nima beradi |
 |---|---|
-| **1 km ga xarajat** (Fleet probeg bilan) | Haqiqiy solishtirish mezoni |
+| **1 km ga xarajat** (`vehicles.odometer_km`, Fleet sinxronidan) | Haqiqiy solishtirish mezoni |
 | **Byudjet vs fakt** | Oylik ta'mir byudjeti belgilanadi, oshib ketish signali |
 | **Prognoz** | "Shu tendensiya bilan yil oxirida X so'm" |
 | **Zaryad xarajati** | EV uchun ikkinchi eng katta xarajat moddasi |

@@ -87,13 +87,14 @@ faqat admin, sabab bilan, audit log'ga yozilib.
 async def approve(id: int, actor = Depends(require_kind("admin"))):
     sub = await get_submission(id)
     ensure_not_self_approval(actor, sub.author_id)  # R1 qoidasi
-    ensure_period_open(sub.period_id)               # R4
+    ensure_status(sub, IN_REVIEW, SUBMITTED)        # holat mos keladimi
     ...
 ```
 
 **Ikki darajali tekshiruv** (rol modeli sodda bo'lgani uchun):
 1. **`role.kind`** — `reporter` / `admin` / `accountant`
-2. **Biznes qoida** — o'z hisobotimi (R1), davr ochiqmi (R4), holat mos keladimi
+2. **Biznes qoida** — o'z hisobotimi (R1), holat mos keladimi, to'lov qarzdan
+   oshmayaptimi (R4)
 
 > Filial ko'lami **yo'q** — [rol modeli](../01-product/01-roles-and-permissions.md#8-filial-branch-tushunchasi--yoq).
 

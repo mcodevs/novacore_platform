@@ -33,7 +33,6 @@ from app.domain import audit
 from app.domain.antifraud import service as antifraud
 from app.domain.approval import service as approval_service
 from app.domain.notify import service as notify
-from app.domain.period import service as period_service
 from app.domain.role import permissions
 from app.domain.template import builder, engine
 from app.domain import vehicle as vehicle_domain
@@ -85,9 +84,6 @@ async def create_draft(
     """«🚗 Mashina keldi» — `arrived_at` SERVER vaqti bilan yoziladi (R6)."""
     if not permissions.can_create_submission(author):
         raise Forbidden("Sizning rolingiz hisobot yaratmaydi")
-
-    period = await period_service.current_period(session)
-    period_service.ensure_open(period)  # R4
 
     submission = Submission(
         number=await next_number(session),
@@ -165,8 +161,18 @@ async def add_line(
     unit_price: Decimal | float | int | None = None,
     catalog_id: int | None = None,
     supplier_name: str | None = None,
+    self_funded: bool = False,
 ) -> SubmissionLine:
-    """Ish yoki qism qatori. Narxni **muallif** qo'yadi (labor uchun)."""
+    """Ish yoki qism qatori. Narxni **muallif** qo'yadi (labor uchun).
+
+    ⭐ ADR-0016 — **narx bor = qarz bor**. Qism qatorida belgi narxdan kelib
+    chiqadi: narx kiritilgan bo'lsa, demak muallif o'z hisobidan to'lagan va
+    unga qaytariladi (`self_funded`). Narx yo'q — kompaniya olgan, qarzga
+    kirmaydi (P6).
+
+    Bu qoida ta'minotchiga ham tabiiy qo'llanadi: uning xaridi doim narx bilan
+    kiritiladi, ya'ni u ham qarzdorlar ro'yxatiga tushadi.
+    """
     ensure_editable(submission, actor)
 
     quantity = Decimal(str(qty or 1)).quantize(Decimal("0.01"))
@@ -174,6 +180,11 @@ async def add_line(
         raise BusinessRuleViolated("Miqdor 0 dan katta bo'lishi kerak")
 
     price = money(unit_price if unit_price is not None else 0)
+    own = kind == LineKind.part and (bool(self_funded) or price > ZERO)
+    if kind == LineKind.part and not own:
+        # Kompaniya to'lagan qism: narxsiz qayd etiladi (P6)
+        price = ZERO
+
     line = SubmissionLine(
         submission_id=submission.id,
         kind=kind,
@@ -183,6 +194,7 @@ async def add_line(
         proposed_unit_price=price,
         proposed_amount=money(price * quantity),
         supplier_name=supplier_name,
+        self_funded=own,
     )
     session.add(line)
     await session.flush()
@@ -236,9 +248,7 @@ async def mark_left(
 # --- Yuborish ----------------------------------------------------------------
 
 
-async def _business_checks(
-    session: AsyncSession, submission: Submission
-) -> list[engine.ValidationIssue]:
+def _business_checks(submission: Submission) -> list[engine.ValidationIssue]:
     issues: list[engine.ValidationIssue] = []
 
     if submission.left_at is None:
@@ -248,24 +258,6 @@ async def _business_checks(
     ):
         issues.append(engine.ValidationIssue("_left_at", "invalid_state", {}))
 
-    # probeg kamaymasin (monotonic_for_vehicle)
-    if submission.odometer_km is not None and submission.subject_vehicle_id is not None:
-        previous = (
-            await session.execute(
-                sa.select(sa.func.max(Submission.odometer_km)).where(
-                    Submission.subject_vehicle_id == submission.subject_vehicle_id,
-                    Submission.id != submission.id,
-                    Submission.deleted_at.is_(None),
-                    Submission.status.not_in(
-                        [SubmissionStatus.DRAFT, SubmissionStatus.REJECTED]
-                    ),
-                )
-            )
-        ).scalar_one_or_none()
-        if previous is not None and submission.odometer_km < previous:
-            issues.append(
-                engine.ValidationIssue("odometer_value", "odometer_decreased", {"prev": previous})
-            )
     return issues
 
 
@@ -275,7 +267,7 @@ async def validate_for_submit(
     schema = await engine.schema_for_submission(session, submission)
     issues = list(engine.validate(schema, submission))
     engine.apply_field_mapping(schema, submission)
-    issues.extend(await _business_checks(session, submission))
+    issues.extend(_business_checks(submission))
     return issues
 
 
@@ -289,15 +281,11 @@ async def submit(
     if submission.status not in EDITABLE_STATUSES:
         raise InvalidStateTransition(f"{submission.status.value} → submitted mumkin emas")
 
-    # 3. davr ochiqmi
-    period = await period_service.current_period(session)
-    period_service.ensure_open(period)
-
     # 4–6. validatsiya + biznes tekshiruvlar
     schema = await engine.schema_for_submission(session, submission)
     issues = list(engine.validate(schema, submission))
     engine.apply_field_mapping(schema, submission)  # 8. promoted ustunlar
-    issues.extend(await _business_checks(session, submission))
+    issues.extend(_business_checks(submission))
     if issues:
         raise ValidationFailed(
             "Forma to'liq to'ldirilmagan",
@@ -308,9 +296,8 @@ async def submit(
     # 7. summalar QAYTA hisoblanadi (klientga ishonilmaydi — R7)
     engine.recalculate_amounts(submission)
 
-    # 11. submitted_at + period
+    # 11. submitted_at
     submission.submitted_at = utcnow()
-    submission.period_id = period.id
 
     # 9. bayroqlar (Faza 1'da o'chirilgan — docs/04-flows/02-antifraud.md §9)
     await antifraud.evaluate(session, submission)
@@ -357,7 +344,6 @@ async def list_for_employee(
     employee: Employee,
     *,
     statuses: tuple[SubmissionStatus, ...] | None = None,
-    period_id: int | None = None,
     limit: int = 20,
 ) -> list[Submission]:
     stmt = sa.select(Submission).where(Submission.deleted_at.is_(None))
@@ -365,8 +351,6 @@ async def list_for_employee(
         stmt = stmt.where(Submission.author_id == employee.id)
     if statuses:
         stmt = stmt.where(Submission.status.in_(list(statuses)))
-    if period_id is not None:
-        stmt = stmt.where(Submission.period_id == period_id)
     stmt = stmt.order_by(Submission.created_at.desc()).limit(limit)
     return list((await session.execute(stmt)).scalars().all())
 

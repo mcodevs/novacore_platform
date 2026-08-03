@@ -47,7 +47,7 @@ Tizimda **faqat uchta** tur bor. Nomlar cheksiz, turlar uchta:
 |---|---|---|
 | **`reporter`** | Hisobot yuboradi (bazaviy imkoniyat) | ♾ Cheksiz — admin yaratadi |
 | **`admin`** | Ko'rib chiqadi, narx kelishadi, tasdiqlaydi, boshqaradi | 1–2 ta |
-| **`accountant`** | Ko'radi, eksport qiladi, oyni yopadi | 1 ta |
+| **`accountant`** | Ko'radi, **qarzlarni to'laydi**, eksport qiladi | 1 ta |
 
 Boshlang'ich (seed) rollar:
 
@@ -90,7 +90,9 @@ Katta ruxsat matritsasi **kerak emas**. Faqat quyidagilar:
 | **Yangi rol yaratish** | — | ✅ | — |
 | Shablon yaratish / tahrirlash | — | ✅ | — |
 | Ish turlari + tayanch narx | — | ✅ | — |
-| Oyni yopish | — | ✅ | ✅ |
+| **Qarzlarni ko'rish (kimga qancha)** | — | ✅ | ✅ |
+| **To'lov qilish** (to'liq / qisman / FIFO) | — | ✅ | ✅ |
+| **To'lovni bekor qilish** (`void`, sabab bilan) | — | ✅ | ✅ |
 | Eksport (Excel) | — | ✅ | ✅ |
 | Audit log | — | ✅ | — |
 
@@ -110,7 +112,7 @@ narxlar tayanchga yopishadi va kelishuv ma'nosini yo'qotadi
 | R1a | **`admin` turidagi muallifning hisoboti tizim tomonidan avtomatik tasdiqlanadi** | Adminga tasdiqlovchi kerak emas ([A-25](../05-delivery/02-open-questions.md)) |
 | R2 | **Admin narxni faqat kamaytira oladi**, oshira olmaydi | Til biriktirib summa ko'tarishning oldini olish |
 | R3 | Tasdiqlangan hisobot tahrirlanmaydi — faqat `reopen` orqali | Audit yaxlitligi |
-| R4 | Yopilgan davrga yozuv qo'shilmaydi/o'zgarmaydi | Buxgalteriya |
+| R4 | **To'lov faqat `APPROVED` hisobotga; `paid_amount ≤ payable_amount`** | Ortiqcha to'lov bo'lmasin ([ADR-0015](../05-delivery/03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)) |
 | R5 | Xodim `fired` bo'lsa — kirish bloklanadi, ma'lumotlari qoladi | Ma'lumot yo'qolmasin |
 | R6 | Bitta Telegram akkaunt = bitta xodim (`tg_user_id` unique) | Identifikatsiya |
 | R7 | Rol/ruxsat o'zgarishi `audit_log`ga yoziladi | Nazorat |

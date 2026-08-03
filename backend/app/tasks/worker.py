@@ -30,7 +30,6 @@ from app.db.models import (
 from app.db.session import session_scope
 from app.domain.fleet import service as fleet_service
 from app.domain.notify import service as notify
-from app.domain.period import service as period_service
 from app.domain.pricing import service as pricing_service
 
 log = structlog.get_logger(__name__)
@@ -235,44 +234,6 @@ async def alert_long_service() -> int:
     return count
 
 
-async def remind_period_closing() -> int:
-    """Oy yopilishiga 3 kun — admin va buxgalterga."""
-    now_local = utcnow().astimezone(TASHKENT)
-    next_month = (now_local.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
-    days_left = (next_month.date() - now_local.date()).days
-    if days_left != 3:
-        return 0
-
-    async with session_scope() as session:
-        period = await period_service.current_period(session)
-        marker = f"period_closing:{period.id}"
-        exists = (
-            await session.execute(
-                sa.select(Notification.id).where(Notification.template_code == marker)
-            )
-        ).first()
-        if exists:
-            return 0
-
-        payload = {"period": period.title, "days": days_left}
-        await notify.notify_admins(
-            session, template_code="notify_period_closing", payload=payload
-        )
-        await notify.notify_accountants(
-            session, template_code="notify_period_closing", payload=payload
-        )
-        # takrorlanmasligi uchun marker
-        session.add(
-            Notification(
-                template_code=marker,
-                payload=payload,
-                status=NotificationStatus.sent,
-                sent_at=utcnow(),
-            )
-        )
-    return 1
-
-
 async def sync_fleet_daily() -> int:
     """Kuniga 1× mashina va haydovchi reyestri (Fleet → platforma, faqat o'qish).
 
@@ -322,7 +283,6 @@ async def tick(bot: Bot) -> None:
         send_negotiation_reminders,
         remind_stale_drafts,
         alert_long_service,
-        remind_period_closing,
         sync_fleet_daily,
     ):
         try:

@@ -153,7 +153,6 @@ async def fill_valid_repair(
     vehicle: Vehicle,
     *,
     works: list[tuple[str, Decimal]] | None = None,
-    odometer: int = 48250,
 ) -> Submission:
     """Ta'mir shablonining barcha majburiy maydonlarini to'ldiradi."""
     engine.set_value(
@@ -163,14 +162,12 @@ async def fill_valid_repair(
 
     for field_code in (
         "photo_car_before",
-        "odometer_photo",
         "photo_problem",
         "photo_after",
         "photo_car_after",
     ):
         await add_photo(session, submission, author, field_code)
 
-    engine.set_value(submission, "odometer_value", odometer)
     engine.set_value(submission, "category", "brakes")
     engine.set_value(submission, "problem_description", "Old tormoz kolodkasi yeyilgan")
     engine.set_value(submission, "comment", "Kolodka almashtirildi, disk normal")

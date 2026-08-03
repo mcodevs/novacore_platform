@@ -173,7 +173,7 @@ Batafsil: [ta'minotchi oqimi](../01-product/05-supplier-role.md)
 | N4 | 48 soat javob bo'lmasa — avtomatik rozilik | To'lov qotib qolmasin |
 | N5 | Admin narxni **oshira olmaydi** | Til biriktirish oldini olish |
 | N6 | Kelishuvning har qadami `audit_log`da | Nizolar uchun dalil |
-| N7 | Davr yopilgach narx o'zgarmaydi | Buxgalteriya |
+| N7 | To'lov qayd etilgach narx o'zgarmaydi | Buxgalteriya |
 | N8 | Admin hisoboti **kelishuvga umuman kirmaydi** — u avtomatik tasdiqlanadi (`approved = proposed`) | R1a; kelishadigan ikkinchi tomon yo'q |
 | N9 | **Tayanch narx `reporter` roliga API'da ham qaytarilmaydi** | Klientda yashirish yetarli emas |
 

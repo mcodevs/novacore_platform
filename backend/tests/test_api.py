@@ -200,7 +200,6 @@ async def _submit_repair(api: AsyncClient, m_token: str, *, price: int = 250000)
     media_ids = {}
     for field in (
         "photo_car_before",
-        "odometer_photo",
         "photo_problem",
         "photo_after",
         "photo_car_after",
@@ -213,7 +212,6 @@ async def _submit_repair(api: AsyncClient, m_token: str, *, price: int = 250000)
         json={
             "data": {
                 "plate": {"vehicle_id": vehicle_id, "plate": "01A123BC"},
-                "odometer_value": 48250,
                 "category": "brakes",
                 "problem_description": "Old tormoz kolodkasi yeyilgan",
                 "comment": "Kolodka almashtirildi, disk normal",
@@ -279,7 +277,6 @@ async def test_full_submission_flow(api):
     media_ids = {}
     for field in (
         "photo_car_before",
-        "odometer_photo",
         "photo_problem",
         "photo_after",
         "photo_car_after",
@@ -293,7 +290,6 @@ async def test_full_submission_flow(api):
         json={
             "data": {
                 "plate": {"vehicle_id": vehicle_id, "plate": "01A123BC"},
-                "odometer_value": 48250,
                 "category": "brakes",
                 "problem_description": "Old tormoz kolodkasi yeyilgan",
                 "comment": "Kolodka almashtirildi, disk normal",
@@ -954,7 +950,7 @@ async def test_pending_list_keeps_reports_being_reviewed(api):
     await api.post(
         f"/api/v1/submissions/{submission_id}/reopen",
         headers=auth_header(a_token),
-        json={"comment": "Probeg fotosi aniq emas"},
+        json={"comment": "Muammo fotosi aniq emas"},
     )
     board = (await api.get("/api/v1/reports/dashboard", headers=auth_header(a_token))).json()
 

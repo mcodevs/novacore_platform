@@ -39,7 +39,7 @@ Farq faqat **nomda** va **maydonlar to'plamida**. Demak:
                     │  • Foto yuklash          │
                     │  • Tasdiqlash oqimi      │
                     │  • Bayroqlar (anti-fraud)│
-                    │  • Davr / oy yopilishi   │
+                    │  • Qarz va to'lov        │
                     │  • Bildirishnoma         │
                     │  • Audit log             │
                     │  • Eksport / analitika   │
@@ -67,7 +67,7 @@ Shablon = **maydonlar ro'yxati + sozlamalar**:
 kod: car_wash
 nom: "Mashina yuvish hisoboti"
 ob'ekt: vehicle          # hisobot mashinaga bog'lanadi
-pul_bor: true            # summa maydoni bor, to'lov varaqasiga kiradi
+pul_bor: true            # summa maydoni bor, qarz daftariga kiradi
 kelishiladi: true        # narx kelishuvi oqimiga tushadi
 # kim ko'radi — ROLDA belgilanadi (role_templates), shablonda emas
 
@@ -128,7 +128,7 @@ Yadro qo'llab-quvvatlaydigan turlar — bular yetsa, deyarli har qanday hisobot 
 |---|---|---|
 | `text` | Qisqa matn | Izoh |
 | `textarea` | Uzun matn | Batafsil tavsif |
-| `number` | Son | Probeg, kVt·soat |
+| `number` | Son | kVt·soat, miqdor |
 | `money` | Pul (UZS) | Ish haqi |
 | `select` | Bitta tanlov | Nosozlik kategoriyasi |
 | `multiselect` | Ko'p tanlov | Bajarilgan ishlar |

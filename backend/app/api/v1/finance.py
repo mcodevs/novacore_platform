@@ -1,169 +1,170 @@
-"""Davr, to'lov varaqalari, hisobotlar va eksport."""
+"""Qarz daftari, to'lovlar, hisobotlar va eksport (ADR-0015).
+
+⚠️ `/periods` va `/payouts` endpointlari **yo'q** — davr va to'lov varaqasi
+tushunchalari olib tashlangan. Qarz hisobot darajasida yuritiladi.
+"""
 
 from __future__ import annotations
+
+import datetime as dt
 
 import sqlalchemy as sa
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
-from app.api.deps import AdminDep, EmployeeDep, FinanceDep, SessionDep
+from app.api.deps import EmployeeDep, FinanceDep, SessionDep
 from app.api.v1 import schemas
 from app.core.errors import BusinessRuleViolated, NotFound
-from app.db.models import (
-    Payout,
-    Period,
-    Submission,
-    SubmissionStatus,
-    Vehicle,
-    VehicleStatus,
-)
+from app.db.base import ZERO
+from app.db.models import Payment, Submission, SubmissionStatus, Vehicle, VehicleStatus
 from app.domain.export import service as export_service
-from app.domain.payout import service as payout_service
-from app.domain.period import service as period_service
+from app.domain.payment import service as payment_service
+from app.domain.stats import service as stats_service
 
 router = APIRouter(tags=["finance"])
 
 
-def _period_out(period: Period) -> schemas.PeriodOut:
-    return schemas.PeriodOut(
-        id=period.id,
-        year=period.year,
-        month=period.month,
-        status=period.status.value,
-        closed_at=period.closed_at,
+# --- Qarzlar -------------------------------------------------------------------
+
+
+@router.get("/debts", response_model=schemas.DebtSummaryOut)
+async def debts(session: SessionDep, employee: FinanceDep):
+    """Qarzdorlar: umumiy summa + xodimlar kesimi (buxgalter ekranining boshi)."""
+    summary = await payment_service.debt_summary(session)
+    return schemas.DebtSummaryOut(
+        total=summary.total,
+        advance_total=summary.advance_total,
+        employees=[
+            schemas.EmployeeDebtOut(
+                employee_id=row.employee_id,
+                full_name=row.full_name,
+                debt=row.debt,
+                count=row.count,
+                advance=row.advance,
+            )
+            for row in summary.employees
+        ],
     )
 
 
-@router.get("/periods", response_model=list[schemas.PeriodOut])
-async def list_periods(session: SessionDep, employee: EmployeeDep):
-    rows = (
-        await session.execute(
-            sa.select(Period).order_by(Period.year.desc(), Period.month.desc()).limit(24)
+@router.get("/debts/{employee_id}", response_model=list[schemas.DebtItemOut])
+async def employee_debts(employee_id: int, session: SessionDep, employee: FinanceDep):
+    """Xodimning to'lanmagan hisobotlari — **eng eskisidan** (FIFO tartibi)."""
+    rows = await payment_service.employee_debts(session, employee_id)
+    return [
+        schemas.DebtItemOut(
+            submission_id=row.id,
+            number=row.number,
+            vehicle=row.vehicle.plate_display if row.vehicle else None,
+            submitted_at=row.submitted_at,
+            payable_amount=row.payable_amount,
+            paid_amount=row.paid_amount,
+            debt=row.payable_amount - row.paid_amount,
         )
-    ).scalars().all()
-    return [_period_out(row) for row in rows]
+        for row in rows
+    ]
 
 
-@router.get("/periods/current", response_model=schemas.PeriodOut)
-async def current_period(session: SessionDep, employee: EmployeeDep):
-    return _period_out(await period_service.current_period(session))
+# --- To'lovlar -----------------------------------------------------------------
 
 
-@router.get("/periods/{period_id}/precheck", response_model=schemas.PrecheckOut)
-async def precheck(period_id: int, session: SessionDep, employee: FinanceDep):
-    period = await session.get(Period, period_id)
-    if period is None:
-        raise NotFound("Davr topilmadi")
-    result = await period_service.precheck(session, period)
-    return schemas.PrecheckOut(
-        can_close=result.can_close,
-        blockers=[{"code": code, **params} for code, params in result.blockers],
-        warnings=[{"code": code, **params} for code, params in result.warnings],
+def _payment_out(payment: Payment) -> schemas.PaymentOut:
+    return schemas.PaymentOut(
+        id=payment.id,
+        employee_id=payment.employee_id,
+        employee_name=payment.employee.full_name,
+        amount=payment.amount,
+        note=payment.note,
+        created_at=payment.created_at,
+        voided_at=payment.voided_at,
+        void_reason=payment.void_reason,
+        allocations=[
+            schemas.AllocationOut(
+                submission_id=item.submission_id,
+                amount=item.amount,
+                fully_paid=False,
+            )
+            for item in payment.allocations
+        ],
     )
 
 
-@router.post("/periods/{period_id}/close", response_model=schemas.PeriodOut)
-async def close_period(period_id: int, session: SessionDep, employee: FinanceDep):
-    period = await session.get(Period, period_id)
-    if period is None:
-        raise NotFound("Davr topilmadi")
-    await period_service.close_period(session, period, employee.id)
-    await payout_service.generate_for_period(session, period)
-    return _period_out(period)
-
-
-@router.post("/periods/{period_id}/reopen", response_model=schemas.PeriodOut)
-async def reopen_period(
-    period_id: int,
-    payload: schemas.ReopenPeriodRequest,
-    session: SessionDep,
-    employee: AdminDep,
+@router.post("/payments", response_model=schemas.PaymentOut)
+async def create_payment(
+    payload: schemas.CreatePaymentRequest, session: SessionDep, employee: FinanceDep
 ):
-    period = await session.get(Period, period_id)
-    if period is None:
-        raise NotFound("Davr topilmadi")
-    await period_service.reopen_period(session, period, employee.id, payload.reason)
-    return _period_out(period)
-
-
-# --- To'lov varaqalari ---------------------------------------------------------
-
-
-def _payout_out(payout: Payout) -> schemas.PayoutOut:
-    return schemas.PayoutOut(
-        id=payout.id,
-        employee_id=payout.employee_id,
-        employee_name=payout.employee.full_name,
-        submissions_count=payout.submissions_count,
-        proposed_total=payout.proposed_total,
-        labor_total=payout.labor_total,
-        reduction_total=payout.reduction_total,
-        bonus=payout.bonus,
-        penalty=payout.penalty,
-        total=payout.total,
-        status=payout.status.value,
-    )
-
-
-@router.get("/payouts", response_model=list[schemas.PayoutOut])
-async def list_payouts(session: SessionDep, employee: FinanceDep, period_id: int):
-    rows = (
-        await session.execute(sa.select(Payout).where(Payout.period_id == period_id))
-    ).scalars().all()
-    return [_payout_out(row) for row in rows]
-
-
-@router.post("/payouts/{payout_id}/adjust", response_model=schemas.PayoutOut)
-async def adjust_payout(
-    payout_id: int,
-    payload: schemas.AdjustPayoutRequest,
-    session: SessionDep,
-    employee: AdminDep,
-):
-    payout = await session.get(Payout, payout_id)
-    if payout is None:
-        raise NotFound("To'lov varaqasi topilmadi")
-    await payout_service.adjust(
+    """To'lovni qayd etadi — chekbox / FIFO / qisman (uchalasi bitta mexanizm)."""
+    payment = await payment_service.create_payment(
         session,
-        payout,
+        employee_id=payload.employee_id,
         actor_id=employee.id,
-        bonus=payload.bonus,
-        penalty=payload.penalty,
-        reason=payload.reason,
+        submission_ids=payload.submission_ids,
+        amount=payload.amount,
+        note=payload.note,
     )
-    return _payout_out(payout)
+    out = _payment_out(payment)
+    # `fully_paid` — allokatsiyadan keyingi holat
+    for item in out.allocations:
+        submission = await session.get(Submission, item.submission_id)
+        item.fully_paid = submission is not None and submission.status == SubmissionStatus.PAID
+    return out
 
 
-@router.post("/payouts/{payout_id}/mark-paid", response_model=schemas.PayoutOut)
-async def mark_paid(payout_id: int, session: SessionDep, employee: FinanceDep):
-    payout = await session.get(Payout, payout_id)
-    if payout is None:
-        raise NotFound("To'lov varaqasi topilmadi")
-    await payout_service.mark_paid(session, payout, actor_id=employee.id)
-    return _payout_out(payout)
+@router.get("/payments", response_model=list[schemas.PaymentOut])
+async def list_payments(
+    session: SessionDep,
+    employee: FinanceDep,
+    employee_id: int | None = None,
+    limit: int = Query(100, le=500),
+):
+    rows = await payment_service.payments_of(session, employee_id=employee_id, limit=limit)
+    return [_payment_out(row) for row in rows]
+
+
+@router.post("/payments/{payment_id}/void", response_model=schemas.PaymentOut)
+async def void_payment(
+    payment_id: int,
+    payload: schemas.VoidPaymentRequest,
+    session: SessionDep,
+    employee: FinanceDep,
+):
+    """P5 — to'lov tahrirlanmaydi, faqat bekor qilinadi. Qarz qayta ochiladi."""
+    payment = await session.get(Payment, payment_id)
+    if payment is None:
+        raise NotFound("To'lov topilmadi")
+    await payment_service.void_payment(
+        session, payment, actor_id=employee.id, reason=payload.reason
+    )
+    return _payment_out(payment)
 
 
 # --- Hisobotlar ----------------------------------------------------------------
 
 
+def _resolve_range(
+    frm: dt.datetime | None, to: dt.datetime | None
+) -> tuple[dt.datetime | None, dt.datetime | None]:
+    """Chegara berilmasa — joriy oy (eski «current period» xulqining o'rnini bosadi)."""
+    if frm is None and to is None:
+        return stats_service.current_month_range()
+    return frm, to
+
+
 @router.get("/reports/dashboard", response_model=schemas.DashboardOut)
-async def dashboard(session: SessionDep, employee: FinanceDep, period_id: int | None = None):
-    period = (
-        await session.get(Period, period_id)
-        if period_id
-        else await period_service.current_period(session)
-    )
-    if period is None:
-        raise NotFound("Davr topilmadi")
-    summary = await payout_service.period_summary(session, period.id)
+async def dashboard(
+    session: SessionDep,
+    employee: FinanceDep,
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
+):
+    frm, to = _resolve_range(frm, to)
+    summary = await stats_service.range_summary(session, frm=frm, to=to)
 
     pending = (
         await session.execute(
             sa.select(sa.func.count(Submission.id)).where(
                 Submission.deleted_at.is_(None),
-                Submission.status.in_(
-                    [SubmissionStatus.SUBMITTED, SubmissionStatus.IN_REVIEW]
-                ),
+                Submission.status.in_([SubmissionStatus.SUBMITTED, SubmissionStatus.IN_REVIEW]),
             )
         )
     ).scalar_one()
@@ -186,7 +187,7 @@ async def dashboard(session: SessionDep, employee: FinanceDep, period_id: int | 
     ).scalar_one()
 
     return schemas.DashboardOut(
-        period=period.title,
+        period=summary.title,
         total_submissions=summary.total_submissions,
         approved_count=summary.approved_count,
         proposed_total=summary.proposed_total,
@@ -199,23 +200,24 @@ async def dashboard(session: SessionDep, employee: FinanceDep, period_id: int | 
         pending_review=int(pending),
         in_negotiation=int(negotiating),
         vehicles_in_service=int(in_service),
+        debt_total=summary.debt_total,
+        paid_total=summary.paid_total,
     )
 
 
 @router.get("/reports/negotiation-savings")
 async def negotiation_savings(
-    session: SessionDep, employee: FinanceDep, period_id: int | None = None
+    session: SessionDep,
+    employee: FinanceDep,
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
 ):
-    """⭐ «Bu oy kelishuv X so'm tejadi» — platformaning o'zini oqlashi."""
-    period = (
-        await session.get(Period, period_id)
-        if period_id
-        else await period_service.current_period(session)
-    )
-    summary = await payout_service.period_summary(session, period.id)
+    """⭐ «Kelishuv X so'm tejadi» — platformaning o'zini oqlashi."""
+    frm, to = _resolve_range(frm, to)
+    summary = await stats_service.range_summary(session, frm=frm, to=to)
     return {
         "data": {
-            "period": period.title,
+            "period": summary.title,
             "proposed_total": float(summary.proposed_total),
             "approved_total": float(summary.approved_total),
             "saved": float(summary.saved),
@@ -231,18 +233,13 @@ async def negotiation_savings(
 async def export(
     session: SessionDep,
     employee: FinanceDep,
-    kind: str = Query("submissions", pattern="^(submissions|payouts|savings)$"),
-    period_id: int | None = None,
+    kind: str = Query("submissions", pattern="^(submissions|debts|savings)$"),
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
 ):
-    period = (
-        await session.get(Period, period_id)
-        if period_id
-        else await period_service.current_period(session)
-    )
-    if period is None:
-        raise NotFound("Davr topilmadi")
+    frm, to = _resolve_range(frm, to)
     try:
-        filename, payload = await export_service.build(session, kind, period)
+        filename, payload = await export_service.build(session, kind, frm=frm, to=to)
     except ValueError as exc:
         raise BusinessRuleViolated(str(exc)) from exc
 
@@ -257,8 +254,9 @@ async def export(
 async def export_to_telegram(
     session: SessionDep,
     employee: FinanceDep,
-    kind: str = Query("submissions", pattern="^(submissions|payouts|savings)$"),
-    period_id: int | None = None,
+    kind: str = Query("submissions", pattern="^(submissions|debts|savings)$"),
+    frm: dt.datetime | None = None,
+    to: dt.datetime | None = None,
 ):
     """Excel'ni **bot orqali** yuboradi (amal Mini App'da, yetkazish botda).
 
@@ -273,15 +271,9 @@ async def export_to_telegram(
     if employee.tg_user_id is None:
         raise BusinessRuleViolated("Avval botda /start bosing")
 
-    period = (
-        await session.get(Period, period_id)
-        if period_id
-        else await period_service.current_period(session)
-    )
-    if period is None:
-        raise NotFound("Davr topilmadi")
+    frm, to = _resolve_range(frm, to)
     try:
-        filename, payload = await export_service.build(session, kind, period)
+        filename, payload = await export_service.build(session, kind, frm=frm, to=to)
     except ValueError as exc:
         raise BusinessRuleViolated(str(exc)) from exc
 
