@@ -12,6 +12,26 @@
  * har xil ko'rinardi va kontrast kafolatlanmasdi. Qarang: telegram.ts applyTheme.
  *
  * Katta teginish maydonlari saqlanadi — usta qo'li moyli, qo'lqopda.
+ *
+ * --- Bo'shliq shkalasi ---------------------------------------------------
+ * Barcha masofalar quyidagi 4 px bazali shkaladan olinadi. Yangi qoidada
+ * tasodifiy raqam yozilmaydi — eng yaqin qadam tanlanadi. Faqat shunda ekran
+ * «bir tekis» ko'rinadi: bugun 11 px, ertaga 13 px qo'yilsa ko'z buni sezadi.
+ *
+ *   --s-1   4px  ikona bilan matn orasi, eng mayda ichki bo'shliq
+ *   --s-2   8px  bir guruh ichidagi elementlar (tugma yostig'i, foto to'ri)
+ *   --s-3  12px  guruhlar orasi, yonma-yon tugmalar orasi, qator ichi
+ *   --s-4  16px  ⭐ asosiy ritm — karta ichki paddingi va bloklar orasi
+ *   --s-5  20px  sarlavha bloki, karta ichidagi bo'lim ajratish
+ *   --s-6  24px  katta bo'lim ajratish
+ *   --s-8  32px  sahifa oxiri (suzuvchi panel uchun zaxira)
+ *
+ * Ma'noli aliaslar (`--gap`, `--card-pad`, `--row-pad`) shkalaga bog'langan:
+ * ritmni o'zgartirish uchun bitta joyni tuzatish kifoya.
+ *
+ * Istisno: pill/belgi ichidagi optik to'ldirish (`.status`, `.delta`,
+ * `.tab-icon` yonidagi bo'shliq) shkaladan tashqarida — u yerda 3–5 px farq
+ * shrift metrikasiga moslash uchun, maket ritmiga aloqasi yo'q.
  */
 
 :root {
@@ -43,9 +63,25 @@
   --radius: 16px;
   --radius-sm: 11px;
   --radius-pill: 999px;
-  --gap: 12px;
 
-  --tabbar-h: 62px;
+  /* Bo'shliq shkalasi — izoh fayl boshida */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+
+  /* Ma'noli aliaslar — qoidalar shularga tayanadi, shkalaga to'g'ridan-to'g'ri emas */
+  --gap: var(--s-4); /* bloklar (karta, to'r, tugma qatori) orasi */
+  --card-pad: var(--s-4); /* karta ichki bo'shlig'i */
+  --row-pad: var(--s-3); /* qatorning ustki/ostki bo'shlig'i → orasi 24px */
+
+  /* Suzuvchi panelning haqiqiy balandligi (yostiq + tab + chegara) va uning
+     ekran chetidan masofasi. Kontent zaxirasi shu ikkisidan hisoblanadi. */
+  --tabbar-h: 66px;
+  --tabbar-inset: var(--s-3);
   --tabbar-bg: rgba(255, 255, 255, 0.72);
   --shadow: 0 1px 2px rgba(21, 22, 28, 0.04), 0 4px 12px rgba(21, 22, 28, 0.05);
   --shadow-accent: 0 4px 14px rgba(79, 70, 229, 0.28);
@@ -147,10 +183,13 @@ body::before {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Pastki zaxira: suzuvchi panel balandligi + bir qadam «havo», shunda oxirgi
+   karta panel ostiga kirib ketmaydi va ostida bo'sh joy ko'rinadi. */
 .app {
   max-width: 560px;
   margin: 0 auto;
-  padding: 8px 16px calc(var(--tabbar-h) + 32px + env(safe-area-inset-bottom));
+  padding: var(--s-2) var(--s-4)
+    calc(var(--tabbar-inset) + var(--tabbar-h) + var(--s-6) + env(safe-area-inset-bottom));
 }
 
 /* Kirish animatsiyasi — kontent pastdan ko'tarilib chiqadi. Bosqichma-bosqich
@@ -191,16 +230,37 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0 16px;
+  gap: var(--s-3);
+  padding: var(--s-2) 0 var(--s-5);
 }
 
 .header h1 {
+  /* `min-width: 0` — yonida tugma/chip bo'lsa sarlavha siqila olsin, aks holda
+     u qo'shnisini ekrandan itarib chiqaradi. */
+  min-width: 0;
   margin: 0;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  overflow-wrap: break-word;
+}
+
+/* Sarlavhadagi orqaga tugmasi — kvadrat, sarlavha joyini yemaydi.
+   (Telegram BackButton faqat push ekranlarda; ekran ichidagi qatlam uchun
+   shu tugma kerak.) */
+.btn-back {
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: none;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .header .sub {
@@ -209,7 +269,16 @@ body::before {
   font-weight: 400;
   color: var(--muted);
   letter-spacing: 0;
-  margin-top: 2px;
+  margin-top: var(--s-1);
+}
+
+/* Sarlavha ostidagi qiymat (masalan xodimning umumiy qarzi) — izoh emas,
+   raqam. Shuning uchun asosiy rangda va og'irroq. */
+.header .sub-strong {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .muted {
@@ -223,17 +292,29 @@ body::before {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px 15px;
+  padding: var(--card-pad);
   margin-bottom: var(--gap);
   box-shadow: var(--shadow);
 }
 
+/* Sarlavha bilan kontent orasi qatorlar orasidagi masofaga yaqin bo'lsin —
+   aks holda sarlavha kontentga «yopishib» qoladi. */
 .card h2 {
-  margin: 0 0 6px;
+  margin: 0 0 var(--s-3);
   font-size: 15px;
   font-weight: 650;
   color: var(--text);
   letter-spacing: -0.01em;
+}
+
+/* Vertikal to'plam — bolalari orasida bir xil bo'shliq. Har bir joyda qo'lda
+   `marginTop` yozib chiqmaslik uchun (masalan to'lov formasi bloklari). */
+.stack > * {
+  margin-bottom: 0;
+}
+
+.stack > * + * {
+  margin-top: var(--s-4);
 }
 
 /* --- Hero ---------------------------------------------------------------
@@ -246,7 +327,7 @@ body::before {
   position: relative;
   overflow: hidden;
   border-radius: 22px;
-  padding: 20px;
+  padding: var(--s-5);
   margin-bottom: var(--gap);
   color: var(--hero-ink);
   background: linear-gradient(150deg, #4f46e5 0%, #6d5ef0 46%, #8b5cf6 100%);
@@ -283,7 +364,7 @@ body::before {
    aks holda «26 493 123» ikki qatorga sinadi. */
 .hero-value {
   position: relative;
-  margin-top: 6px;
+  margin-top: var(--s-2);
   font-size: clamp(28px, 8.2vw, 38px);
   font-weight: 700;
   line-height: 1.05;
@@ -301,7 +382,7 @@ body::before {
 
 .hero-caption {
   position: relative;
-  margin-top: 4px;
+  margin-top: var(--s-1);
   font-size: 14px;
   opacity: 0.8;
 }
@@ -311,7 +392,7 @@ body::before {
 .meter {
   position: relative;
   height: 6px;
-  margin-top: 16px;
+  margin-top: var(--s-4);
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.26);
   overflow: hidden;
@@ -330,8 +411,8 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
   font-size: 13px;
   opacity: 0.88;
 }
@@ -360,45 +441,64 @@ body::before {
 
 /* --- Yorliq/qiymat qatori ----------------------------------------------- */
 
+/* ⚠️ Grid, flex EMAS — ataylab.
+ *
+ * Flex'da (`flex-wrap: wrap`) qator uzilishi elementlarning SIQILISHIDAN OLDIN
+ * hisoblanadi: uzun yorliq (masalan «Abdurahmonov Sherzod Baxtiyorovich»)
+ * summani ikkinchi qatorga itarib yuborardi. Grid'da ustunlar qat'iy:
+ * yorliq — siqiladigan ustun (`minmax(0, 1fr)`), summa — o'z eni bo'yicha,
+ * izoh esa ikkala ustunni egallab pastki qatorga tushadi.
+ */
 .row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 11px 0;
+  column-gap: var(--s-3);
+  padding: var(--row-pad) 0;
 }
 
 .row + .row {
   border-top: 1px solid var(--border);
 }
 
+/* Yorliq siqiladigan ustunda: uzun so'z qatordan chiqib ketmasin */
 .row > .muted {
-  flex: 1 1 auto;
   min-width: 0;
+  overflow-wrap: break-word;
 }
 
+/* ⚠️ Summa HECH QACHON sinmaydi: «80 000 so'm» ikki qatorga bo'linsa raqam
+   o'qilmay qoladi. O'ralish kerak bo'lsa yorliq hisobidan bo'ladi. */
 .row strong {
-  flex: 0 1 auto;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   text-align: right;
+  white-space: nowrap;
 }
 
-/* Yorliq ostidagi mayda izoh — sana, qisman to'lov holati */
+/* Yorliq ostidagi mayda izoh — sana, mashina raqami, qisman to'lov holati.
+   `.row` ichida ikkala ustunni egallaydi, ya'ni BUTUN en bo'ylab yoziladi.
+   Aks holda u yorliqning tor ustuniga siqilib, «01 851 NNA · 12.07.2026 14:30»
+   uch qatorga bo'linib ketardi. `.row` dan tashqarida (masalan
+   `.check-row > span` ichida) `grid-column` e'tiborsiz qoladi. */
 .row-hint {
   display: block;
-  margin-top: 2px;
+  grid-column: 1 / -1;
+  margin-top: var(--s-1);
   font-size: 12px;
+  line-height: 1.35;
   opacity: 0.75;
 }
 
 /* --- Qarz daftari ekranlari --------------------------------------------- */
 
-/* Chekboxli qator: belgi + `Row` yonma-yon, butun qator bosiladi */
+/* Chekboxli qator: belgi + `Row` yonma-yon, butun qator bosiladi.
+   `min-height` — qo'lqopdagi barmoq uchun kafolatlangan teginish maydoni. */
 .check-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--s-3);
+  min-height: 48px;
   cursor: pointer;
 }
 
@@ -408,8 +508,9 @@ body::before {
 
 .check-row input[type='checkbox'] {
   flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
   margin: 0;
   accent-color: var(--accent);
 }
@@ -424,14 +525,20 @@ body::before {
   border-top: none;
 }
 
-/* Bosiladigan qator (qarzdor → uning hisobotlari) — tugma, lekin qator ko'rinishida */
+/* Bosiladigan qator (qarzdor → uning hisobotlari) — tugma, lekin qator
+   ko'rinishida. ⚠️ `box-shadow`/`border-radius`/`min-height` ni ham qaytarish
+   SHART: aks holda asosiy tugma uslubidan qolgan soya har bir qatorni
+   ko'tarilgan oq quticha qilib ko'rsatadi. */
 .link-row {
   display: block;
   width: 100%;
+  min-height: 0;
   margin: 0;
   padding: 0;
   border: none;
+  border-radius: 0;
   background: none;
+  box-shadow: none;
   color: inherit;
   font: inherit;
   text-align: left;
@@ -446,24 +553,46 @@ body::before {
   opacity: 0.6;
 }
 
+/* Ochilishi mumkinligi ko'rinib tursin: chegarasiz qator oddiy ma'lumot
+   qatoridan farq qilmaydi va bosiladigani sezilmaydi. */
+.link-row .row {
+  position: relative;
+  padding-right: var(--s-5);
+}
+
+.link-row .row::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  margin-top: -4px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  border-radius: 1px;
+  transform: rotate(-45deg);
+  opacity: 0.5;
+}
+
 /* --- Statistika plitkalari ---------------------------------------------- */
 
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   align-items: start;
-  gap: 10px;
+  gap: var(--s-3);
   margin-bottom: var(--gap);
 }
 
 .tile {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--s-1);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: var(--card-pad);
   text-align: left;
   color: inherit;
   font: inherit;
@@ -509,7 +638,7 @@ button,
   letter-spacing: -0.01em;
   border: 1px solid transparent;
   border-radius: var(--radius);
-  padding: 14px 18px;
+  padding: var(--s-3) var(--s-4);
   background: var(--accent);
   color: var(--accent-text);
   box-shadow: var(--shadow-accent);
@@ -524,9 +653,34 @@ button:active {
   opacity: 0.9;
 }
 
-button:disabled {
-  opacity: 0.4;
+/* O'chirilgan tugma «buzilgan» yoki «yo'qolgan» ko'rinmasin: shaffoflik
+   o'rniga neytral qatlam — matni to'liq o'qiladi, lekin amal emasligi
+   darhol bilinadi (rangsiz, soyasiz, kursor taqiqli). */
+button:disabled,
+.btn:disabled {
+  opacity: 1;
+  background: var(--surface-2);
+  color: var(--muted);
+  border-color: var(--border);
+  box-shadow: none;
+  cursor: not-allowed;
   transform: none;
+}
+
+button:disabled:active {
+  transform: none;
+  opacity: 1;
+}
+
+/* Tugma yorlig'i ostidagi qiymat (masalan tanlanganlar summasi) — alohida
+   qatorda. Bitta qatorga qo'shilsa yorliq so'z o'rtasidan sinadi. */
+.btn-sub {
+  display: block;
+  margin-top: var(--s-1);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
 }
 
 .btn-secondary {
@@ -543,15 +697,71 @@ button:disabled {
   box-shadow: none;
 }
 
+/* Yonma-yon tugmalar. `flex-wrap` — zaxira: yorliqlar sig'masa tugma
+   keyingi qatorga tushadi, ekrandan chiqib ketmaydi. */
 .btn-row {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: var(--s-3);
   margin-bottom: var(--gap);
 }
 
+/* `flex-basis: 120px` — zaxira chegarasi, xohish emas: ikkita element ichma-ich
+   joylashgan tor blokda ham (karta → `builder-field` ≈ 283 px) yonma-yon
+   sig'adi, uchtasi esa keyingi qatorga o'tadi. Kattaroq bazis ikkitasini ham
+   uzib yuborardi. */
 .btn-row > * {
-  flex: 1;
+  flex: 1 1 120px;
   margin-bottom: 0;
+}
+
+/* Uzun yorliqli tugmalar (eksport turlari: «Qarzlar va to'lovlar»,
+   «Kelishuv tejamkorligi»). `auto-fit` + katta minimum: tor ekranda ustma-ust
+   to'liq enli bo'ladi, keng ekranda ikkitadan — matn hech qachon sinmaydi. */
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s-2);
+}
+
+.btn-grid > * {
+  margin-bottom: 0;
+}
+
+/* --- Segment tanlovi ----------------------------------------------------
+ * Ko'rinishni almashtirish (Qarzlar / To'langanlar) — bu AMAL emas. Shuning
+ * uchun asosiy tugma kabi urg'u rangida bo'lmaydi: neytral yostiq ichidagi
+ * past segmentlar. Faol segment — oq qatlam, urg'u rangi haqiqiy amallarga
+ * qoladi.
+ */
+
+.segmented {
+  display: flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  margin-bottom: var(--gap);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.segmented > button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--s-2) var(--s-3);
+  border: none;
+  border-radius: calc(var(--radius) - var(--s-1));
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  font-size: 15px;
+}
+
+.segmented > button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
 }
 
 /* --- Pastki navigatsiya ------------------------------------------------- */
@@ -560,13 +770,13 @@ button:disabled {
    o'tib ketadi va ilova «qatlamli» ko'rinadi. */
 .tabbar {
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(10px + env(safe-area-inset-bottom));
+  left: var(--s-3);
+  right: var(--s-3);
+  bottom: calc(var(--tabbar-inset) + env(safe-area-inset-bottom));
   z-index: 30;
   display: flex;
   justify-content: center;
-  padding: 6px;
+  padding: var(--s-2);
   border-radius: 22px;
   background: var(--tabbar-bg);
   backdrop-filter: saturate(180%) blur(24px);
@@ -579,7 +789,7 @@ button:disabled {
   display: flex;
   width: 100%;
   max-width: 536px;
-  gap: 4px;
+  gap: var(--s-1);
 }
 
 .tab {
@@ -588,9 +798,9 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  min-height: 46px;
-  padding: 5px 2px;
+  gap: var(--s-1);
+  min-height: 48px;
+  padding: var(--s-1) 2px;
   background: transparent;
   border: none;
   border-radius: 16px;
@@ -634,8 +844,8 @@ button:disabled {
 .profile-head {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 4px 0 20px;
+  gap: var(--s-4);
+  padding: var(--s-1) 0 var(--s-6);
 }
 
 .avatar {
@@ -696,12 +906,12 @@ textarea,
 select {
   font: inherit;
   width: 100%;
-  padding: 13px 14px;
+  padding: var(--s-3) var(--s-4);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
-  min-height: 50px;
+  min-height: 52px;
 }
 
 input:focus,
@@ -718,7 +928,7 @@ textarea {
 
 label.field {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: var(--s-2);
   font-weight: 600;
   font-size: 14px;
 }
@@ -726,13 +936,31 @@ label.field {
 .hint {
   color: var(--muted);
   font-size: 13px;
-  margin: 6px 0 0;
+  line-height: 1.4;
+  margin: var(--s-2) 0 0;
+}
+
+/* Sarlavhadan keyin darhol keluvchi izoh — bo'lim tavsifi. U keyingi
+   kontentdan ajralib tursin, aks holda tugmalarga yopishib qoladi. */
+.card > h2 + .hint {
+  margin-top: 0;
+  margin-bottom: var(--s-3);
+}
+
+/* Ikkinchi darajali izoh — asosiysining ostida, maydaroq. Ikkala izoh bir xil
+   og'irlikda bo'lsa ko'z qayerdan boshlashni bilmaydi va matn «devor» bo'ladi. */
+.hint-sub {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.8;
+  margin: var(--s-1) 0 0;
 }
 
 .error {
   color: var(--danger);
   font-size: 14px;
-  margin-top: 6px;
+  margin-top: var(--s-2);
 }
 
 /* --- Chiplar ------------------------------------------------------------ */
@@ -740,25 +968,30 @@ label.field {
 .chips {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: var(--s-2);
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   margin-bottom: var(--gap);
-  padding-bottom: 2px;
+  padding-bottom: var(--s-1);
 }
 
 .chips::-webkit-scrollbar {
   display: none;
 }
 
+/* `inline-flex` — chip tugma ham, sarlavhadagi oddiy `span` ham bo'lishi
+   mumkin; ikkalasida ham matn markazda tursin. */
 .chip {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: none;
   border-radius: var(--radius-pill);
-  padding: 9px 15px;
+  padding: var(--s-2) var(--s-4);
   width: auto;
   min-height: 40px;
   font-size: 14px;
@@ -779,14 +1012,14 @@ label.field {
 .list-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--s-3);
   width: 100%;
   text-align: left;
   background: transparent;
   border: none;
   box-shadow: none;
   border-radius: var(--radius-sm);
-  padding: 13px 0;
+  padding: var(--row-pad) 0;
   margin: 0;
   color: inherit;
   font-weight: 400;
@@ -840,7 +1073,7 @@ label.field {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--s-3);
   font-size: 15px;
 }
 
@@ -874,7 +1107,7 @@ label.field {
 
 /* Kartadan tashqarida turgan ro'yxat (masalan shablon tanlash) */
 .card > .list-item:first-of-type {
-  padding-top: 4px;
+  padding-top: var(--s-1);
 }
 
 .list-item strong {
@@ -886,25 +1119,25 @@ label.field {
 .list-item.active {
   background: var(--surface-2);
   border-radius: var(--radius-sm);
-  padding-left: 12px;
-  padding-right: 12px;
-  margin: 0 -12px;
-  width: calc(100% + 24px);
+  padding-left: var(--s-3);
+  padding-right: var(--s-3);
+  margin: 0 calc(var(--s-3) * -1);
+  width: calc(100% + var(--s-3) * 2);
 }
 
 /* Ro'yxatdan keyingi oddiy tugma yopishib qolmasin */
 .list-item + button:not(.list-item) {
-  margin-top: 14px;
+  margin-top: var(--s-4);
 }
 
 .badge {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--s-2);
   font-size: 13px;
   color: var(--muted);
-  margin-top: 5px;
+  margin-top: var(--s-1);
 }
 
 /* Ro'yxat qatorida meta bir qatorda qoladi — qator balandligi sakramasin */
@@ -999,8 +1232,29 @@ label.field {
 .photos {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+/* Foto — bosiladigan (ilova ichidagi ko'ruvchini ochadi). Tugma bo'lgani uchun
+   asosiy tugma uslubi (fon, soya, min-height, padding) bekor qilinadi —
+   `.link-row` dagi kabi. */
+.photo-open {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  box-shadow: none;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.photo-open:active {
+  opacity: 0.7;
 }
 
 .photos img {
@@ -1035,8 +1289,8 @@ label.field {
 
 .stepper {
   display: flex;
-  gap: 6px;
-  margin-bottom: 16px;
+  gap: var(--s-2);
+  margin-bottom: var(--gap);
 }
 
 .stepper span {
@@ -1072,14 +1326,14 @@ label.field {
 
 .toast {
   position: fixed;
-  left: 16px;
-  right: 16px;
-  bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom));
+  left: var(--s-4);
+  right: var(--s-4);
+  bottom: calc(var(--tabbar-inset) + var(--tabbar-h) + var(--s-3) + env(safe-area-inset-bottom));
   max-width: 528px;
   margin: 0 auto;
   background: var(--text);
   color: var(--bg);
-  padding: 13px 16px;
+  padding: var(--s-3) var(--s-4);
   border-radius: var(--radius);
   text-align: center;
   font-size: 15px;
@@ -1099,13 +1353,82 @@ label.field {
 
 .negotiation {
   border-left: 2px solid var(--warning);
-  padding-left: 12px;
+  padding-left: var(--s-3);
+}
+
+/* --- Kelishuv: xizmat bo'yicha qatorlar --------------------------------
+ * Kelishuv BITTA, lekin u bir nechta xizmatni qamraydi. Shuning uchun har
+ * xizmat alohida qator bo'lib ko'rinadi, ostida esa jami turadi — usta nimaga
+ * rozi bo'layotganini qator-ma-qator ko'radi.
+ */
+
+.nego-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--s-3);
+  padding: var(--s-2) 0;
+}
+
+.nego-line + .nego-line {
+  border-top: 1px solid var(--border);
+}
+
+.nego-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Eski narx — o'chirilgan, yangisi urg'uli. Summalar hech qachon sinmaydi. */
+.nego-nums {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.nego-nums s {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.nego-nums strong {
+  font-weight: 600;
+}
+
+/* Jami — qatorlardan ajralib tursin */
+.nego-total {
+  margin-top: var(--s-3);
+  padding-top: var(--s-1);
+  border-top: 1px solid var(--border);
+}
+
+.nego-total .row:first-child {
+  border-top: none;
+}
+
+/* Admin formasi: har xizmat — o'z summasi va o'z tez tanlovi */
+.nego-edit {
+  padding: var(--s-3) 0;
+}
+
+.nego-edit + .nego-edit {
+  border-top: 1px solid var(--border);
+}
+
+.nego-edit .row {
+  padding-top: 0;
+}
+
+.nego-edit input {
+  margin-bottom: var(--s-2);
 }
 
 .history {
   font-size: 13px;
   color: var(--muted);
-  margin-top: 4px;
+  margin-top: var(--s-1);
 }
 
 /* --- E'lon (broadcast) --------------------------------------------------- */
@@ -1113,7 +1436,7 @@ label.field {
 /* Tarixdagi e'lon matni. Qator uzilishlari saqlanadi (admin yozgandek), lekin
    uzun matn ro'yxatni cho'zib yubormasin — uch qatordan keyin kesiladi. */
 .broadcast-text {
-  margin: 6px 0 0;
+  margin: var(--s-2) 0 0;
   font-size: 14px;
   color: var(--text);
   white-space: pre-wrap;
@@ -1138,14 +1461,14 @@ label.field {
 .builder-field {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 12px;
-  margin-bottom: 8px;
+  padding: var(--s-3);
+  margin-bottom: var(--s-3);
 }
 
 .builder-field-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s-2);
 }
 
 .builder-field-head .link {
@@ -1165,7 +1488,7 @@ label.field {
 
 .builder-field-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--s-2);
 }
 
 .builder-field-actions button {
@@ -1179,36 +1502,43 @@ label.field {
 }
 
 .builder-field-body {
-  margin-top: 12px;
+  margin-top: var(--s-3);
   border-top: 1px solid var(--border);
-  padding-top: 12px;
+  padding-top: var(--s-3);
 }
 
-.card label {
+/* ⚠️ `:not(...)` MAJBURIY. Bu qoida `.check-row`/`.switch` dan keyin turadi va
+   selektor og'irligi kattaroq (`.card` + `label`), shuning uchun `:not()` siz
+   u `display: flex` ni bosib ketardi — chekbox qatorning ustiga chiqib
+   ketardi. Yangi `label` utilitasi qo'shsangiz shu ro'yxatga ham qo'shing. */
+.card label:not(.check-row):not(.switch) {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: var(--s-4);
   font-size: 13px;
   font-weight: 600;
   color: var(--muted);
 }
 
-.card label input,
+.card label:not(.check-row):not(.switch) input,
 .card label select,
 .card label textarea {
-  margin-top: 6px;
+  margin-top: var(--s-2);
   color: var(--text);
   font-size: 16px;
   font-weight: 400;
 }
 
+/* `margin-bottom` shu yerda: yuqoridagi `.card label` qoidasi `.switch` ni
+   ataylab chetlab o'tadi, aks holda u `display: flex` ni buzardi. */
 label.switch {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
   color: var(--text);
   font-size: 16px;
   font-weight: 400;
-  min-height: 44px;
+  min-height: 48px;
 }
 
 label.switch input {

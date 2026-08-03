@@ -170,6 +170,41 @@ export function confirmAction(message: string): Promise<boolean> {
   return new Promise((resolve) => tg.showConfirm(message, resolve));
 }
 
+/* --- «Orqaga» tugmasi — steк ---------------------------------------------
+ *
+ * Bir vaqtda bir nechta qatlam orqaga qaytishni kutishi mumkin: ekranlar
+ * steki (App) va uning ustidagi modal (foto ko'ruvchi). Telegram'da esa
+ * bitta `BackButton` bor. Shuning uchun ishlov beruvchilar stekda turadi va
+ * **eng yuqoridagisi** ishlaydi — modal ochiq bo'lsa ekran yopilib ketmaydi.
+ */
+
+const backHandlers: (() => void)[] = [];
+let backBound = false;
+
+function runTopBackHandler(): void {
+  backHandlers[backHandlers.length - 1]?.();
+}
+
+function syncBackButton(): void {
+  if (!backBound) {
+    tg.BackButton.onClick(runTopBackHandler);
+    backBound = true;
+  }
+  if (backHandlers.length) tg.BackButton.show();
+  else tg.BackButton.hide();
+}
+
+/** Ishlov beruvchini stek tepasiga qo'yadi. Qaytgan funksiya uni olib tashlaydi. */
+export function pushBackHandler(handler: () => void): () => void {
+  backHandlers.push(handler);
+  syncBackButton();
+  return () => {
+    const index = backHandlers.lastIndexOf(handler);
+    if (index >= 0) backHandlers.splice(index, 1);
+    syncBackButton();
+  };
+}
+
 export function init(): void {
   tg.ready();
   tg.expand();

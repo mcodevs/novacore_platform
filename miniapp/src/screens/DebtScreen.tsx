@@ -104,14 +104,23 @@ export function DebtScreen({ onDone }: Props) {
     const typed = Number(amount.replace(/\s/g, ''));
     return (
       <>
+        {/* Orqaga — kvadrat tugma, summa esa ism ostidagi qatorda: uchtasi
+            yonma-yon turganda 375 px'da F.I.Sh. so'z o'rtasidan sinib ketardi. */}
         <div className="header">
-          <button type="button" className="btn-secondary" onClick={() => setPicked(null)}>
-            ← {t('back')}
+          <button
+            type="button"
+            className="btn-back"
+            aria-label={t('back')}
+            onClick={() => setPicked(null)}
+          >
+            ←
           </button>
-          <h1>{picked.full_name}</h1>
-          <span className="chip">
-            {picked.debt > 0 ? money(picked.debt) : `+${money(picked.advance)}`}
-          </span>
+          <h1>
+            {picked.full_name}
+            <span className="sub sub-strong">
+              {picked.debt > 0 ? money(picked.debt) : `+${money(picked.advance)}`}
+            </span>
+          </h1>
         </div>
         {error ? <p className="error">{error}</p> : null}
 
@@ -125,6 +134,9 @@ export function DebtScreen({ onDone }: Props) {
         <Card title={t('debt_reports')}>
           {items === null ? <Skeleton count={3} /> : null}
           {items?.length === 0 ? <p className="muted">{t('no_debt')}</p> : null}
+          {/* Yorliqda faqat raqam qoladi: mashina va sana ostidagi izohga
+              tushadi. Aks holda uzun matn summani ikkinchi qatorga siqib
+              chiqaradi va qator o'qilmay qoladi. */}
           {items?.map((row) => (
             <label className="check-row" key={row.submission_id}>
               <input
@@ -133,13 +145,17 @@ export function DebtScreen({ onDone }: Props) {
                 onChange={() => toggle(row.submission_id)}
               />
               <Row
-                label={`#${row.number}${row.vehicle ? ` · ${row.vehicle}` : ''}`}
+                label={`#${row.number}`}
                 value={money(row.debt)}
-                hint={
+                hint={[
+                  row.vehicle,
+                  dateTime(row.submitted_at),
                   Number(row.paid_amount) > 0
-                    ? `${dateTime(row.submitted_at)} · ${t('partly_paid')}: ${money(row.paid_amount)}`
-                    : dateTime(row.submitted_at)
-                }
+                    ? `${t('partly_paid')}: ${money(row.paid_amount)}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               />
             </label>
           ))}
@@ -147,58 +163,68 @@ export function DebtScreen({ onDone }: Props) {
 
         {items ? (
           <Card title={t('make_payment')}>
-            {/* 1-usul: belgilanganlarni to'liq to'lash */}
-            <button
-              type="button"
-              disabled={busy || checked.size === 0}
-              onClick={() =>
-                void run(
-                  () =>
-                    api.createPayment({
-                      employee_id: picked.employee_id,
-                      submission_ids: [...checked],
-                    }),
-                  t('payment_saved'),
-                )
-              }
-            >
-              {t('pay_selected')}
-              {checked.size > 0 ? ` · ${money(selectedTotal)}` : ''}
-            </button>
+            <div className="stack">
+              {/* 1-usul: belgilanganlarni to'liq to'lash */}
+              <button
+                type="button"
+                disabled={busy || checked.size === 0}
+                onClick={() =>
+                  void run(
+                    () =>
+                      api.createPayment({
+                        employee_id: picked.employee_id,
+                        submission_ids: [...checked],
+                      }),
+                    t('payment_saved'),
+                  )
+                }
+              >
+                {t('pay_selected')}
+                {checked.size > 0 ? (
+                  <small className="btn-sub">{money(selectedTotal)}</small>
+                ) : null}
+              </button>
 
-            {/* 2-usul: summa kiritish → FIFO, eng eski qarzdan */}
-            <label className="field">
-              <span>{t('pay_amount')}</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={amount}
-                placeholder={String(picked.debt)}
-                onChange={(event) => setAmount(event.target.value)}
-              />
-            </label>
-            <p className="hint">
-              {items.length > 0 ? t('fifo_hint') : t('advance_only_hint')}
-            </p>
-            <p className="hint">{t('overpay_hint')}</p>
-            <button
-              type="button"
-              disabled={busy || !typed || typed <= 0}
-              onClick={() =>
-                void run(
-                  () =>
-                    api.createPayment({
-                      employee_id: picked.employee_id,
-                      amount: typed,
-                      // chekbox belgilangan bo'lsa — aynan ularga (qisman ham)
-                      submission_ids: checked.size > 0 ? [...checked] : undefined,
-                    }),
-                  t('payment_saved'),
-                )
-              }
-            >
-              {t('pay_by_amount')}
-            </button>
+              {/* 2-usul: summa kiritish → FIFO, eng eski qarzdan.
+                  Izoh ikki bosqichli: asosiysi — pul qayerga ketadi, mayda
+                  qatori — ortiqchasi nima bo'ladi. Ikkalasi bir xil o'lchamda
+                  bo'lsa matn devorga aylanadi. */}
+              <div>
+                <label className="field">
+                  <span>{t('pay_amount')}</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={amount}
+                    placeholder={String(picked.debt)}
+                    onChange={(event) => setAmount(event.target.value)}
+                  />
+                </label>
+                <p className="hint">
+                  {items.length > 0 ? t('fifo_hint') : t('advance_only_hint')}
+                </p>
+                <p className="hint-sub">{t('overpay_hint')}</p>
+              </div>
+
+              <button
+                type="button"
+                disabled={busy || !typed || typed <= 0}
+                onClick={() =>
+                  void run(
+                    () =>
+                      api.createPayment({
+                        employee_id: picked.employee_id,
+                        amount: typed,
+                        // chekbox belgilangan bo'lsa — aynan ularga (qisman ham)
+                        submission_ids: checked.size > 0 ? [...checked] : undefined,
+                      }),
+                    t('payment_saved'),
+                  )
+                }
+              >
+                {t('pay_by_amount')}
+              </button>
+            </div>
           </Card>
         ) : null}
       </>
@@ -213,17 +239,23 @@ export function DebtScreen({ onDone }: Props) {
       </div>
       {error ? <p className="error">{error}</p> : null}
 
-      <div className="btn-row">
+      {/* Ko'rinishni almashtirish — amal emas, shuning uchun segment tanlovi:
+          urg'u rangi haqiqiy amallarga (to'lov, eksport) qoladi. */}
+      <div className="segmented" role="tablist">
         <button
           type="button"
-          className={tab === 'debts' ? '' : 'btn-secondary'}
+          role="tab"
+          aria-selected={tab === 'debts'}
+          className={tab === 'debts' ? 'active' : ''}
           onClick={() => setTab('debts')}
         >
           {t('tab_debts')}
         </button>
         <button
           type="button"
-          className={tab === 'paid' ? '' : 'btn-secondary'}
+          role="tab"
+          aria-selected={tab === 'paid'}
+          className={tab === 'paid' ? 'active' : ''}
           onClick={() => setTab('paid')}
         >
           {t('tab_paid')}
@@ -290,9 +322,11 @@ export function DebtScreen({ onDone }: Props) {
         </Card>
       ) : null}
 
+      {/* Eksport yorliqlari uzun («Qarzlar va to'lovlar») — yonma-yon qo'yilsa
+          matn 2–3 qatorga sinadi. `.btn-grid` tor ekranda ustma-ust qo'yadi. */}
       <Card title={t('export')}>
         <p className="hint">{t('export_hint')}</p>
-        <div className="btn-row">
+        <div className="btn-grid">
           {EXPORTS.map((kind) => (
             <button
               type="button"

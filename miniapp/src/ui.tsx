@@ -28,13 +28,14 @@ export function Row({
   /** Yorliq ostidagi mayda izoh (sana, qisman to'lov…). */
   hint?: ReactNode;
 }) {
+  // Izoh ataylab yorliq ichida EMAS: `.row` — ikki ustunli grid, uchinchi
+  // element esa ikkala ustunni egallab pastki qatorga tushadi va butun en
+  // bo'ylab yoziladi. Yorliq ichida bo'lsa u tor ustunda qolib sinardi.
   return (
     <div className="row">
-      <span className="muted">
-        {label}
-        {hint ? <small className="row-hint">{hint}</small> : null}
-      </span>
+      <span className="muted">{label}</span>
       <strong className={tone}>{value}</strong>
+      {hint ? <small className="row-hint">{hint}</small> : null}
     </div>
   );
 }

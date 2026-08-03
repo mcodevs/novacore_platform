@@ -131,9 +131,12 @@ export const T: Dict = {
     uz: 'Qarz yo‘q — kiritilgan summa to‘liq avans bo‘lib qoladi.',
     ru: 'Долга нет — введённая сумма полностью останется авансом.',
   },
+  // ⚠️ Bu — summa maydoni ostidagi IKKINCHI, mayda izoh. Asosiysi (`fifo_hint`)
+  // bilan yonma-yon turadi, shuning uchun ataylab qisqa: ikkita uzun jumla
+  // ketma-ket qo'yilsa ikkalasi ham o'qilmaydi.
   overpay_hint: {
-    uz: 'Qarzdan ortiq summa avans sifatida xodim hisobida qoladi.',
-    ru: 'Сумма сверх долга останется авансом на счёте сотрудника.',
+    uz: 'Ortiqcha summa avans bo‘lib qoladi.',
+    ru: 'Излишек останется авансом.',
   },
   debtors: { uz: 'Qarzdorlar', ru: 'Должники' },
   no_debt: { uz: 'Qarz yo‘q', ru: 'Долгов нет' },
@@ -145,8 +148,8 @@ export const T: Dict = {
   pay_amount: { uz: 'Summa', ru: 'Сумма' },
   pay_by_amount: { uz: 'To‘lovni qayd etish', ru: 'Записать выплату' },
   fifo_hint: {
-    uz: 'Summa eng eski qarzdan boshlab taqsimlanadi; yetmasa oxirgisi qisman yopiladi.',
-    ru: 'Сумма распределяется с самого старого долга; при нехватке последний закрывается частично.',
+    uz: 'Eng eski qarzdan boshlab taqsimlanadi — yetmasa oxirgisi qisman yopiladi.',
+    ru: 'Распределяется с самого старого долга — при нехватке последний закрывается частично.',
   },
   payment_saved: { uz: 'To‘lov qayd etildi', ru: 'Выплата записана' },
   payment_history: { uz: 'To‘lovlar tarixi', ru: 'История выплат' },
@@ -324,6 +327,15 @@ export const T: Dict = {
   reopen: { uz: '↩️ Qaytarish', ru: '↩️ Вернуть' },
   reject: { uz: '❌ Rad etish', ru: '❌ Отклонить' },
   new_amount: { uz: 'Yangi summa', ru: 'Новая сумма' },
+  reduce_hint: {
+    uz: 'Har bir xizmatga o‘z summangizni qo‘ying. Tegilmagani o‘z narxida qoladi.',
+    ru: 'Укажите свою сумму по каждой работе. Нетронутые останутся в своей цене.',
+  },
+  keep_price: { uz: 'O‘zgarishsiz qoldirish', ru: 'Оставить без изменений' },
+  unchanged_lines_note: {
+    uz: 'Qolgan xizmatlar o‘z narxida qoldi.',
+    ru: 'Остальные работы остались в своей цене.',
+  },
   reason: { uz: 'Sabab (majburiy)', ru: 'Причина (обязательно)' },
   reason_required: { uz: 'Sabab majburiy', ru: 'Причина обязательна' },
   price_increase_forbidden: {

@@ -293,3 +293,42 @@ async def test_employee_price_stats(session):
     assert stats.reduction_total == Decimal("50000.00")
     assert stats.avg_reduction_pct == Decimal("20.00")
     assert stats.reduction_rate_pct == Decimal("100.00")
+
+
+async def test_partial_multiline_reduction_reports_full_total(session):
+    """⭐ Admin bir nechta xizmatdan faqat bittasini kamaytirsa — jami to'g'ri.
+
+    Tegilmagan qatorda `approved_amount = None` bo'lib qoladi; u nol deb
+    sanalsa, ustaga «Admin taklifi» haqiqatdan kam ko'rinardi.
+    """
+    mechanic = await make_employee(session, role_code="mechanic", name="Karimov B.")
+    admin = await make_employee(session, role_code="admin", name="Admin A.")
+    vehicle = await make_vehicle(session)
+    submission = await create_ready_submission(
+        session,
+        mechanic,
+        vehicle,
+        works=[("Balon almashtirish", Decimal("150000")), ("Kolodka", Decimal("100000"))],
+    )
+    await submission_service.submit(session, submission, mechanic)
+    first = submission.lines[0]
+
+    await pricing_service.propose_price(
+        session,
+        submission,
+        admin,
+        changes=[(first.id, Decimal("120000"))],  # faqat bittasi
+        comment="Bu ish odatda arzonroq",
+    )
+
+    from app.db.models import LineKind
+    from app.domain.template import engine
+
+    lines = list(submission.lines)
+    assert engine.sum_lines(lines, LineKind.labor) == Decimal("250000.00")
+    # 120 000 (kamaytirilgan) + 100 000 (tegilmagan, o'z narxida)
+    assert engine.effective_sum(lines, LineKind.labor) == Decimal("220000.00")
+
+    # usta rozi bo'lgach yakuniy summa ham shu
+    await pricing_service.accept_price(session, submission, mechanic)
+    assert submission.labor_amount == Decimal("220000.00")

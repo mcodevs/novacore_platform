@@ -336,7 +336,9 @@ async def _notify_price_proposed(
     session: AsyncSession, submission: Submission, reason: str
 ) -> None:
     proposed = engine.sum_lines(list(submission.lines), LineKind.labor)
-    approved = engine.sum_lines(list(submission.lines), LineKind.labor, approved=True)
+    # Admin bir nechta xizmatdan faqat bir qismini kamaytirishi mumkin —
+    # tegilmagan qatorlar o'z narxida qoladi (aks holda jami kam ko'rinardi)
+    approved = engine.effective_sum(list(submission.lines), LineKind.labor)
     await notify.enqueue(
         session,
         template_code="notify_price_proposed",

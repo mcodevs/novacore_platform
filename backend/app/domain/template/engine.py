@@ -454,6 +454,23 @@ def sum_lines(lines: list[SubmissionLine], kind: LineKind, *, approved: bool = F
     return money(total)
 
 
+def effective_sum(lines: list[SubmissionLine], kind: LineKind) -> Decimal:
+    """Amaldagi jami: tasdiqlangan summa bor bo'lsa u, aks holda so'ralgani.
+
+    ⚠️ `sum_lines(approved=True)` dan farqi shunda: admin bir nechta qatordan
+    faqat bittasini kamaytirsa, tegilmagan qatorlar `approved_amount = None`
+    bo'lib qoladi va u yerda **nol** deb sanalardi — jami noto'g'ri chiqardi.
+    """
+    total = ZERO
+    for line in lines:
+        if line.kind != kind:
+            continue
+        total += (
+            line.approved_amount if line.approved_amount is not None else line.proposed_amount
+        ) or ZERO
+    return money(total)
+
+
 def all_lines_approved(lines: list[SubmissionLine], kind: LineKind) -> bool:
     kind_lines = [ln for ln in lines if ln.kind == kind]
     return bool(kind_lines) and all(ln.approved_amount is not None for ln in kind_lines)

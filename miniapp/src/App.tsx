@@ -23,7 +23,7 @@ import { ProfileScreen } from './screens/ProfileScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { RoleEditScreen } from './screens/RoleEditScreen';
 import { TemplateEditScreen } from './screens/TemplateEditScreen';
-import { tg, waitForInitData } from './telegram';
+import { pushBackHandler, waitForInitData } from './telegram';
 import type { AuthResponse, Lang, RoleKind } from './types';
 import { Skeleton, TabBar, useToast } from './ui';
 import type { Tab } from './ui';
@@ -105,18 +105,10 @@ export function App() {
     };
   }, [deepLink]);
 
+  // Ekranlar steki — modal ochilsa u tepaga chiqadi (telegram.ts steki)
   useEffect(() => {
-    const back = tg.BackButton;
-    if (stack.length > 1) {
-      back.show();
-      back.onClick(pop);
-      return () => {
-        back.offClick(pop);
-        back.hide();
-      };
-    }
-    back.hide();
-    return undefined;
+    if (stack.length <= 1) return undefined;
+    return pushBackHandler(pop);
   }, [stack.length, pop]);
 
   if (error) {

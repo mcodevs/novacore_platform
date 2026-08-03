@@ -13,6 +13,7 @@ import { dateTime, duration, money } from '../format';
 import { t } from '../i18n';
 import { confirmAction, haptic } from '../telegram';
 import type { AuthResponse, PriceContext, Submission } from '../types';
+import { Lightbox } from '../Lightbox';
 import { Card, Row, Skeleton, StatusBadge } from '../ui';
 
 interface Props {
@@ -28,11 +29,13 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [contexts, setContexts] = useState<PriceContext[]>([]);
   const [prompt, setPrompt] = useState<Prompt>(null);
-  const [lineId, setLineId] = useState<number | null>(null);
-  const [amount, setAmount] = useState('');
+  //  qator id -> kiritilgan summa (bo'sh = narx o'zgarmaydi)
+  const [amounts, setAmounts] = useState<Record<number, string>>({});
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
+  //  null — ko'ruvchi yopiq; son — ochilgan foto indeksi
+  const [viewer, setViewer] = useState<number | null>(null);
 
   const isAdmin = auth.employee.role.kind === 'admin';
   const isAuthor = submission?.author_id === auth.employee.id;
@@ -64,7 +67,7 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
       setBusy(false);
       setPrompt(null);
       setComment('');
-      setAmount('');
+      setAmounts({});
     }
   }
 
@@ -166,11 +169,18 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
 
       {submission.media.length ? (
         <Card title={t('photos')}>
+          {/* Foto ilova ichida ochiladi — brauzerga chiqmaydi */}
           <div className="photos">
-            {submission.media.map((item) => (
-              <a key={item.id} href={item.url} target="_blank" rel="noreferrer">
+            {submission.media.map((item, i) => (
+              <button
+                key={item.id}
+                type="button"
+                className="photo-open"
+                onClick={() => setViewer(i)}
+                aria-label={t('photos')}
+              >
                 <img src={item.url} alt={item.field_code ?? ''} loading="lazy" />
-              </a>
+              </button>
             ))}
           </div>
         </Card>
@@ -185,19 +195,42 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
       {/* --- Usta: narx taklifiga javob --- */}
       {canNegotiate ? (
         <Card title={t('negotiation')}>
+          {/* Har bir xizmat alohida ko'rinadi — kelishuv esa BITTA (hammasiga) */}
           <div className="negotiation">
-            {labor
-              .filter(
+            {(() => {
+              const changed = labor.filter(
                 (line) =>
                   line.approved_amount !== null &&
                   Number(line.approved_amount) < Number(line.proposed_amount),
-              )
-              .map((line) => (
-                <div key={line.id}>
-                  <Row label={t('you_asked')} value={money(line.proposed_amount)} />
-                  <Row label={t('admin_proposed')} value={money(line.approved_amount)} />
-                </div>
-              ))}
+              );
+              // Jami — BARCHA xizmatlar bo'yicha: tegilmagani o'z narxida qoladi
+              const askedTotal = labor.reduce((s, l) => s + Number(l.proposed_amount), 0);
+              const offerTotal = labor.reduce(
+                (s, l) =>
+                  s + Number(l.approved_amount ?? l.proposed_amount),
+                0,
+              );
+              return (
+                <>
+                  {changed.map((line) => (
+                    <div className="nego-line" key={line.id}>
+                      <span className="nego-name">🔧 {line.name}</span>
+                      <span className="nego-nums">
+                        <s>{money(line.proposed_amount)}</s>
+                        <strong>{money(line.approved_amount)}</strong>
+                      </span>
+                    </div>
+                  ))}
+                  {labor.length > changed.length && changed.length ? (
+                    <p className="hint">{t('unchanged_lines_note')}</p>
+                  ) : null}
+                  <div className="nego-total">
+                    <Row label={t('you_asked')} value={money(askedTotal)} />
+                    <Row label={t('admin_proposed')} value={money(offerTotal)} tone="accent" />
+                  </div>
+                </>
+              );
+            })()}
           </div>
           <p className="hint">{t('auto_accept_note', { hours: 48 })}</p>
           {prompt === 'dispute' ? (
@@ -264,7 +297,7 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
                   className="btn-secondary"
                   onClick={() => {
                     setPrompt('reduce');
-                    setLineId(labor[0]?.id ?? null);
+                    setAmounts({});
                   }}
                 >
                   {t('reduce_price')}
@@ -288,76 +321,112 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
             </>
           ) : null}
 
+          {/* ⭐ Har bir xizmat uchun o'z summasi — yuborilganda BITTA kelishuv */}
           {prompt === 'reduce' ? (
             <>
-              <div className="chips">
-                {labor.map((line) => (
-                  <button
-                    key={line.id}
-                    type="button"
-                    className={`chip${lineId === line.id ? ' active' : ''}`}
-                    onClick={() => setLineId(line.id)}
-                  >
-                    {line.name}
-                  </button>
-                ))}
-              </div>
-              <label className="field" style={{ marginTop: 10 }}>
-                {t('new_amount')}
-              </label>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-              {(() => {
-                const ctx = contexts.find((c) => c.line_id === lineId);
-                return ctx?.quick_amounts?.length ? (
-                  <>
-                    <p className="hint">{t('quick_choice')}</p>
-                    <div className="chips">
-                      {ctx.quick_amounts.map((value) => (
-                        <button
-                          key={value}
-                          type="button"
-                          className="chip"
-                          onClick={() => setAmount(String(value))}
-                        >
-                          {money(value)}
-                        </button>
-                      ))}
+              <p className="hint">{t('reduce_hint')}</p>
+              {labor.map((line) => {
+                const ctx = contexts.find((c) => c.line_id === line.id);
+                const typed = amounts[line.id] ?? '';
+                const tooHigh = typed !== '' && Number(typed) > Number(line.proposed_amount);
+                return (
+                  <div className="nego-edit" key={line.id}>
+                    <div className="row">
+                      <span>🔧 {line.name}</span>
+                      <strong>{money(line.proposed_amount)}</strong>
                     </div>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder={t('keep_price')}
+                      value={typed}
+                      onChange={(e) =>
+                        setAmounts({ ...amounts, [line.id]: e.target.value })
+                      }
+                    />
+                    {tooHigh ? (
+                      <p className="error">{t('price_increase_forbidden')}</p>
+                    ) : null}
+                    {ctx?.quick_amounts?.length ? (
+                      <div className="chips">
+                        {ctx.quick_amounts.map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className={`chip${Number(typed) === Number(value) ? ' active' : ''}`}
+                            onClick={() =>
+                              setAmounts({ ...amounts, [line.id]: String(value) })
+                            }
+                          >
+                            {money(value)}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+
+              {(() => {
+                const changes = labor
+                  .filter((l) => (amounts[l.id] ?? '') !== '')
+                  .map((l) => ({ line: l, value: Number(amounts[l.id]) }));
+                const invalid = changes.some(
+                  (c) => !(c.value >= 0) || c.value > Number(c.line.proposed_amount),
+                );
+                const newTotal = labor.reduce(
+                  (sum, l) =>
+                    sum +
+                    ((amounts[l.id] ?? '') !== ''
+                      ? Number(amounts[l.id])
+                      : Number(l.proposed_amount)),
+                  0,
+                );
+                return (
+                  <>
+                    <div className="nego-total">
+                      <Row
+                        label={t('requested')}
+                        value={money(submission.proposed_labor_amount)}
+                      />
+                      <Row label={t('new_amount')} value={money(newTotal)} tone="accent" />
+                    </div>
+                    <label className="field">{t('reason')}</label>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      disabled={
+                        busy || !changes.length || invalid || comment.trim().length < 5
+                      }
+                      onClick={() => {
+                        if (invalid) {
+                          setFailure(t('price_increase_forbidden'));
+                          haptic('error');
+                          return;
+                        }
+                        void run(
+                          () =>
+                            api.proposePrice(
+                              submissionId,
+                              changes.map((c) => ({
+                                line_id: c.line.id,
+                                amount: c.value,
+                              })),
+                              comment.trim(),
+                            ),
+                          t('done'),
+                        );
+                      }}
+                    >
+                      {t('send_proposal')}
+                      {changes.length ? ` (${changes.length})` : ''}
+                    </button>
                   </>
-                ) : null;
+                );
               })()}
-              <label className="field" style={{ marginTop: 10 }}>
-                {t('reason')}
-              </label>
-              <textarea value={comment} onChange={(e) => setComment(e.target.value)} />
-              <button
-                type="button"
-                disabled={busy || !lineId || !amount || comment.trim().length < 5}
-                onClick={() => {
-                  const line = labor.find((l) => l.id === lineId);
-                  if (line && Number(amount) > Number(line.proposed_amount)) {
-                    setFailure(t('price_increase_forbidden'));
-                    haptic('error');
-                    return;
-                  }
-                  void run(
-                    () =>
-                      api.proposePrice(
-                        submissionId,
-                        [{ line_id: lineId as number, amount: Number(amount) }],
-                        comment.trim(),
-                      ),
-                    t('done'),
-                  );
-                }}
-              >
-                {t('send_proposal')}
-              </button>
             </>
           ) : null}
 
@@ -394,6 +463,14 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
             </button>
           ) : null}
         </Card>
+      ) : null}
+
+      {viewer !== null ? (
+        <Lightbox
+          items={submission.media}
+          index={viewer}
+          onClose={() => setViewer(null)}
+        />
       ) : null}
 
       {failure ? <p className="error">{failure}</p> : null}
