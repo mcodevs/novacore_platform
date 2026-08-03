@@ -55,7 +55,28 @@ function setTokens(auth: AuthResponse): void {
 
 async function parse<T>(response: Response): Promise<T> {
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+
+  // ⚠️ Server har doim ham JSON qaytarmaydi: ishlov berilmagan xatoda
+  // uvicorn oddiy matn («Internal Server Error») beradi. Uni ko'r-ko'rona
+  // `JSON.parse` qilish foydalanuvchiga «JSON Parse error…» ko'rsatardi —
+  // bu hech narsani anglatmaydi va asl muammoni yashiradi.
+  let payload: { error?: { code?: string; message?: string; fields?: Record<string, string> } } | null =
+    null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      throw new ApiError(
+        response.ok ? 'bad_response' : 'server_error',
+        response.ok
+          ? 'Serverdan kutilmagan javob keldi'
+          : `Serverda xatolik (HTTP ${response.status})`,
+        {},
+        response.status,
+      );
+    }
+  }
+
   if (!response.ok) {
     const error = payload?.error ?? {};
     throw new ApiError(

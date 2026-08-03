@@ -1036,3 +1036,91 @@ async def test_reporter_archive_still_shows_only_own_reports(api):
     )
     ids = [s["id"] for s in as_mechanic.json()]
     assert admin_submission not in ids
+
+
+async def test_accountant_payment_flow(api):
+    """⭐ Buxgalter to'lov oqimi API orqali — qarz → to'lov → tarix → bekor.
+
+    Bu test aynan shu sabab yozilgan: `POST /payments` prodda 500 bergan edi.
+    Servis darajasidagi testlar buni ushlamadi, chunki xato **javobni
+    serializatsiya qilishda** edi: yangi yaratilgan `Payment` da `employee`
+    bog'lanishi yuklanmagan bo'lib, unga murojaat lazy load'ni chaqirardi
+    (`MissingGreenlet`).
+    """
+    mechanic = await login(api, MECHANIC_TG)
+    admin = await login(api, ADMIN_TG)
+    accountant = await login(api, ACCOUNTANT_TG)
+    m_token, a_token, acc_token = (
+        mechanic["access_token"],
+        admin["access_token"],
+        accountant["access_token"],
+    )
+
+    submission_id = await _submit_repair(api, m_token, price=250000)
+    approved = await api.post(
+        f"/api/v1/submissions/{submission_id}/approve",
+        headers=auth_header(a_token),
+        json={},
+    )
+    assert approved.status_code == 200, approved.text
+
+    # qarzdorlar ro'yxati
+    debts = await api.get("/api/v1/debts", headers=auth_header(acc_token))
+    assert debts.status_code == 200, debts.text
+    assert float(debts.json()["total"]) == 250000.0
+    employee_id = debts.json()["employees"][0]["employee_id"]
+
+    items = await api.get(f"/api/v1/debts/{employee_id}", headers=auth_header(acc_token))
+    assert items.status_code == 200
+    assert float(items.json()[0]["debt"]) == 250000.0
+
+    # qisman to'lov — javob to'liq serializatsiya bo'lishi kerak
+    paid = await api.post(
+        "/api/v1/payments",
+        headers=auth_header(acc_token),
+        json={"employee_id": employee_id, "amount": 100000},
+    )
+    assert paid.status_code == 200, paid.text
+    body = paid.json()
+    assert body["employee_name"]  # ← lazy load bo'lsa shu yerda 500 bo'lardi
+    assert float(body["amount"]) == 100000.0
+    assert body["allocations"][0]["fully_paid"] is False
+    payment_id = body["id"]
+
+    after = await api.get("/api/v1/debts", headers=auth_header(acc_token))
+    assert float(after.json()["total"]) == 150000.0
+
+    # qarzdan ortiq to'lov — avansga aylanadi (P7)
+    advance = await api.post(
+        "/api/v1/payments",
+        headers=auth_header(acc_token),
+        json={"employee_id": employee_id, "amount": 200000},
+    )
+    assert advance.status_code == 200, advance.text
+    summary = await api.get("/api/v1/debts", headers=auth_header(acc_token))
+    assert float(summary.json()["total"]) == 0.0
+    assert float(summary.json()["advance_total"]) == 50000.0
+
+    history = await api.get("/api/v1/payments", headers=auth_header(acc_token))
+    assert history.status_code == 200
+    assert len(history.json()) == 2
+
+    # bekor qilish — qarz qaytadi
+    voided = await api.post(
+        f"/api/v1/payments/{payment_id}/void",
+        headers=auth_header(acc_token),
+        json={"reason": "Xato kiritildi"},
+    )
+    assert voided.status_code == 200, voided.text
+    assert voided.json()["voided_at"] is not None
+
+
+async def test_payment_requires_finance_role(api):
+    """Usta to'lov qayd eta olmaydi."""
+    mechanic = await login(api, MECHANIC_TG)
+    response = await api.post(
+        "/api/v1/payments",
+        headers=auth_header(mechanic["access_token"]),
+        json={"employee_id": 1, "amount": 1000},
+    )
+    assert response.status_code == 403

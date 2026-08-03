@@ -243,10 +243,15 @@ async def create_payment(
 
     allocations, advance = _allocate(targets, money(amount))
 
-    # Allokatsiyalar obyekt qurilishida biriktiriladi: `flush` dan keyin
-    # `payment.allocations` ga murojaat lazy yuklashni (MissingGreenlet) chaqiradi.
+    # ⚠️ `employee` va `allocations` obyekt qurilishida biriktiriladi. Aks holda
+    # chaqiruvchi (API serializatori) ularga murojaat qilganda SQLAlchemy lazy
+    # yuklashga urinadi va async kontekstdan tashqarida `MissingGreenlet` beradi.
+    employee = await session.get(Employee, employee_id)
+    if employee is None:
+        raise NotFound(f"Xodim topilmadi: {employee_id}")
+
     payment = Payment(
-        employee_id=employee_id,
+        employee=employee,
         amount=money(amount),
         actor_id=actor_id,
         note=note,
