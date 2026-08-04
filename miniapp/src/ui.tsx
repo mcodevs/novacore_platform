@@ -117,27 +117,22 @@ export function StatusBadge({ status }: { status: DisplayStatus }) {
 /**
  * Ekranni boshlaydigan yagona katta raqam — **sahifada faqat bittasi**.
  *
- * `share` berilsa ostida nisbat ko'rsatkichi (meter) chiziladi: to'ldirilgan
- * qism — tasdiqlangan ulush, bo'sh yo'lak — so'ralganning qolgani.
+ * ⚠️ Ilgari ostida «tasdiqlangan / so'ralgan» nisbat meteri va «Tejaldi»
+ * belgisi bor edi. Olib tashlandi (2026-08-04): ular ekranni savdolashish
+ * hisobiga aylantirardi, holbuki platformaning mavzusi — bajarilgan ish va
+ * qarz. Yangi ko'rsatkich qo'shishdan oldin shuni o'ylang.
  */
 export function Hero({
   label,
   value,
   currency,
   caption,
-  share,
-  foot,
-  delta,
 }: {
   label: ReactNode;
   value: string;
   currency?: string;
   caption?: ReactNode;
-  share?: number;
-  foot?: ReactNode;
-  delta?: ReactNode;
 }) {
-  const filled = share === undefined ? null : Math.max(0, Math.min(100, share));
   return (
     <section className="hero">
       <div className="hero-label">{label}</div>
@@ -146,17 +141,6 @@ export function Hero({
         {currency ? <span className="cur">{currency}</span> : null}
       </div>
       {caption ? <div className="hero-caption">{caption}</div> : null}
-      {filled !== null ? (
-        <div className="meter" role="presentation">
-          <span style={{ width: `${filled}%` }} />
-        </div>
-      ) : null}
-      {foot || delta ? (
-        <div className="hero-foot">
-          <span>{foot}</span>
-          {delta ? <span className="delta">{delta}</span> : null}
-        </div>
-      ) : null}
     </section>
   );
 }

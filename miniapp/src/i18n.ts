@@ -42,7 +42,6 @@ export const T: Dict = {
   approved_month: { uz: 'Bu oy tasdiqlangan', ru: 'Подтверждено за месяц' },
   this_month: { uz: 'Bu oy', ru: 'Этот месяц' },
   more_details: { uz: 'Qo‘shimcha', ru: 'Дополнительно' },
-  saved_short: { uz: 'Tejaldi', ru: 'Сэкономлено' },
   requested: { uz: 'So‘radim', ru: 'Запросил' },
   approved_sum: { uz: 'Tasdiqlandi', ru: 'Подтверждено' },
   // Hisobot kartochkasidagi to'lov holati — aynan SHU ish bo'yicha (ADR-0015).
@@ -50,7 +49,6 @@ export const T: Dict = {
   // hisobimdan» qismlar ham kiradi (R5).
   payable_total: { uz: 'To‘lanadi', ru: 'К выплате' },
   remaining: { uz: 'Qoldi', ru: 'Осталось' },
-  reduced: { uz: 'Kamaydi', ru: 'Снижено' },
   car_arrived: { uz: '🚗 Mashina keldi', ru: '🚗 Машина приехала' },
   my_reports: { uz: 'Hisobotlarim', ru: 'Мои отчёты' },
   no_reports: { uz: 'Hozircha hisobot yo‘q', ru: 'Отчётов пока нет' },
@@ -59,9 +57,7 @@ export const T: Dict = {
   // Admin
   admin_dashboard: { uz: 'Boshqaruv paneli', ru: 'Панель управления' },
   pending: { uz: 'Tasdiq kutmoqda', ru: 'Ждут подтверждения' },
-  in_negotiation: { uz: 'Kelishuvda', ru: 'В согласовании' },
   cars_in_service: { uz: 'Ustaxonada', ru: 'В сервисе' },
-  savings: { uz: 'Kelishuv tejamkorligi', ru: 'Экономия согласования' },
   parts_total: { uz: 'Ehtiyot qism', ru: 'Запчасти' },
   auto_approved_line: {
     uz: 'Avtomatik tasdiqlangan (admin)',
@@ -171,7 +167,6 @@ export const T: Dict = {
   export_sent: { uz: 'Excel botga yuborildi', ru: 'Excel отправлен в бот' },
   export_submissions: { uz: 'Hisobotlar', ru: 'Отчёты' },
   export_debts: { uz: 'Qarzlar va to‘lovlar', ru: 'Долги и выплаты' },
-  export_savings: { uz: 'Kelishuv tejamkorligi', ru: 'Экономия согласования' },
 
   // Hisobotlar arxivi (admin/buxgalter)
   all_reports: { uz: '📋 Hisobotlar', ru: '📋 Отчёты' },
@@ -325,9 +320,6 @@ export const T: Dict = {
   photos: { uz: 'Fotolar', ru: 'Фото' },
   comment: { uz: 'Izoh', ru: 'Комментарий' },
   history_avg: { uz: 'Tarix (oxirgi {n})', ru: 'История (последние {n})' },
-  history_none: { uz: 'Bu ish bo‘yicha tarix yo‘q', ru: 'По этой работе истории нет' },
-  author_avg: { uz: '{name} o‘rtachasi', ru: 'Среднее у {name}' },
-  reduction_rate: { uz: 'narxi {pct}% hollarda kamaytirilgan', ru: 'цену снижали в {pct}% случаев' },
   approve: { uz: '✅ Tasdiqlash', ru: '✅ Подтвердить' },
   reduce_price: { uz: '✏️ Narxni kamaytirish', ru: '✏️ Снизить цену' },
   reopen: { uz: '↩️ Qaytarish', ru: '↩️ Вернуть' },
@@ -369,19 +361,6 @@ export const T: Dict = {
   // Profil
   profile: { uz: 'Profil', ru: 'Профиль' },
   language: { uz: 'Til', ru: 'Язык' },
-  my_price_behaviour: { uz: 'Mening narx statistikam', ru: 'Моя статистика по цене' },
-  stats_lines: { uz: 'Tasdiqlangan ishlar', ru: 'Подтверждённые работы' },
-  stats_reduced: { uz: 'Kamaytirilgan', ru: 'Снижено' },
-  stats_avg_reduction: { uz: 'O‘rtacha kamaytirish', ru: 'Среднее снижение' },
-  stats_disputes: { uz: 'Nizolar', ru: 'Споры' },
-  stats_hint_good: {
-    uz: '✅ Siz halol narx qo‘yasiz',
-    ru: '✅ Вы ставите честную цену',
-  },
-  stats_hint_high: {
-    uz: '🟡 Narxlaringiz tez-tez kamaytirilmoqda',
-    ru: '🟡 Ваши цены часто снижают',
-  },
   workshop: { uz: 'Ustaxona', ru: 'Мастерская' },
 };
 

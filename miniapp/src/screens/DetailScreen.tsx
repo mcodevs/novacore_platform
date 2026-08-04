@@ -105,48 +105,28 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
       </Card>
 
       <Card title="💰">
-        {labor.map((line) => {
-          const ctx = contexts.find((c) => c.line_id === line.id);
-          return (
-            <div key={line.id} style={{ marginBottom: 10 }}>
-              <div className="row">
-                <span>🔧 {line.name}</span>
-                <strong>
-                  {money(line.proposed_amount)}
-                  {line.approved_amount !== null &&
-                  Number(line.approved_amount) !== Number(line.proposed_amount)
-                    ? ` → ${money(line.approved_amount)}`
-                    : ''}
-                </strong>
-              </div>
-              {ctx ? (
-                <div className="history">
-                  {ctx.count > 0 ? (
-                    <>
-                      📊 {t('history_avg', { n: ctx.count })}: {money(ctx.avg_approved)} ·{' '}
-                      {money(ctx.min_approved)} – {money(ctx.max_approved)}
-                      {ctx.author_avg !== null ? (
-                        <>
-                          <br />
-                          👤 {t('author_avg', { name: submission.author_name })}:{' '}
-                          {money(ctx.author_avg)} ·{' '}
-                          {t('reduction_rate', {
-                            pct: Math.round(Number(ctx.author_reduction_pct ?? 0)),
-                          })}
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    t('history_none')
-                  )}
-                </div>
-              ) : null}
-              {line.price_change_reason ? (
-                <div className="history">💬 {line.price_change_reason}</div>
-              ) : null}
+        {/* ⚠️ Narx tarixi (o'rtacha, min–maks, «necha % hollarda kamaytirilgan»)
+            bu yerda ATAYLAB YO'Q. U faqat admin narxni kamaytirayotgan
+            lahzada — «Narxni kamaytirish» oynasida — ko'rsatiladi. Hisobot
+            o'zi bajarilgan ish haqidagi hujjat; savdolashish raqamlari uni
+            asosiy mavzuga aylantirib yuborardi. */}
+        {labor.map((line) => (
+          <div key={line.id} style={{ marginBottom: 10 }}>
+            <div className="row">
+              <span>🔧 {line.name}</span>
+              <strong>
+                {money(line.proposed_amount)}
+                {line.approved_amount !== null &&
+                Number(line.approved_amount) !== Number(line.proposed_amount)
+                  ? ` → ${money(line.approved_amount)}`
+                  : ''}
+              </strong>
             </div>
-          );
-        })}
+            {line.price_change_reason ? (
+              <div className="history">💬 {line.price_change_reason}</div>
+            ) : null}
+          </div>
+        ))}
         {parts.length ? (
           <>
             <p className="muted">{t('parts')}</p>
@@ -162,10 +142,19 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
             ))}
           </>
         ) : null}
-        <Row label={t('requested')} value={money(submission.proposed_labor_amount)} />
-        {submission.labor_amount !== null ? (
-          <Row label={t('approved_sum')} value={money(submission.labor_amount)} />
-        ) : null}
+        {/* «So'radim» faqat narx haqiqatan kamaytirilgan bo'lsa ko'rsatiladi:
+            teng bo'lganda ikkita bir xil raqam savdolashish bo'lmagan joyda ham
+            uni ko'z oldiga keltirardi. */}
+        {submission.labor_amount === null ? (
+          <Row label={t('requested')} value={money(submission.proposed_labor_amount)} />
+        ) : (
+          <>
+            {Number(submission.labor_amount) < Number(submission.proposed_labor_amount) ? (
+              <Row label={t('requested')} value={money(submission.proposed_labor_amount)} />
+            ) : null}
+            <Row label={t('approved_sum')} value={money(submission.labor_amount)} />
+          </>
+        )}
 
         {/* ⭐ To'lov holati aynan SHU hisobot bo'yicha (ADR-0015): «to'landi» va
             «qoldi» bo'lmasa, xodim faqat umumiy qarzini ko'rardi va qaysi ish
@@ -355,6 +344,14 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
                       <span>🔧 {line.name}</span>
                       <strong>{money(line.proposed_amount)}</strong>
                     </div>
+                    {/* Narx tarixi FAQAT shu yerda — kamaytirish qarori aynan
+                        shu lahzada qabul qilinadi. Hisobot ko'rinishida u yo'q. */}
+                    {ctx && ctx.count > 0 ? (
+                      <div className="history">
+                        📊 {t('history_avg', { n: ctx.count })}: {money(ctx.avg_approved)} ·{' '}
+                        {money(ctx.min_approved)} – {money(ctx.max_approved)}
+                      </div>
+                    ) : null}
                     <MoneyInput
                       placeholder={t('keep_price')}
                       value={typed}

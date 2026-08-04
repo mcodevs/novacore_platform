@@ -204,7 +204,7 @@ Batafsil: [03-integrations/02-telegram-bot-miniapp.md](../03-integrations/02-tel
 |---|---|
 | O'z hisobotlari va statuslari | Boshqalarning hisobotlari va daromadi |
 | O'z bu oygi summasi (so'ralgan / tasdiqlangan) | Umumiy park xarajati |
-| **O'z narx statistikasi** ("narxim 10% kamaytirilgan") | Boshqalarning narx statistikasi |
+| O'z kelishuv taklifi (roziman / nizo) | ❌ Narx statistikasi — ekranda yo'q (ADR-0019) |
 | Mashinaning ta'mir tarixi | ❗ **Tayanch narx** (ataylab yopiq) |
 | O'z kelishuv tarixi va sabablar | Audit log, ehtiyot qism marjasi |
 

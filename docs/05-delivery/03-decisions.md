@@ -684,6 +684,76 @@ Yandex Fleet sinxronidan keladi, hisobotga aloqasi yo'q.
 
 ---
 
+## ADR-0019 — Savdolashish ko'rsatkichlari interfeysdan olib tashlandi
+
+**Sana:** 2026-08-04 · **Holat:** ✅ Qabul qilindi (egasining qarori)
+
+### Kontekst
+Narx kelishuvi shu qadar ko'p joyda ko'rsatilardi-ki, ilovaning **asosiy
+mavzusi savdolashish** bo'lib qolgandi:
+
+- admin hero'sida «Tejaldi 1.85 mln · 16.5%» va «so'ralgan / tasdiqlangan» meteri
+- ustaning hero'sida «Kamaydi X»
+- plitkalarda «Kelishuvda»
+- profilda «Mening narx statistikam»: kamaytirilgan summa, o'rtacha kamaytirish %,
+  nizolar soni va «narxlaringiz yuqori» degan izoh
+- **har bir hisobot kartochkasida** har xizmat ostida narx tarixi va
+  «👤 Murod Usta o'rtachasi … narxi 45% hollarda kamaytirilgan»
+- adminga ketadigan **har yangi hisobot bildirishnomasida** «📊 o'rtacha …»
+- eksportda «Kelishuv tejamkorligi»
+
+Platformaning maqsadi esa boshqa: **bajarilgan ishni qayd etish va pulni
+to'lash** (ADR-0015). Savdolashish — yo'ldagi qadam, maqsad emas.
+
+### Qaror
+Kelishuvga oid qiymat, matn va ko'rsatkichlar **faqat kelishuv sodir
+bo'ladigan joyda** qoladi:
+
+| Qoladi | Olib tashlandi |
+|---|---|
+| Admin «Narxni kamaytirish» oynasi (+ shu yerda ishning narx tarixi) | Hisobot kartochkasidagi narx tarixi |
+| Usta uchun «Narx kelishuvi» kartasi (roziman / nizo) va plitkasi | Profildagi «Mening narx statistikam» kartasi |
+| `price_negotiation` / `price_disputed` statuslari va filtri | Hero'dagi «Tejaldi», «Kamaydi», so'ralgan/tasdiqlangan meteri |
+| Kelishuv bildirishnomalari (taklif, eslatma, nizo, avto-qabul) | Yangi hisobot bildirishnomasidagi «📊 o'rtacha …» |
+| `price_change_reason` (nega kamaytirildi) | Admin plitkasi «Kelishuvda» → o'rniga «Umumiy qarz» |
+| Server: `/me/price-stats`, `negotiation-savings`, `price_context` | Eksportdagi «Kelishuv tejamkorligi» tugmasi |
+
+Hisobotda «So'radim» qatori endi **faqat narx haqiqatan kamaytirilgan bo'lsa**
+ko'rinadi — teng bo'lganda ikkita bir xil raqam savdolashish bo'lmagan joyda
+ham uni ko'z oldiga keltirardi.
+
+⚠️ **Backend tegilmadi**: hisob-kitob, endpointlar va R2/R2a/R2b invariantlari
+o'z holicha. Faqat interfeys va bildirishnoma matni o'zgardi — qaror qaytarilsa
+ma'lumot joyida turibdi.
+
+### Sabab
+- Xodim ilovani ochganda birinchi ko'rgani «senga narxni qanchaga tushirdik»
+  bo'lmasligi kerak — bu ishonchni yemiradi
+- «Narxi 45% hollarda kamaytirilgan» — ustani **profillash**; u kelishuvni
+  hamkorlikdan bahsga aylantiradi
+- Admin uchun ham tarix faqat **qaror lahzasida** kerak, hisobotni ko'rayotganda
+  emas ([[docs/04-flows/04-price-negotiation.md]] dagi KPI jadvali — ichki
+  hisobot, ekran emas)
+- Bo'shagan joy asosiy mavzuga berildi: admin panelidagi plitka endi **qarz**
+
+### Oqibatlar
+- ➕ Bosh ekran, profil va hisobot kartochkasi sezilarli soddalashdi
+- ➕ `Hero` dan `share`/`foot`/`delta` proplari va ular bilan `.meter`,
+  `.hero-foot`, `.delta` uslublari o'chdi (o'lik kod qolmadi)
+- ➖ Admin «bu oy qancha tejaldi» ni ekranda ko'rmaydi — faqat API/eksportda
+- ➖ Usta o'z narx xulqini ko'rmaydi (A-24 g'oyasi vaqtincha o'chdi)
+- ⓘ `PriceStats` tipi va `myPriceStats()` klienti o'chirildi; server endpointi
+  qoldi
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Hammasini qoldirib, faqat kichraytirish | Kichik shrift mavzuni o'zgartirmaydi — ko'rsatkich ekranda bo'lsa, u maqsadga o'xshaydi |
+| Kelishuv oqimini butunlay olib tashlash | Kelishuv real ehtiyoj (R2) — muammo uning **ko'rinishida** edi, o'zida emas |
+| Statistikani faqat adminga qoldirish | Usta profilidagi zarar shundan edi; adminda ham hisobot ko'rishda emas, kamaytirish lahzasida kerak |
+
+---
+
 ## Shablon (yangi ADR uchun)
 
 ```markdown

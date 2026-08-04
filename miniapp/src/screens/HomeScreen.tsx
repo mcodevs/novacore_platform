@@ -4,15 +4,10 @@ import { useEffect, useState } from 'react';
 
 import * as api from '../api';
 import { displayStatus } from '../display-status';
-import { money, percent, shortMoney } from '../format';
+import { money, shortMoney } from '../format';
 import { t } from '../i18n';
 import type { AuthResponse, Dashboard, Submission } from '../types';
 import { Card, Hero, ReportRow, Row, Skeleton, Tile } from '../ui';
-
-/** Tasdiqlangan ulush — hero ostidagi meter uchun. So'ralgan 0 bo'lsa to'la. */
-function approvedShare(proposed: number, approved: number): number {
-  return proposed > 0 ? (approved / proposed) * 100 : 100;
-}
 
 interface Props {
   auth: AuthResponse;
@@ -64,7 +59,6 @@ export function HomeScreen({
     (s) => s.status === 'submitted' || s.status === 'in_review',
   );
   const approved = (mine ?? []).filter((s) => s.status === 'approved' || s.status === 'paid');
-  const myProposed = approved.reduce((sum, s) => sum + Number(s.proposed_labor_amount), 0);
   const myApproved = approved.reduce((sum, s) => sum + Number(s.labor_amount ?? 0), 0);
 
   function startReport() {
@@ -83,20 +77,6 @@ export function HomeScreen({
                 value={shortMoney(board.approved_total)}
                 currency={t('currency')}
                 caption={t('approved_sum')}
-                share={approvedShare(
-                  Number(board.proposed_total),
-                  Number(board.approved_total),
-                )}
-                foot={
-                  <>
-                    {t('requested')} <b>{shortMoney(board.proposed_total)}</b>
-                  </>
-                }
-                delta={
-                  Number(board.saved) > 0
-                    ? `${t('saved_short')} ${shortMoney(board.saved)} · ${percent(board.saved_pct)}`
-                    : undefined
-                }
               />
               <div className="grid">
                 <Tile
@@ -105,9 +85,9 @@ export function HomeScreen({
                   tone={board.pending_review > 0 ? 'warn' : undefined}
                 />
                 <Tile
-                  value={board.in_negotiation}
-                  label={t('in_negotiation')}
-                  tone={board.in_negotiation > 0 ? 'accent' : undefined}
+                  value={shortMoney(board.debt_total)}
+                  label={t('total_debt')}
+                  tone={Number(board.debt_total) > 0 ? 'accent' : undefined}
                 />
                 <Tile value={board.vehicles_in_service} label={t('cars_in_service')} />
                 <Tile value={board.approved_count} label={t('approved_month')} />
@@ -175,17 +155,6 @@ export function HomeScreen({
               value={shortMoney(myApproved)}
               currency={t('currency')}
               caption={t('approved_sum')}
-              share={approvedShare(myProposed, myApproved)}
-              foot={
-                <>
-                  {t('requested')} <b>{shortMoney(myProposed)}</b>
-                </>
-              }
-              delta={
-                myProposed > myApproved
-                  ? `${t('reduced')} ${shortMoney(myProposed - myApproved)}`
-                  : undefined
-              }
             />
           )}
 

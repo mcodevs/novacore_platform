@@ -29,7 +29,7 @@
  * Ma'noli aliaslar (`--gap`, `--card-pad`, `--row-pad`) shkalaga bog'langan:
  * ritmni o'zgartirish uchun bitta joyni tuzatish kifoya.
  *
- * Istisno: pill/belgi ichidagi optik to'ldirish (`.status`, `.delta`,
+ * Istisno: pill/belgi ichidagi optik to'ldirish (`.status`,
  * `.tab-icon` yonidagi bo'shliq) shkaladan tashqarida — u yerda 3–5 px farq
  * shrift metrikasiga moslash uchun, maket ritmiga aloqasi yo'q.
  */
@@ -385,58 +385,6 @@ body::before {
   margin-top: var(--s-1);
   font-size: 14px;
   opacity: 0.8;
-}
-
-/* Meter — nisbat: tasdiqlangan / so'ralgan. Bo'sh yo'lak to'ldirgichning
-   o'z rangidan ochroq bosqich, shunda holat butun chiziq bo'ylab o'qiladi. */
-.meter {
-  position: relative;
-  height: 6px;
-  margin-top: var(--s-4);
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.26);
-  overflow: hidden;
-}
-
-.meter > span {
-  display: block;
-  height: 100%;
-  border-radius: var(--radius-pill);
-  background: #ffffff;
-  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.hero-foot {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-3);
-  margin-top: var(--s-3);
-  font-size: 13px;
-  opacity: 0.88;
-}
-
-.hero-foot > span:first-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hero-foot b {
-  font-weight: 650;
-}
-
-.hero-foot .delta {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.18);
-  font-weight: 650;
-  white-space: nowrap;
 }
 
 /* --- Yorliq/qiymat qatori ----------------------------------------------- */

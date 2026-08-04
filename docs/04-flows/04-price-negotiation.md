@@ -42,8 +42,8 @@ sequenceDiagram
     participant A as Admin
 
     U->>P: Hisobot + o'z narxi (250 000)
-    P->>A: bildirishnoma + tarixiy narx statistikasi
-    Note over A: "Bu ish oxirgi 8 marta<br/>o'rtacha 175 000 ga tasdiqlangan"
+    P->>A: bildirishnoma (raqam, mashina, summa)
+    Note over A: Narx tarixi «Narxni kamaytirish»<br/>oynasida ko'rinadi (ADR-0019)
 
     alt Admin roziman
         A->>P: ✅ Tasdiqlash (250 000)
@@ -130,6 +130,10 @@ Agar 35% bo'lsa — u har safar "havoga" so'raydi va admin vaqtini yeyapti.
 Bu — suhbat uchun aniq raqam.
 
 ### Platformaning o'z KPI'si — tejamkorlik
+
+> ⚠️ **Bu jadval ekranda YO'Q** (ADR-0019, 2026-08-04). Hisob-kitob va
+> `GET /reports/negotiation-savings` qoladi, lekin Mini App'da ko'rsatilmaydi:
+> savdolashish ko'rsatkichi ilovaning mavzusiga aylanib ketgandi.
 
 ```
 ┌────────────────────────────────────────────┐

@@ -16,7 +16,6 @@ import type {
   DebtSummary,
   Payment,
   PriceContext,
-  PriceStats,
   RoleKind,
   RoleSummary,
   Submission,
@@ -261,7 +260,6 @@ export const disputePrice = (id: number, comment: string) =>
     body: JSON.stringify({ comment }),
   });
 
-export const myPriceStats = () => request<PriceStats>('/me/price-stats');
 
 /** `submission_picker` nomzodlari — qism xaridini ta'mirga bog'lash uchun. */
 export const linkableSubmissions = (params: {

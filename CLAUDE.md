@@ -71,6 +71,7 @@ qo'shmang — har biri ADR bilan rad etilgan:
 | **Oy yopish / davr (`periods`) / `payouts`** | ADR-0015. To'lov oyga emas, **hisobotga** bog'langan — qarz daftari |
 | **Probeg hisobotda** (`odometer_*`) | ADR-0018. Har hisobotda spidometr fotosi — eng qimmat, eng foydasiz maydon edi. `vehicles.odometer_km` (Fleet'dan) qoladi |
 | **Foto galereyadan** | ADR-0017. Faqat kamera (`capture`). Serverda ham `source=gallery` rad etiladi |
+| **Savdolashish ko'rsatkichlari UI'da** | ADR-0019. «Tejaldi», «Kamaydi», narx statistikasi, hisobotdagi narx tarixi — olib tashlandi. Kelishuv qoladi, lekin **faqat sodir bo'ladigan joyda**: admin kamaytirish oynasi, ustaning roziman/nizo kartasi, statuslar va bildirishnomalar. Hisob-kitob serverda joyida |
 
 ## Stack
 

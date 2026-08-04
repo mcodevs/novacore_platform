@@ -23,7 +23,10 @@ interface Props {
   onDone(message: string): void;
 }
 
-const EXPORTS: ExportKind[] = ['submissions', 'debts', 'savings'];
+// ⚠️ `savings` («kelishuv tejamkorligi») ataylab yo'q: u savdolashish
+// analitikasi, platformaning maqsadi esa hisobot va qarz. Server endpointi
+// joyida qoladi — kerak bo'lsa qaytarish oson.
+const EXPORTS: ExportKind[] = ['submissions', 'debts'];
 
 type Tab = 'debts' | 'paid';
 

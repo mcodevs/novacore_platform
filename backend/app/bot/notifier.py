@@ -17,9 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.bot import keyboards as kb
 from app.core.config import settings
 from app.core.i18n import fmt_money, t
-from app.db.models import Employee, Notification, Submission
-from app.domain.pricing import service as pricing_service
-from app.domain.role import permissions
+from app.db.models import Employee, Notification
 
 log = structlog.get_logger(__name__)
 
@@ -39,15 +37,16 @@ async def render(
             payload[key] = fmt_money(Decimal(str(payload[key])), lang)
 
     payload.setdefault("hours", settings.price_auto_accept_hours)
+    # ⚠️ Ilgari bu yerda yangi hisobot bildirishnomasiga narx tarixi
+    # («📊 o'rtacha …») qo'shilardi. Olib tashlandi (2026-08-04): savdolashish
+    # ma'lumoti har bildirishnomaga emas, faqat admin narxni kamaytirayotgan
+    # ekranda kerak. `{context}` shabloni bo'sh qoladi — matn buzilmasin.
     payload.setdefault("context", "")
 
     if code == "notify_broadcast":
         # e'lon matnini admin qo'lda yozadi: «<» bo'lsa Telegram butun xabarni
         # rad etadi va e'lon hech kimga yetmaydi. DB'dagi matn xom qoladi.
         payload["body"] = html.escape(str(payload.get("body", "")), quote=False)
-
-    if code == "notify_new_submission" and submission_id and employee is not None:
-        payload["context"] = await _price_hint(session, submission_id, employee, lang)
 
     text = t(code, lang, **payload)
     markup = _markup(code, lang, submission_id)
@@ -62,26 +61,6 @@ def _markup(code: str, lang: str, submission_id: int | None) -> InlineKeyboardMa
     barcha amallar Mini App'da: bitta amal — bitta joyda.
     """
     return kb.open_app(lang, submission_id)
-
-
-async def _price_hint(
-    session: AsyncSession, submission_id: int, employee: Employee, lang: str
-) -> str:
-    """Adminga bildirishnoma bilan birga tarixiy narx (R3 — faqat admin/buxgalter)."""
-    if not permissions.can_see_reference_price(employee):
-        return ""
-    submission = await session.get(Submission, submission_id)
-    if submission is None:
-        return ""
-    contexts = await pricing_service.price_context(session, submission, employee)
-    parts = []
-    for ctx in contexts:
-        if ctx.has_history and ctx.avg_approved is not None:
-            parts.append(
-                f"\n📊 {ctx.name}: {'o‘rtacha' if lang == 'uz' else 'среднее'} "
-                f"{fmt_money(ctx.avg_approved, lang)} ({ctx.count})"
-            )
-    return "".join(parts)
 
 
 async def deliver(

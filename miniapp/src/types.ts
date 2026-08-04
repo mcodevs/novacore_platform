@@ -149,17 +149,6 @@ export interface PriceContext {
   quick_amounts: number[];
 }
 
-export interface PriceStats {
-  lines_total: number;
-  lines_reduced: number;
-  proposed_total: number;
-  approved_total: number;
-  reduction_total: number;
-  reduction_rate_pct: number;
-  avg_reduction_pct: number;
-  disputes: number;
-}
-
 export interface Dashboard {
   /** Sana oralig'i yorlig'i (davr tushunchasi yo'q — ADR-0015). */
   period: string;
@@ -325,7 +314,9 @@ export interface Payment {
   allocations: Allocation[];
 }
 
-export type ExportKind = 'submissions' | 'debts' | 'savings';
+/** ⚠️ `savings` server tomonda hali bor, lekin ilova uni **so'ramaydi**
+ *  (ADR-0019) — shuning uchun tipda ham yo'q. */
+export type ExportKind = 'submissions' | 'debts';
 
 // --- E'lonlar (faqat admin) --------------------------------------------------
 

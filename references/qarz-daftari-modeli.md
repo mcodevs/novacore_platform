@@ -145,6 +145,12 @@ izoh qo'shildi.
   unga «o'z hisobimdan» qismlar ham kiradi (R5) — real hisobotda 180 000 ish
   haqi + 350 000 usta olgan kolodka = 530 000
 
+
+✅ **Prodda** — 2026-08-04, commit `9fd5a78` (main, push qilingan), bundle
+`index-Cmy2KlwR.js` (lokal build hashi bilan bir xil). Migratsiya yo'q.
+Shu deploy bilan git ↔ prod farqi ham yopildi (oldingi deploy commit
+qilinmagan papkadan chiqqan edi — [[miniapp-dizayn-tizimi]] dagi ogohlantirish).
+
 ## Holat (2026-08-03)
 
 ✅ **Prodga chiqarildi** — 2026-08-03, commit `e2dd3e0` (main), fly deploy.
