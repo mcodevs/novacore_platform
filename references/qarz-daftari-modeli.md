@@ -112,6 +112,15 @@ qoida haqiqatan bitta — server ikkala holatda ham `submitted_at` bo'yicha
 eskisidan taqsimlaydi; chekbox faqat **doirani** toraytiradi (belgilanganlar
 ichida, yana FIFO). Faqat avans qatori shartli qo'shiladi.
 
+✅ **Prodga chiqarildi** — 2026-08-04, commit `b2b05bf` (main), `fly deploy`
+(image `deployment-01KZ6DHRMDE0PJ0A9G319K6BCK`). Migratsiya bo'lmadi — faqat
+Mini App va hujjat. Prodda tekshirildi: bundle ichida `.pick-total` va yangi
+tasdiq matni bor, eski «Belgilanganlarni to'lash» yo'q.
+
+ⓘ Deploy oxirida `fly` «app is not listening on 0.0.0.0:8000» ogohlantirishini
+berdi — tekshiruv `alembic upgrade head` tugamagan lahzaga tushadi. Keyingi
+health check o'tsa, bu **normal**; qo'rqib rollback qilish shart emas.
+
 ## Holat (2026-08-03)
 
 ✅ **Prodga chiqarildi** — 2026-08-03, commit `e2dd3e0` (main), fly deploy.

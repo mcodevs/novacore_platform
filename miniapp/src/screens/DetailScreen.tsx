@@ -14,7 +14,7 @@ import { t } from '../i18n';
 import { confirmAction, haptic } from '../telegram';
 import type { AuthResponse, PriceContext, Submission } from '../types';
 import { Lightbox } from '../Lightbox';
-import { Card, Row, Skeleton, StatusBadge } from '../ui';
+import { Card, MoneyInput, Row, Skeleton, StatusBadge } from '../ui';
 
 interface Props {
   auth: AuthResponse;
@@ -335,14 +335,10 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
                       <span>🔧 {line.name}</span>
                       <strong>{money(line.proposed_amount)}</strong>
                     </div>
-                    <input
-                      type="number"
-                      inputMode="numeric"
+                    <MoneyInput
                       placeholder={t('keep_price')}
                       value={typed}
-                      onChange={(e) =>
-                        setAmounts({ ...amounts, [line.id]: e.target.value })
-                      }
+                      onChange={(digits) => setAmounts({ ...amounts, [line.id]: digits })}
                     />
                     {tooHigh ? (
                       <p className="error">{t('price_increase_forbidden')}</p>
@@ -355,7 +351,9 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
                             type="button"
                             className={`chip${Number(typed) === Number(value) ? ' active' : ''}`}
                             onClick={() =>
-                              setAmounts({ ...amounts, [line.id]: String(value) })
+                              // ⚠️ `Math.round`: serverdan «200000.00» kelishi
+                              // mumkin, maydon esa faqat raqam saqlaydi.
+                              setAmounts({ ...amounts, [line.id]: String(Math.round(Number(value))) })
                             }
                           >
                             {money(value)}

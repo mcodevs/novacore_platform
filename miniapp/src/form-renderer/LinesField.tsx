@@ -15,6 +15,7 @@ import type { LineInput } from '../api';
 import { money } from '../format';
 import { label as pickLabel, t } from '../i18n';
 import type { FieldSchema, Line, WorkCatalogItem } from '../types';
+import { MoneyInput } from '../ui';
 
 interface Props {
   field: FieldSchema;
@@ -210,13 +211,7 @@ export function LinesField({ field, lines, error, onSave }: Props) {
               <label className="field" style={{ marginTop: 10 }}>
                 {t('my_price')}
               </label>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="250000"
-              />
+              <MoneyInput value={price} onChange={setPrice} placeholder="250 000" />
             </>
           ) : null}
 

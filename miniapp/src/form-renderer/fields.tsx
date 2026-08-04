@@ -6,6 +6,7 @@ import * as api from '../api';
 import { compressImage, money } from '../format';
 import { label as pickLabel, t } from '../i18n';
 import type { FieldSchema, LinkableSubmission, MediaItem, Vehicle } from '../types';
+import { MoneyInput } from '../ui';
 
 export interface FieldProps {
   field: FieldSchema;
@@ -61,12 +62,21 @@ export function NumberField({ field, value, error, onChange }: FieldProps) {
   return (
     <div className="card">
       <Label field={field} />
-      <input
-        type="number"
-        inputMode="numeric"
-        value={(value as number | string) ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-      />
+      {/* Pul — guruhlangan maydon (`90 000`). Oddiy son (masalan miqdor) esa
+          kasr bo'lishi mumkin, shuning uchun u `type="number"` bo'lib qoladi. */}
+      {isMoney ? (
+        <MoneyInput
+          value={(value as number | string) ?? ''}
+          onChange={(digits) => onChange(digits === '' ? null : Number(digits))}
+        />
+      ) : (
+        <input
+          type="number"
+          inputMode="numeric"
+          value={(value as number | string) ?? ''}
+          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        />
+      )}
       {isMoney && value ? <p className="hint">{money(Number(value))}</p> : null}
       {error ? <p className="error">{error}</p> : null}
     </div>

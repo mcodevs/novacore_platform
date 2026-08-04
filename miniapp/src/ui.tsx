@@ -1,8 +1,9 @@
 /** Kichik UI primitivlari — tashqi UI kutubxonasiz (bundle kichik qolsin). */
 
-import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import { groupDigits } from './group-digits';
 import { STATUS_TONE, statusText } from './i18n';
 import type { SubmissionStatus } from './types';
 
@@ -37,6 +38,74 @@ export function Row({
       <strong className={tone}>{value}</strong>
       {hint ? <small className="row-hint">{hint}</small> : null}
     </div>
+  );
+}
+
+/**
+ * Summa maydoni — kiritilayotgan raqam darhol «90 000» bo'lib guruhlanadi.
+ *
+ * Pul kiritiladigan HAR BIR maydon shu komponentdan foydalanadi: nol soni
+ * ko'p, guruhlashsiz «250000» va «2500000» ko'z bilan farqlanmaydi.
+ *
+ * ⚠️ `type="number"` EMAS: u probelli qiymatni ushlab tura olmaydi (brauzer
+ * `value` ni bo'sh deb hisoblaydi). `inputMode="numeric"` telefonda baribir
+ * raqamli klaviatura ochadi.
+ *
+ * Tashqariga **raqamlar** chiqadi (`'90000'`), ya'ni chaqiruvchi `Number(...)`
+ * bilan ishlayveradi — probelni tozalash kerak emas.
+ */
+export function MoneyInput({
+  value,
+  onChange,
+  placeholder,
+  style,
+}: {
+  /** Raqamlar (yoki bo'sh qator) — ko'rsatishda o'zi guruhlanadi. */
+  value: string | number | null | undefined;
+  onChange(digits: string): void;
+  placeholder?: string;
+  style?: CSSProperties;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  // Kursor o'rni: probel qo'shilgandan keyin brauzer kursorni oxiriga tashlaydi,
+  // shuning uchun uni raqamlar soni bo'yicha qayta tiklaymiz — aks holda o'rtaga
+  // bitta raqam qo'shib bo'lmaydi.
+  const caret = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (caret.current !== null && ref.current) {
+      ref.current.setSelectionRange(caret.current, caret.current);
+      caret.current = null;
+    }
+  });
+
+  function handle(event: ChangeEvent<HTMLInputElement>) {
+    const el = event.target;
+    const before = el.value.slice(0, el.selectionStart ?? el.value.length).replace(/\D/g, '')
+      .length;
+    const digits = el.value.replace(/\D/g, '');
+    const text = groupDigits(digits);
+
+    let pos = 0;
+    let seen = 0;
+    while (pos < text.length && seen < before) {
+      if (/\d/.test(text[pos])) seen += 1;
+      pos += 1;
+    }
+    caret.current = pos;
+    onChange(digits);
+  }
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      inputMode="numeric"
+      style={style}
+      value={groupDigits(value)}
+      placeholder={placeholder}
+      onChange={handle}
+    />
   );
 }
 

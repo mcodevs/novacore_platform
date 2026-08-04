@@ -13,11 +13,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import * as api from '../api';
 import { ApiError } from '../api';
-import { dateTime, money, shortMoney } from '../format';
+import { dateTime, money } from '../format';
 import { t } from '../i18n';
 import { confirmAction } from '../telegram';
 import type { DebtItem, DebtSummary, EmployeeDebt, ExportKind, Payment } from '../types';
-import { Card, Row, Skeleton } from '../ui';
+import { Card, MoneyInput, Row, Skeleton } from '../ui';
 
 interface Props {
   onDone(message: string): void;
@@ -109,14 +109,15 @@ export function DebtScreen({ onDone }: Props) {
     // summa maydonini to'ldiradi. Bitta tugma qoladi, natija esa o'sha: summa
     // aynan belgilangan hisobotlarga taqsimlanadi (server 3-rejim). Admin
     // qiymatni tahrirlab qisman to'lashi ham mumkin.
-    setAmount(next.size > 0 ? shortMoney(sumOf(next)) : '');
+    setAmount(next.size > 0 ? String(Math.round(sumOf(next))) : '');
   }
 
   const selectedTotal = sumOf(checked);
 
   // --- 3-qatlam: tanlangan xodimning hisobotlari ---
   if (picked) {
-    const typed = Number(amount.replace(/\s/g, ''));
+    // `MoneyInput` faqat raqam qaytaradi — probelni tozalash kerak emas.
+    const typed = Number(amount);
 
     /** Tasdiq matni. Maydon ostida izoh yo'q — pul qayerga ketishi aynan shu
      *  yerda, qaror qabul qilinadigan lahzada aytiladi.
@@ -215,12 +216,7 @@ export function DebtScreen({ onDone }: Props) {
                   maydon ostida esa o'qilmasdan «devor» bo'lib turardi. */}
               <label className="field">
                 <span>{t('pay_amount')}</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                />
+                <MoneyInput value={amount} onChange={setAmount} />
               </label>
 
               <button
