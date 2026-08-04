@@ -127,29 +127,29 @@ export const T: Dict = {
     uz: 'Yangi ish tasdiqlanganda avansdan avtomatik ushlab qolinadi.',
     ru: 'При подтверждении новой работы аванс списывается автоматически.',
   },
-  advance_only_hint: {
-    uz: 'Qarz yo‘q — kiritilgan summa to‘liq avans bo‘lib qoladi.',
-    ru: 'Долга нет — введённая сумма полностью останется авансом.',
-  },
-  // ⚠️ Bu — summa maydoni ostidagi IKKINCHI, mayda izoh. Asosiysi (`fifo_hint`)
-  // bilan yonma-yon turadi, shuning uchun ataylab qisqa: ikkita uzun jumla
-  // ketma-ket qo'yilsa ikkalasi ham o'qilmaydi.
-  overpay_hint: {
-    uz: 'Ortiqcha summa avans bo‘lib qoladi.',
-    ru: 'Излишек останется авансом.',
-  },
   debtors: { uz: 'Qarzdorlar', ru: 'Должники' },
   no_debt: { uz: 'Qarz yo‘q', ru: 'Долгов нет' },
   debt_reports: { uz: 'To‘lanmagan hisobotlar', ru: 'Неоплаченные отчёты' },
   reports_count: { uz: 'ta ish', ru: 'работ' },
   partly_paid: { uz: 'qisman to‘langan', ru: 'частично оплачено' },
   make_payment: { uz: 'To‘lov qilish', ru: 'Выплатить' },
-  pay_selected: { uz: 'Belgilanganlarni to‘lash', ru: 'Оплатить выбранные' },
+  // Belgilanganlarning yakuni — alohida tugma emas, xulosa qatori: summa
+  // maydoni shu qiymatga tenglashadi, to'lov bitta tugma bilan qayd etiladi.
+  selected: { uz: 'Belgilangan', ru: 'Выбрано' },
   pay_amount: { uz: 'Summa', ru: 'Сумма' },
   pay_by_amount: { uz: 'To‘lovni qayd etish', ru: 'Записать выплату' },
-  fifo_hint: {
-    uz: 'Eng eski qarzdan boshlab taqsimlanadi — yetmasa oxirgisi qisman yopiladi.',
-    ru: 'Распределяется с самого старого долга — при нехватке последний закрывается частично.',
+  // Tasdiq oynasi — summa maydoni ostidagi izohlarning o'rnini bosdi: pul
+  // qayerga ketishi qaror qabul qilinadigan lahzada aytiladi. To'lov keyin
+  // faqat `void` bilan qaytariladi, shuning uchun tasdiq majburiy.
+  // Matn tanlovga qarab o'zgarmaydi: qoida ikkala holatda ham bitta — FIFO,
+  // eng eskisidan. Chekbox faqat taqsimot doirasini toraytiradi.
+  pay_confirm: {
+    uz: '{sum} to‘lansinmi? Eng eski qarzdan boshlab taqsimlanadi.',
+    ru: 'Выплатить {sum}? Распределится с самого старого долга.',
+  },
+  pay_confirm_advance: {
+    uz: 'Ortiqcha {sum} avans bo‘lib qoladi.',
+    ru: 'Излишек {sum} останется авансом.',
   },
   payment_saved: { uz: 'To‘lov qayd etildi', ru: 'Выплата записана' },
   payment_history: { uz: 'To‘lovlar tarixi', ru: 'История выплат' },

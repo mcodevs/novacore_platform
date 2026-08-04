@@ -69,6 +69,49 @@ endi yo'q).
 - **Bonus / jarima** — eski `payouts` da bor edi, olib tashlandi. Qarz doim
   aniq hisobotga bog'lanadi; kerak bo'lsa kelajakda `adjustment` yozuvi
 
+
+## To'lov ekrani: ikkita tugma → bitta amal (2026-08-04)
+
+Egasining kuzatuvi: chekboxli ro'yxat ostida **ikkita** to'lov tugmasi turardi
+(«Belgilanganlarni to'lash» + «To'lovni qayd etish») — bir amalni ikki xil
+qilish chalkashtiradi (bot ↔ Mini App dublikati bilan bir xil sabab).
+
+**Yechim:** «Belgilanganlarni to'lash» olib tashlandi. Chekbox tanlovi endi
+**Summa maydonini to'ldiradi**, uning ustida esa xulosa qatori turadi:
+«Belgilangan · N ta ish → jami» (`.pick-total`, `--accent-soft` qatlam).
+Kartada bitta haqiqiy amal qoldi.
+
+- Funksiya yo'qolmadi: ilova `submission_ids` + `amount` (**server 3-rejim**)
+  yuboradi → summa aynan belgilanganlarga taqsimlanadi. Ustiga qo'shimcha imkon:
+  summani tahrirlab belgilanganlarga **qisman** to'lash
+- `amount`siz `submission_ids` (1-rejim) API'da **qoladi** — o'chirilmadi
+- Dizayn qoidasi: xulosa amal emas → to'liq urg'u rangi berilmaydi, faqat
+  yupqa `accent-soft` qatlam ([[miniapp-dizayn-tizimi]])
+- `docs/04-flows/03-payroll-and-reports.md` §3.1 shunga mos yangilandi
+
+Shu kuni ikkinchi qadam — **maydon bo'sh, matn tasdiqda**:
+
+- Summa maydonida na o'rnak summa (placeholder), na ostidagi izohlar
+  (`fifo_hint` · `overpay_hint` · `advance_only_hint` o'chirildi)
+- O'rniga «To'lovni qayd etish» **tasdiq oynasi** so'raydi (`confirmAction` →
+  `tg.showConfirm`): summa + taqsimot usuli, qarzdan oshsa avans qismi ham
+- Ortiqcha summa chegarasi tanlovga bog'liq: belgilangan hisobotlar bo'lsa pul
+  **faqat ularga** taqsimlanadi, boshqa qarz qolsa ham oshgani avansga tushadi
+- ⚠️ `showConfirm` `try` **ichida** chaqiriladi — eski klientda istisno tashlaydi
+  va u ushlanmasa tugma «hech narsa qilmayotgandek» ko'rinadi (Broadcast
+  ekranida bir marta shunday xato bo'lgan)
+
+CSS tuzog'i (uchinchisi): `.card label:not(.check-row):not(.switch)` yorliqqa
+16 px pastki bo'shliq beradi va u `.stack` ning o'z bo'shlig'iga qo'shilib
+32 px bo'lardi → `.card .stack > label.field { margin-bottom: 0 }`, ataylab
+o'sha qoidadan **keyin** ([[miniapp-dizayn-tizimi]]).
+
+Tasdiq matni **bitta** (egasining qarori): «{sum} to‘lansinmi? Eng eski qarzdan
+boshlab taqsimlanadi.» Tanlov bor-yo'qligiga qarab ikkiga bo'linmaydi, chunki
+qoida haqiqatan bitta — server ikkala holatda ham `submitted_at` bo'yicha
+eskisidan taqsimlaydi; chekbox faqat **doirani** toraytiradi (belgilanganlar
+ichida, yana FIFO). Faqat avans qatori shartli qo'shiladi.
+
 ## Holat (2026-08-03)
 
 ✅ **Prodga chiqarildi** — 2026-08-03, commit `e2dd3e0` (main), fly deploy.

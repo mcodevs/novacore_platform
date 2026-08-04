@@ -87,7 +87,9 @@ Buxgalter uchun hisobotlar **ikkita kesimda** ko'rinadi:
 │  ☐ #138  01 C 789 DE   16-avg   320 000 ⚠️  │  ← qisman: 180 000 to'langan
 │  …                                          │
 ├─────────────────────────────────────────────┤
-│  [ Belgilanganlarni to'lash ]  [ Summa… ]   │
+│  Belgilangan (2 ta ish)         1 340 000   │
+│  Summa: [ 1 340 000 ]                       │
+│  [ To'lovni qayd etish ]                    │
 └─────────────────────────────────────────────┘
 ```
 
@@ -111,6 +113,17 @@ qolgan qarzi **to'liq** yopiladi.
 ☑ #131  890 000   →      ├→ #124 : 450 000
 ☐ #138  320 000          └→ #131 : 890 000
 ```
+
+⚠️ **Ekranda alohida «Belgilanganlarni to'lash» tugmasi YO'Q** (2026-08-04).
+Chekbox tanlovi **Summa maydonini to'ldiradi**, kartada esa bitta amal tugmasi
+qoladi. Ya'ni ilova §3.1 ni har doim `submission_ids` + `amount` (server
+3-rejim) orqali yuboradi — natija yuqoridagi bilan bir xil, lekin buxgalter
+summani tahrirlab **belgilanganlarga qisman** ham to'lay oladi (u holda pul
+belgilanganlar ichida **yana FIFO** taqsimlanadi — §3.2 bilan bitta qoida).
+
+Chekbox ustidagi «Belgilangan · N ta ish → jami» qatori — **xulosa**, tugma
+emas. `amount`siz `submission_ids` rejimi API'da qoladi (bot/skript uchun),
+Mini App uni ishlatmaydi.
 
 ### 3.2. Summa kiritib to'lash (FIFO) ⭐
 
@@ -166,6 +179,9 @@ Avansdan 200 000 avtomatik ishlatiladi  →  qarz 50 000 bo'lib qoladi
 - Qarzdan ortiq to'lov **rad etilmaydi** — u avansga aylanadi (P7, §3.3a)
 - To'lov asosi — **tasdiqlangan** summa (`payable_amount`), usta so'ragan emas
 - ⚠️ Platforma **pul o'tkazmaydi** — faqat qayd etadi
+- «To'lovni qayd etish» **tasdiq oynasi** bilan (2026-08-04): summa, taqsimot
+  usuli va — qarzdan oshsa — avansga qoladigan qism aytiladi. Summa maydoni
+  ostida izoh yo'q; matn aynan qaror lahzasida ko'rsatiladi
 - Xato to'lov → **`void`** (sabab majburiy): allokatsiyalar qaytariladi,
   hisobot qarzi qayta ochiladi, `audit_log`ga yoziladi (P5)
 - Barcha to'lovlar Excel'ga eksport qilinadi (sana oralig'i bo'yicha)

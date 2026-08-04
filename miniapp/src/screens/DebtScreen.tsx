@@ -13,8 +13,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import * as api from '../api';
 import { ApiError } from '../api';
-import { dateTime, money } from '../format';
+import { dateTime, money, shortMoney } from '../format';
 import { t } from '../i18n';
+import { confirmAction } from '../telegram';
 import type { DebtItem, DebtSummary, EmployeeDebt, ExportKind, Payment } from '../types';
 import { Card, Row, Skeleton } from '../ui';
 
@@ -67,10 +68,16 @@ export function DebtScreen({ onDone }: Props) {
     }
   }, []);
 
-  async function run<T>(action: () => Promise<T>, message: string) {
+  /** `question` berilsa — avval tasdiq so'raladi, rad etilsa hech narsa bo'lmaydi.
+   *
+   * ⚠️ Tasdiq oynasi ataylab `try` ICHIDA: `showConfirm` eski klientda yoki
+   * oldingi popup yopilmagan bo'lsa istisno tashlaydi. Tashqarida bo'lsa uni
+   * hech kim ushlamaydi — tugma bosiladi, lekin ekranda hech narsa o'zgarmaydi. */
+  async function run<T>(action: () => Promise<T>, message: string, question?: string) {
     setBusy(true);
     setError('');
     try {
+      if (question && !(await confirmAction(question))) return;
       await action();
       await reload();
       if (picked) {
@@ -86,22 +93,45 @@ export function DebtScreen({ onDone }: Props) {
     }
   }
 
-  function toggle(id: number) {
-    setChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  /** Belgilangan hisobotlarning qolgan qarzi. */
+  function sumOf(ids: Set<number>): number {
+    return (items ?? [])
+      .filter((row) => ids.has(row.submission_id))
+      .reduce((sum, row) => sum + Number(row.debt), 0);
   }
 
-  const selectedTotal = (items ?? [])
-    .filter((row) => checked.has(row.submission_id))
-    .reduce((sum, row) => sum + Number(row.debt), 0);
+  function toggle(id: number) {
+    const next = new Set(checked);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setChecked(next);
+    // Alohida «belgilanganlarni to'lash» tugmasi YO'Q — chekbox to'g'ridan-to'g'ri
+    // summa maydonini to'ldiradi. Bitta tugma qoladi, natija esa o'sha: summa
+    // aynan belgilangan hisobotlarga taqsimlanadi (server 3-rejim). Admin
+    // qiymatni tahrirlab qisman to'lashi ham mumkin.
+    setAmount(next.size > 0 ? shortMoney(sumOf(next)) : '');
+  }
+
+  const selectedTotal = sumOf(checked);
 
   // --- 3-qatlam: tanlangan xodimning hisobotlari ---
   if (picked) {
     const typed = Number(amount.replace(/\s/g, ''));
+
+    /** Tasdiq matni. Maydon ostida izoh yo'q — pul qayerga ketishi aynan shu
+     *  yerda, qaror qabul qilinadigan lahzada aytiladi.
+     *
+     *  Qoida bitta: **FIFO, eng eski qarzdan**. Chekbox uni o'zgartirmaydi,
+     *  faqat doirasini toraytiradi (belgilanganlar ichida, yana eskisidan) —
+     *  shuning uchun matn ham bitta.
+     *
+     *  Ortiqcha summa chegarasi esa o'sha doiraga bog'liq: belgilangan
+     *  hisobotlar bo'lsa boshqa qarz qolsa ham oshgani avansga tushadi. */
+    const question = (): string => {
+      const extra = typed - (checked.size > 0 ? selectedTotal : picked.debt);
+      const head = t('pay_confirm', { sum: money(typed) });
+      return extra > 0 ? `${head}\n\n${t('pay_confirm_advance', { sum: money(extra) })}` : head;
+    };
     return (
       <>
         {/* Orqaga — kvadrat tugma, summa esa ism ostidagi qatorda: uchtasi
@@ -164,47 +194,34 @@ export function DebtScreen({ onDone }: Props) {
         {items ? (
           <Card title={t('make_payment')}>
             <div className="stack">
-              {/* 1-usul: belgilanganlarni to'liq to'lash */}
-              <button
-                type="button"
-                disabled={busy || checked.size === 0}
-                onClick={() =>
-                  void run(
-                    () =>
-                      api.createPayment({
-                        employee_id: picked.employee_id,
-                        submission_ids: [...checked],
-                      }),
-                    t('payment_saved'),
-                  )
-                }
-              >
-                {t('pay_selected')}
-                {checked.size > 0 ? (
-                  <small className="btn-sub">{money(selectedTotal)}</small>
-                ) : null}
-              </button>
+              {/* Tanlov yakuni — amal emas, xulosa: shuning uchun tugma emas,
+                  yupqa urg'u qatlamidagi qator. Urg'u rangi asosiy amalda
+                  (pastdagi tugmada) qoladi. */}
+              {checked.size > 0 ? (
+                <div className="pick-total">
+                  <span className="pick-label">
+                    {t('selected')}
+                    <small>
+                      {checked.size} {t('reports_count')}
+                    </small>
+                  </span>
+                  <strong>{money(selectedTotal)}</strong>
+                </div>
+              ) : null}
 
-              {/* 2-usul: summa kiritish → FIFO, eng eski qarzdan.
-                  Izoh ikki bosqichli: asosiysi — pul qayerga ketadi, mayda
-                  qatori — ortiqchasi nima bo'ladi. Ikkalasi bir xil o'lchamda
-                  bo'lsa matn devorga aylanadi. */}
-              <div>
-                <label className="field">
-                  <span>{t('pay_amount')}</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={amount}
-                    placeholder={String(picked.debt)}
-                    onChange={(event) => setAmount(event.target.value)}
-                  />
-                </label>
-                <p className="hint">
-                  {items.length > 0 ? t('fifo_hint') : t('advance_only_hint')}
-                </p>
-                <p className="hint-sub">{t('overpay_hint')}</p>
-              </div>
+              {/* Maydon bo'sh boshlanadi: na o'rnak summa, na izoh. Chekbox
+                  belgilansa summa o'zi to'ladi, pul qayerga ketishi esa
+                  tasdiq oynasida aytiladi — matn qaror lahzasida o'qiladi,
+                  maydon ostida esa o'qilmasdan «devor» bo'lib turardi. */}
+              <label className="field">
+                <span>{t('pay_amount')}</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                />
+              </label>
 
               <button
                 type="button"
@@ -219,6 +236,7 @@ export function DebtScreen({ onDone }: Props) {
                         submission_ids: checked.size > 0 ? [...checked] : undefined,
                       }),
                     t('payment_saved'),
+                    question(),
                   )
                 }
               >

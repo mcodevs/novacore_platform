@@ -525,6 +525,45 @@ body::before {
   border-top: none;
 }
 
+/* Belgilanganlar yakuni — chekbox tanlovining xulosasi, amal EMAS. Shuning
+   uchun tugma emas va to'liq urg'u rangi emas: yupqa urg'u qatlami. Urg'uning
+   o'zi kartadagi yagona haqiqiy amalda («To'lovni qayd etish») qoladi. */
+.pick-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.pick-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.pick-label small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ⚠️ Summa HECH QACHON sinmaydi — `.row strong` bilan bir xil qoida. */
+.pick-total strong {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* Bosiladigan qator (qarzdor → uning hisobotlari) — tugma, lekin qator
    ko'rinishida. ⚠️ `box-shadow`/`border-radius`/`min-height` ni ham qaytarish
    SHART: aks holda asosiy tugma uslubidan qolgan soya har bir qatorni
@@ -670,17 +709,6 @@ button:disabled,
 button:disabled:active {
   transform: none;
   opacity: 1;
-}
-
-/* Tugma yorlig'i ostidagi qiymat (masalan tanlanganlar summasi) — alohida
-   qatorda. Bitta qatorga qo'shilsa yorliq so'z o'rtasidan sinadi. */
-.btn-sub {
-  display: block;
-  margin-top: var(--s-1);
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.85;
 }
 
 .btn-secondary {
@@ -1517,6 +1545,14 @@ label.field {
   font-size: 13px;
   font-weight: 600;
   color: var(--muted);
+}
+
+/* ⚠️ Yuqoridagi qoida yorliqqa 16 px pastki bo'shliq beradi. `.stack` ichida u
+   to'plamning o'z bo'shlig'iga QO'SHILIB ketadi (16 + 16 = 32) va qatorlar
+   ritmi buziladi. Selektor og'irligi teng, shuning uchun bu qoida ataylab
+   yuqoridagisidan KEYIN turadi. */
+.card .stack > label.field {
+  margin-bottom: 0;
 }
 
 .card label:not(.check-row):not(.switch) input,
