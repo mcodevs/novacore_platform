@@ -87,6 +87,7 @@ export function HomeScreen({
                 <Tile
                   value={shortMoney(board.debt_total)}
                   label={t('total_debt')}
+                  money
                   tone={Number(board.debt_total) > 0 ? 'accent' : undefined}
                 />
                 <Tile value={board.vehicles_in_service} label={t('cars_in_service')} />

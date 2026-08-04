@@ -28,7 +28,9 @@ interface Props {
 // joyida qoladi — kerak bo'lsa qaytarish oson.
 const EXPORTS: ExportKind[] = ['submissions', 'debts'];
 
-type Tab = 'debts' | 'paid';
+type Tab = 'debts' | 'advance' | 'paid';
+
+const TABS: Tab[] = ['debts', 'advance', 'paid'];
 
 export function DebtScreen({ onDone }: Props) {
   const [tab, setTab] = useState<Tab>('debts');
@@ -116,6 +118,11 @@ export function DebtScreen({ onDone }: Props) {
   }
 
   const selectedTotal = sumOf(checked);
+
+  // Bir xodimda qarz ham, avans ham bo'lishi mumkin — u ikkala ro'yxatga ham
+  // tushadi. Filtrlash shu yerda: server bitta ro'yxat qaytaradi.
+  const debtors = (summary?.employees ?? []).filter((row) => Number(row.debt) > 0);
+  const advances = (summary?.employees ?? []).filter((row) => Number(row.advance) > 0);
 
   // --- 3-qatlam: tanlangan xodimning hisobotlari ---
   if (picked) {
@@ -259,45 +266,34 @@ export function DebtScreen({ onDone }: Props) {
       {/* Ko'rinishni almashtirish — amal emas, shuning uchun segment tanlovi:
           urg'u rangi haqiqiy amallarga (to'lov, eksport) qoladi. */}
       <div className="segmented" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'debts'}
-          className={tab === 'debts' ? 'active' : ''}
-          onClick={() => setTab('debts')}
-        >
-          {t('tab_debts')}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'paid'}
-          className={tab === 'paid' ? 'active' : ''}
-          onClick={() => setTab('paid')}
-        >
-          {t('tab_paid')}
-        </button>
+        {TABS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            className={tab === key ? 'active' : ''}
+            onClick={() => setTab(key)}
+          >
+            {t(`tab_${key}`)}
+          </button>
+        ))}
       </div>
 
       {summary === null ? <Skeleton count={3} /> : null}
 
+      {/* ⚠️ Qarz va avans — ikki xil ro'yxat, ataylab ikki tabda. Ilgari
+          ikkalasi bitta ro'yxatda edi: qarzdorlar orasida «+60 000 Avans»
+          qatorlari turib, «kimga qancha qarzmiz?» degan asosiy savolga javob
+          berish qiyinlashardi. */}
       {tab === 'debts' && summary ? (
         <>
           <Card>
             <Row label={t('total_debt')} value={money(summary.total)} />
-            {summary.advance_total > 0 ? (
-              <Row
-                label={t('total_advance')}
-                value={money(summary.advance_total)}
-                tone="good"
-              />
-            ) : null}
           </Card>
           <Card title={t('debtors')}>
-            {summary.employees.length === 0 ? (
-              <p className="muted">✅ {t('no_debt')}</p>
-            ) : null}
-            {summary.employees.map((row) => (
+            {debtors.length === 0 ? <p className="muted">✅ {t('no_debt')}</p> : null}
+            {debtors.map((row) => (
               <button
                 type="button"
                 className="link-row"
@@ -306,15 +302,38 @@ export function DebtScreen({ onDone }: Props) {
               >
                 <Row
                   label={row.full_name}
-                  value={row.debt > 0 ? money(row.debt) : `+${money(row.advance)}`}
-                  tone={row.debt > 0 ? undefined : 'good'}
-                  hint={
-                    row.debt > 0
-                      ? `${row.count} ${t('reports_count')}${
-                          row.advance > 0 ? ` · ${t('advance')}: ${money(row.advance)}` : ''
-                        }`
-                      : t('advance')
-                  }
+                  value={money(row.debt)}
+                  hint={`${row.count} ${t('reports_count')}`}
+                />
+              </button>
+            ))}
+          </Card>
+        </>
+      ) : null}
+
+      {tab === 'advance' && summary ? (
+        <>
+          <Card>
+            <Row label={t('total_advance')} value={money(summary.advance_total)} tone="good" />
+            <p className="hint">{t('advance_hint')}</p>
+          </Card>
+          <Card title={t('advance_holders')}>
+            {advances.length === 0 ? <p className="muted">{t('no_advance')}</p> : null}
+            {advances.map((row) => (
+              <button
+                type="button"
+                className="link-row"
+                key={row.employee_id}
+                onClick={() => void openEmployee(row)}
+              >
+                {/* Xodimda bir vaqtda qarz ham, avans ham bo'lishi mumkin
+                    (avans yangi ish tasdiqlangunicha ishlatilmaydi) — shuning
+                    uchun qarzi izohda ko'rsatiladi. */}
+                <Row
+                  label={row.full_name}
+                  value={`+${money(row.advance)}`}
+                  tone="good"
+                  hint={row.debt > 0 ? t('has_debt', { sum: money(row.debt) }) : undefined}
                 />
               </button>
             ))}

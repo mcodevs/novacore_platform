@@ -196,16 +196,25 @@ export function Tile({
   value,
   label,
   tone,
+  money,
   onClick,
 }: {
   value: ReactNode;
   label: ReactNode;
   /** Raqamni rang bilan ajratadi — faqat e'tibor kerak bo'lganda beriladi. */
   tone?: 'warn' | 'accent' | 'good';
+  /** Summa (masalan qarz) — sanoqdan uzun, shuning uchun maydaroq va sinmaydi.
+   *  ⚠️ Bo'lmasa «7 300 000» ikki qatorga bo'linib plitkani cho'zib yuboradi
+   *  va yonidagi plitka bilan bo'yi teng bo'lmay qoladi. */
+  money?: boolean;
   onClick?: () => void;
 }) {
   return (
-    <button className={`tile${tone ? ` tone-${tone}` : ''}`} onClick={onClick} type="button">
+    <button
+      className={`tile${tone ? ` tone-${tone}` : ''}${money ? ' tile-money' : ''}`}
+      onClick={onClick}
+      type="button"
+    >
       <div className="value">{value}</div>
       <div className="label">{label}</div>
     </button>

@@ -44,6 +44,16 @@ bekor qila olmaydi (selektor yengilroq). Yechim — `.card .stack > label.field
 tartibi hal qiladi). To'lov ekranida shu tuzoq bo'lgan
 ([[qarz-daftari-modeli]]).
 
+**4. Plitkaga (`.tile`) summa qo'ysangiz — u sinadi.** 375 px'da plitka ichki
+eni ~133 px, qiymat esa 28 px: «7 300 000» ikki qatorga bo'linib plitkani
+cho'zadi va yonidagisi bilan bo'yi teng bo'lmay qoladi (2026-08-04, admin
+paneliga «Umumiy qarz» qo'shilganda chiqdi). Yechim — `Tile` ga `money`
+bayrog'i → `.tile-money`: 22 px + `nowrap` + tabular raqamlar.
+
+⚠️ `line-height` ham moslanadi (**1.46**): 22 × 1.46 ≈ 28 × 1.15 — qator
+balandligi oddiy plitkaniki bilan bir xil bo'lsagina yonma-yon plitkalarning
+**yorliqlari bir chiziqda** turadi. `.grid` esa `align-items: stretch`.
+
 ## Xulosa qatori ≠ amal
 
 `.pick-total` (belgilangan hisobotlar jami) — **xulosa**, shuning uchun tugma

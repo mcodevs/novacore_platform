@@ -151,6 +151,25 @@ izoh qo'shildi.
 Shu deploy bilan git ↔ prod farqi ham yopildi (oldingi deploy commit
 qilinmagan papkadan chiqqan edi — [[miniapp-dizayn-tizimi]] dagi ogohlantirish).
 
+
+## Avans — alohida tab (2026-08-04)
+
+Qarzdorlar ro'yxatida avans qatorlari («+60 000 · Avans») qarz qatorlari bilan
+aralash turardi va «kimga qancha qarzmiz?» degan **asosiy** savolga javob
+berishni qiyinlashtirardi. Endi ekranda uchta tab: **Qarzlar · Avans ·
+To'langan**.
+
+- «Qarzlar» — faqat `debt > 0`; kartada yolg'iz «Umumiy qarz» qatori
+- «Avans» — `advance > 0`; «Umumiy avans» + `advance_hint` izohi
+- ⚠️ Xodim **ikkala ro'yxatda** ham bo'lishi mumkin (avans yangi ish
+  tasdiqlangunicha ishlatilmaydi) — avans tabida uning qarzi izohda ko'rinadi
+- Server bitta ro'yxat qaytaradi (`DebtSummary.employees`), ajratish klientda
+- Xodim kartochkasidagi avans bloki **qoldi** — to'lov qayd etishda kerakli
+  kontekst, global ro'yxat emas
+- `tab_paid` yorlig'i «To'langanlar» → «To'langan» (ru: «Выплаты»): uchta tabda
+  375 px'da yorliq torayadi. O'lchandi — har tab 108 px, ikkala tilda ham
+  bitta qator ([[miniapp-dizayn-tizimi]])
+
 ## Holat (2026-08-03)
 
 ✅ **Prodga chiqarildi** — 2026-08-03, commit `e2dd3e0` (main), fly deploy.

@@ -121,7 +121,10 @@ export const T: Dict = {
 
   // Qarz daftari, to'lovlar, eksport (admin/buxgalter) — ADR-0015
   tab_debts: { uz: 'Qarzlar', ru: 'Долги' },
-  tab_paid: { uz: 'To‘langanlar', ru: 'Выплаченные' },
+  // Avans alohida tabda (2026-08-04): qarzdorlar ro'yxatida «+60 000 Avans»
+  // qatorlari turgani «kimga qancha qarzmiz?» degan savolni ko'mib qo'yardi.
+  tab_advance: { uz: 'Avans', ru: 'Аванс' },
+  tab_paid: { uz: 'To‘langan', ru: 'Выплаты' },
   total_debt: { uz: 'Umumiy qarz', ru: 'Общий долг' },
   total_advance: { uz: 'Umumiy avans', ru: 'Общий аванс' },
   advance: { uz: 'Avans', ru: 'Аванс' },
@@ -130,6 +133,9 @@ export const T: Dict = {
     ru: 'При подтверждении новой работы аванс списывается автоматически.',
   },
   debtors: { uz: 'Qarzdorlar', ru: 'Должники' },
+  advance_holders: { uz: 'Avansi borlar', ru: 'С авансом' },
+  no_advance: { uz: 'Avans yo‘q', ru: 'Авансов нет' },
+  has_debt: { uz: 'Qarzi: {sum}', ru: 'Долг: {sum}' },
   no_debt: { uz: 'Qarz yo‘q', ru: 'Долгов нет' },
   debt_reports: { uz: 'To‘lanmagan hisobotlar', ru: 'Неоплаченные отчёты' },
   reports_count: { uz: 'ta ish', ru: 'работ' },

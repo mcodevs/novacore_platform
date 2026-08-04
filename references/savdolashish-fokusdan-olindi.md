@@ -60,3 +60,12 @@ ogohlantirishi bilan) · `02-employee-flow.md` · CLAUDE.md dagi
 «Ataylab YO'Q» ro'yxati.
 
 Tekshiruv: miniapp 16/16 · backend 256/256 · build ✅.
+
+## Holat
+
+✅ **Prodda** — 2026-08-04, commit `e47781e` (main'ga push qilingan), bundle
+`index-DC1S1lMO.js` (lokal build hashi bilan bir xil). Migratsiya yo'q.
+
+Prodda tekshirildi: bundle ichida «Tejaldi», «Kamaydi», «narx statistikam»,
+«hollarda kamaytirilgan» — **0 ta**; «Umumiy qarz» (yangi admin plitkasi) va
+«Narx kelishuvi» (ustaning roziman/nizo kartasi) — joyida.

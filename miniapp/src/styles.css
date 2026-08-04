@@ -576,7 +576,9 @@ body::before {
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  align-items: start;
+  /* `stretch` — yonma-yon plitkalar bo'yi teng: biriniki yorlig'i ikki qatorga
+     tushsa, ikkinchisi «kalta» bo'lib qolmaydi. */
+  align-items: stretch;
   gap: var(--s-3);
   margin-bottom: var(--gap);
 }
@@ -604,6 +606,18 @@ body::before {
   letter-spacing: -0.03em;
   /* Proporsional raqamlar — bu o'lchamda `tabular-nums` bo'sh ko'rinadi.
      Tabular faqat ustunga tizilgan sonlarda (`.row strong`) kerak. */
+}
+
+/* Summali plitka: 375 px'da plitka ichki eni ~133 px, «7 300 000» esa 28 px'da
+   sig'maydi va sinadi. Maydaroq o'lcham + `nowrap` — raqam butun qoladi.
+   ⚠️ `line-height` ataylab 1.46: 22 × 1.46 ≈ 28 × 1.15, ya'ni qator balandligi
+   oddiy plitkaniki bilan bir xil bo'ladi va yorliqlar bir chiziqda turadi. */
+.tile.tile-money .value {
+  font-size: 22px;
+  line-height: 1.46;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* E'tibor talab qiladigan plitka — raqam rang bilan ajraladi (nol bo'lsa yo'q) */
