@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import * as api from '../api';
+import { displayStatus } from '../display-status';
 import { money, percent, shortMoney } from '../format';
 import { t } from '../i18n';
 import type { AuthResponse, Dashboard, Submission } from '../types';
@@ -136,7 +137,7 @@ export function HomeScreen({
                   key={item.id}
                   title={item.number}
                   amount={shortMoney(item.proposed_labor_amount)}
-                  status={item.status}
+                  status={displayStatus(item)}
                   meta={`${item.author_name} · ${item.vehicle?.plate_display ?? '—'}`}
                   onClick={() => onOpen(item.id)}
                 />
@@ -240,7 +241,7 @@ export function HomeScreen({
                   key={item.id}
                   title={item.number}
                   amount={shortMoney(item.labor_amount ?? item.proposed_labor_amount)}
-                  status={item.status}
+                  status={displayStatus(item)}
                   meta={item.vehicle?.plate_display ?? '—'}
                   onClick={() => onOpen(item.id)}
                 />

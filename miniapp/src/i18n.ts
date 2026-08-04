@@ -1,6 +1,7 @@
 /** uz (lotin) + ru — 1-kundan. Til `employees.lang` da saqlanadi. */
 
-import type { Lang, SubmissionStatus } from './types';
+import type { DisplayStatus } from './display-status';
+import type { Lang } from './types';
 
 type Dict = Record<string, { uz: string; ru: string }>;
 
@@ -44,6 +45,11 @@ export const T: Dict = {
   saved_short: { uz: 'Tejaldi', ru: 'Сэкономлено' },
   requested: { uz: 'So‘radim', ru: 'Запросил' },
   approved_sum: { uz: 'Tasdiqlandi', ru: 'Подтверждено' },
+  // Hisobot kartochkasidagi to'lov holati — aynan SHU ish bo'yicha (ADR-0015).
+  // `payable_total` «Tasdiqlandi» dan katta bo'lishi mumkin: unga «o'z
+  // hisobimdan» qismlar ham kiradi (R5).
+  payable_total: { uz: 'To‘lanadi', ru: 'К выплате' },
+  remaining: { uz: 'Qoldi', ru: 'Осталось' },
   reduced: { uz: 'Kamaydi', ru: 'Снижено' },
   car_arrived: { uz: '🚗 Mashina keldi', ru: '🚗 Машина приехала' },
   my_reports: { uz: 'Hisobotlarim', ru: 'Мои отчёты' },
@@ -379,7 +385,8 @@ export const T: Dict = {
   workshop: { uz: 'Ustaxona', ru: 'Мастерская' },
 };
 
-export const STATUS_LABEL: Record<SubmissionStatus, { uz: string; ru: string }> = {
+// ⚠️ `partly_paid` — serverda YO'Q, ko'rsatish holati (`display-status.ts`).
+export const STATUS_LABEL: Record<DisplayStatus, { uz: string; ru: string }> = {
   draft: { uz: '📝 Qoralama', ru: '📝 Черновик' },
   submitted: { uz: '⏳ Tasdiq kutmoqda', ru: '⏳ Ждёт подтверждения' },
   in_review: { uz: '👀 Ko‘rilmoqda', ru: '👀 На рассмотрении' },
@@ -388,13 +395,14 @@ export const STATUS_LABEL: Record<SubmissionStatus, { uz: string; ru: string }> 
   reopened: { uz: '↩️ Qaytarilgan', ru: '↩️ Возвращён' },
   approved: { uz: '✅ Tasdiqlangan', ru: '✅ Подтверждён' },
   rejected: { uz: '❌ Rad etilgan', ru: '❌ Отклонён' },
+  partly_paid: { uz: '🧾 Qisman to‘langan', ru: '🧾 Частично выплачен' },
   paid: { uz: '💵 To‘langan', ru: '💵 Выплачен' },
 };
 
 /** Holatning vizual ohangi — ro'yxatdagi rangli belgini tanlaydi. */
 export type StatusTone = 'neutral' | 'wait' | 'talk' | 'good' | 'bad';
 
-export const STATUS_TONE: Record<SubmissionStatus, StatusTone> = {
+export const STATUS_TONE: Record<DisplayStatus, StatusTone> = {
   draft: 'neutral',
   submitted: 'wait',
   in_review: 'wait',
@@ -403,6 +411,9 @@ export const STATUS_TONE: Record<SubmissionStatus, StatusTone> = {
   reopened: 'talk',
   approved: 'good',
   rejected: 'bad',
+  // Ish tugagan, lekin pul to'liq berilmagan — «kutish» ohangi: yashil bo'lsa
+  // qarz qolgani ko'zga tashlanmaydi.
+  partly_paid: 'wait',
   paid: 'good',
 };
 
@@ -426,12 +437,12 @@ export function t(key: string, params: Record<string, string | number> = {}): st
   return text;
 }
 
-export function statusLabel(status: SubmissionStatus): string {
+export function statusLabel(status: DisplayStatus): string {
   return STATUS_LABEL[status]?.[current] ?? status;
 }
 
 /** Emoji'siz matn — rangli belgida (`StatusBadge`) nuqta emoji o'rnini bosadi. */
-export function statusText(status: SubmissionStatus): string {
+export function statusText(status: DisplayStatus): string {
   return statusLabel(status).replace(/^\S+\s+/, '');
 }
 

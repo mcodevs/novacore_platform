@@ -141,6 +141,16 @@ stateDiagram-v2
 | **Qisman** | `0 < paid_amount < payable_amount` — «Qarzlar» tabida qoldiq bilan |
 | **To'langan** | `paid_amount == payable_amount` → `status = PAID` |
 
+⭐ **«Qisman» endi Mini App'da ham ko'rinadi** (2026-08-04): hisobot belgisi
+`Tasdiqlangan → Qisman to'langan → To'langan` bo'lib o'zgaradi va kartochkada
+«To'lanadi · To'langan · Qoldi» qatorlari turadi.
+
+⚠️ Bu **ko'rsatish holati** — bazada `partly_paid` statusi YO'Q va qo'shilmaydi.
+Holat mashinasi o'zgarmagan: `status` qisman to'lov davrida hamon `APPROVED`.
+Farq `paid_amount`/`payable_amount` dan hisoblanadi (`miniapp/src/display-status.ts`,
+testi bor). Yangi status kiritilsa migratsiya, `_sync_status` va barcha
+filtrlar buzilardi — foyda esa faqat ko'rinishda edi.
+
 To'lovning o'zi ikki holatda: **faol** yoki **`void`** (bekor qilingan, sabab
 majburiy). To'lov hech qachon tahrirlanmaydi — faqat `void` (P5).
 

@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import * as api from '../api';
+import { displayStatus } from '../display-status';
 import { shortMoney } from '../format';
 import { t } from '../i18n';
 import type { Submission, SubmissionStatus } from '../types';
@@ -94,7 +95,7 @@ export function ReportsScreen({ onOpen }: Props) {
               </>
             }
             amount={shortMoney(item.labor_amount ?? item.proposed_labor_amount)}
-            status={item.status}
+            status={displayStatus(item)}
             meta={`${item.author_name} · ${item.vehicle?.plate_display ?? '—'}`}
             onClick={() => onOpen(item.id)}
           />

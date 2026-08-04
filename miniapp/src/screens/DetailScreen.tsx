@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 
 import * as api from '../api';
 import { ApiError } from '../api';
+import { displayStatus } from '../display-status';
 import { dateTime, duration, money } from '../format';
 import { t } from '../i18n';
 import { confirmAction, haptic } from '../telegram';
@@ -84,7 +85,7 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
     <>
       <div className="header">
         <h1>{submission.number}</h1>
-        <StatusBadge status={submission.status} />
+        <StatusBadge status={displayStatus(submission)} />
       </div>
 
       <Card>
@@ -164,6 +165,25 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
         <Row label={t('requested')} value={money(submission.proposed_labor_amount)} />
         {submission.labor_amount !== null ? (
           <Row label={t('approved_sum')} value={money(submission.labor_amount)} />
+        ) : null}
+
+        {/* ⭐ To'lov holati aynan SHU hisobot bo'yicha (ADR-0015): «to'landi» va
+            «qoldi» bo'lmasa, xodim faqat umumiy qarzini ko'rardi va qaysi ish
+            uchun qancha kelganini bilmasdi. `payable` — tasdiqlangan ish haqi
+            + «o'z hisobimdan» qismlar (R5), shuning uchun u yuqoridagi
+            «Tasdiqlandi» dan katta bo'lishi mumkin. */}
+        {Number(submission.payable_amount) > 0 ? (
+          <div className="pay-state">
+            <Row label={t('payable_total')} value={money(submission.payable_amount)} />
+            <Row
+              label={t('paid')}
+              value={money(submission.paid_amount)}
+              tone={Number(submission.paid_amount) > 0 ? 'good' : undefined}
+            />
+            {Number(submission.debt) > 0 ? (
+              <Row label={t('remaining')} value={money(submission.debt)} tone="accent" />
+            ) : null}
+          </div>
         ) : null}
       </Card>
 

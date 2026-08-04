@@ -121,6 +121,30 @@ tasdiq matni bor, eski «Belgilanganlarni to'lash» yo'q.
 berdi — tekshiruv `alembic upgrade head` tugamagan lahzaga tushadi. Keyingi
 health check o'tsa, bu **normal**; qo'rqib rollback qilish shart emas.
 
+
+## «Qisman to'langan» — status EMAS, ko'rsatish holati (2026-08-04)
+
+Xodim hisobotini «Tasdiqlangan» deb ko'rardi, holbuki pulning yarmi kelgan
+bo'lardi: belgi to'g'ridan-to'g'ri `Tasdiqlangan → To'langan` sakrardi. Endi
+oraliq qadam bor: **`Tasdiqlangan → 🧾 Qisman to'langan → 💵 To'langan`**.
+
+⚠️ **Bazaga yangi status qo'shilmadi.** Serverda `status` qisman to'lov davrida
+hamon `APPROVED` (`_sync_status` uni faqat qarz to'liq yopilganda `PAID`
+qiladi). Farq `paid_amount`/`payable_amount` dan **klientda** hisoblanadi —
+`miniapp/src/display-status.ts` (sof funksiya + 4 test). Yangi status
+migratsiya, `_sync_status` va barcha filtrlarni buzardi, foyda esa faqat
+ko'rinishda edi. `docs/02-architecture/05-state-machines.md` §3 da bu holat
+allaqachon «QISMAN» ko'rinishi deb yozilgan edi — UI shunga yetdi, hujjatga
+izoh qo'shildi.
+
+- Ohang **sariq** (`wait`), yashil emas: ish tugagan, lekin pul to'liq
+  berilmagan. Yashil bo'lsa qarz qolgani ko'zga tashlanmaydi
+- Hisobot kartochkasida yangi blok: **To'lanadi · To'langan · Qoldi** (`.pay-state`,
+  chiziq bilan ajratilgan — yuqorisi ish narxi, bu yeri pul harakati)
+- ⚠️ «To'lanadi» (`payable_amount`) «Tasdiqlandi» dan **katta bo'lishi normal**:
+  unga «o'z hisobimdan» qismlar ham kiradi (R5) — real hisobotda 180 000 ish
+  haqi + 350 000 usta olgan kolodka = 530 000
+
 ## Holat (2026-08-03)
 
 ✅ **Prodga chiqarildi** — 2026-08-03, commit `e2dd3e0` (main), fly deploy.

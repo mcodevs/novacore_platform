@@ -4,8 +4,8 @@ import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { groupDigits } from './group-digits';
+import type { DisplayStatus } from './display-status';
 import { STATUS_TONE, statusText } from './i18n';
-import type { SubmissionStatus } from './types';
 
 export function Card({ title, children }: { title?: ReactNode; children: ReactNode }) {
   return (
@@ -110,7 +110,7 @@ export function MoneyInput({
 }
 
 /** Holat belgisi — rangli nuqta + matn. */
-export function StatusBadge({ status }: { status: SubmissionStatus }) {
+export function StatusBadge({ status }: { status: DisplayStatus }) {
   return <span className={`status status-${STATUS_TONE[status]}`}>{statusText(status)}</span>;
 }
 
@@ -173,7 +173,7 @@ export function ReportRow({
 }: {
   title: ReactNode;
   amount: ReactNode;
-  status: SubmissionStatus;
+  status: DisplayStatus;
   meta?: ReactNode;
   onClick(): void;
 }) {

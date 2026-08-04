@@ -525,6 +525,15 @@ body::before {
   border-top: none;
 }
 
+/* Hisobot ichidagi to'lov holati — pul kartasining oxirgi bloki. Yuqorida ish
+   narxlari, bu yerda esa **pul harakati**; chiziq ikkalasini ajratadi, aks
+   holda «Tasdiqlandi» va «To'landi» bir xil vaznda o'qilib chalkashtiradi. */
+.pay-state {
+  margin-top: var(--s-3);
+  padding-top: var(--s-1);
+  border-top: 1px solid var(--border);
+}
+
 /* Belgilanganlar yakuni — chekbox tanlovining xulosasi, amal EMAS. Shuning
    uchun tugma emas va to'liq urg'u rangi emas: yupqa urg'u qatlami. Urg'uning
    o'zi kartadagi yagona haqiqiy amalda («To'lovni qayd etish») qoladi. */

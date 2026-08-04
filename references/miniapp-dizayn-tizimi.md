@@ -82,6 +82,17 @@ Mantiq alohida modulda — `src/group-digits.ts` + 4 ta test (`unwrap.ts` bilan
 bir uslubda: sof funksiya, `i18n` ga bog'liq emas, shuning uchun Node testida
 import qilinadi). Bog'liq: [[qarz-daftari-modeli]]
 
+
+### Holat
+
+✅ Prodda — 2026-08-04, `fly deploy` (bundle `index-BZynp3CB.js`, lokal build
+hashi bilan bir xil). Migratsiya yo'q.
+
+⚠️ **Bu deploy commit qilinmagan ishchi papkadan chiqdi** — `fly deploy` git'ga
+emas, papkaga qaraydi. Ya'ni shu lahzada prodda `git` da yo'q kod turibdi;
+keyingi safar boshqa mashinadan deploy qilinsa u **yo'qoladi**. Deploydan
+oldin commit qilish odat bo'lsin.
+
 ## `.row` endi grid
 
 `display: grid; grid-template-columns: minmax(0,1fr) auto`. Sabab: flex'da

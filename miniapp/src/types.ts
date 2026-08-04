@@ -101,6 +101,11 @@ export interface Submission {
   labor_amount: number | null;
   parts_amount: number;
   total_amount: number;
+  /** ⭐ Qarz daftari (ADR-0015): to'lanadigan summa, to'langani va qolgan qarz.
+   *  «Qisman to'langan» ko'rinishi shulardan hisoblanadi (`display-status.ts`). */
+  payable_amount: number;
+  paid_amount: number;
+  debt: number;
   auto_approved: boolean;
   price_negotiated: boolean;
   arrived_at: string | null;
