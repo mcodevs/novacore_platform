@@ -241,6 +241,9 @@ class DebtItemOut(BaseModel):
 
 class AllocationOut(BaseModel):
     submission_id: int
+    #: Hisobot raqami — to'lov kartochkasida «#WO-…» bo'lib ko'rinadi.
+    #: `_payment_out` uni bilmaydi (bog'lanish yuklanmagan), endpoint to'ldiradi.
+    number: str = ""
     amount: Decimal
     fully_paid: bool
 

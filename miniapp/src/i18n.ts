@@ -163,6 +163,16 @@ export const T: Dict = {
   payment_history: { uz: 'To‘lovlar tarixi', ru: 'История выплат' },
   no_payments: { uz: 'Hozircha to‘lov yo‘q', ru: 'Выплат пока нет' },
   voided: { uz: 'bekor qilingan', ru: 'отменено' },
+  // To'lov kartochkasi — tarixdagi qatorni ochganda. To'lov tahrirlanmaydi
+  // (P5), shuning uchun bu yer faqat o'qish uchun: pul qaysi ishlarga tushdi.
+  payment_date: { uz: 'Sana', ru: 'Дата' },
+  payment_covers: { uz: 'Qaysi ishlarga', ru: 'На какие работы' },
+  fully_closed: { uz: 'to‘liq yopildi', ru: 'закрыт полностью' },
+  partly_closed: { uz: 'qisman yopildi', ru: 'закрыт частично' },
+  payment_voided_note: {
+    uz: 'To‘lov bekor qilingan — qarz qayta ochilgan.',
+    ru: 'Выплата отменена — долг открыт заново.',
+  },
   paid: { uz: 'To‘langan', ru: 'Выплачено' },
   total: { uz: 'Jami', ru: 'Итого' },
   export: { uz: '📥 Eksport', ru: '📥 Экспорт' },

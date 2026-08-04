@@ -11,6 +11,7 @@ import datetime as dt
 import sqlalchemy as sa
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import EmployeeDep, FinanceDep, SessionDep
 from app.api.v1 import schemas
@@ -89,6 +90,31 @@ def _payment_out(payment: Payment) -> schemas.PaymentOut:
     )
 
 
+async def _fill_allocations(
+    session: AsyncSession, payments: list[schemas.PaymentOut]
+) -> None:
+    """Allokatsiyalarga hisobot raqami va joriy `fully_paid` holatini qo'yadi.
+
+    ⚠️ Bog'lanish orqali emas, **bitta so'rov** bilan: `PaymentAllocation` da
+    `submission` relationship yo'q, uni async kontekstda lazy o'qish
+    `MissingGreenlet` beradi. Ro'yxatda esa to'lov ko'p — N+1 bo'lardi.
+    """
+    ids = {item.submission_id for payment in payments for item in payment.allocations}
+    if not ids:
+        return
+    rows = (
+        await session.execute(sa.select(Submission).where(Submission.id.in_(ids)))
+    ).scalars().all()
+    found = {row.id: row for row in rows}
+    for payment in payments:
+        for item in payment.allocations:
+            submission = found.get(item.submission_id)
+            if submission is None:
+                continue
+            item.number = submission.number
+            item.fully_paid = submission.status == SubmissionStatus.PAID
+
+
 @router.post("/payments", response_model=schemas.PaymentOut)
 async def create_payment(
     payload: schemas.CreatePaymentRequest, session: SessionDep, employee: FinanceDep
@@ -103,10 +129,7 @@ async def create_payment(
         note=payload.note,
     )
     out = _payment_out(payment)
-    # `fully_paid` — allokatsiyadan keyingi holat
-    for item in out.allocations:
-        submission = await session.get(Submission, item.submission_id)
-        item.fully_paid = submission is not None and submission.status == SubmissionStatus.PAID
+    await _fill_allocations(session, [out])
     return out
 
 
@@ -118,7 +141,9 @@ async def list_payments(
     limit: int = Query(100, le=500),
 ):
     rows = await payment_service.payments_of(session, employee_id=employee_id, limit=limit)
-    return [_payment_out(row) for row in rows]
+    outs = [_payment_out(row) for row in rows]
+    await _fill_allocations(session, outs)
+    return outs
 
 
 @router.post("/payments/{payment_id}/void", response_model=schemas.PaymentOut)

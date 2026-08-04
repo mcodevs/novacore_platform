@@ -298,6 +298,8 @@ export interface DebtItem {
 
 export interface Allocation {
   submission_id: number;
+  /** Hisobot raqami (`WO-2026-000028`) — to'lov kartochkasida ko'rsatiladi. */
+  number: string;
   amount: number;
   fully_paid: boolean;
 }

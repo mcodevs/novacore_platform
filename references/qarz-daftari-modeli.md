@@ -170,6 +170,11 @@ To'langan**.
   375 px'da yorliq torayadi. O'lchandi — har tab 108 px, ikkala tilda ham
   bitta qator ([[miniapp-dizayn-tizimi]])
 
+
+✅ **Prodda** — 2026-08-04, commit `0e0698d` (main, sinxron), bundle
+`index-DGfSxgBk.js` (lokal build hashi bilan bir xil). Migratsiya yo'q.
+Shu deploy bilan `.tile-money` tuzatishi ham chiqdi.
+
 ## Holat (2026-08-03)
 
 ✅ **Prodga chiqarildi** — 2026-08-03, commit `e2dd3e0` (main), fly deploy.
@@ -217,3 +222,38 @@ yiqilishi tekshirib ko'rilgan.
 ⓘ Ikkinchi kamchilik: klient JSON bo'lmagan javobni (`Internal Server Error`)
 ko'r-ko'rona `JSON.parse` qilardi va foydalanuvchiga «JSON Parse error…»
 ko'rsatib, asl muammoni yashirardi. `api.ts` endi tushunarli xato beradi.
+
+
+## To'lov kartochkasi — tarixdagi qator ochiladi (2026-08-04)
+
+«To'langan» tabidagi qatorlar o'lik matn edi: xodim, summa, sana va «3 ta ish»
+— lekin **qaysi** ishlar ekani hech qayerda ko'rinmasdi. Endi qator bosiladi va
+faqat o'qish uchun kartochka ochiladi (P5 — to'lov tahrirlanmaydi):
+
+- sarlavhada xodim + summa · sana · izoh · bekor qilingan bo'lsa: sana,
+  «qarz qayta ochilgan» izohi va sababi
+- **«Qaysi ishlarga»** — allokatsiyalar: `#WO-…` · summa · `✅ to'liq yopildi`
+  yoki `qisman yopildi`
+
+⚠️ Buning uchun `AllocationOut` ga **`number`** qo'shildi: ilgari faqat ichki
+`submission_id` qaytardi, ya'ni ekranda «#12» chiqardi. Yo'l-yo'lakay xato ham
+tuzaldi — **`fully_paid` ro'yxat endpointida doim `false`** edi (u faqat to'lov
+yaratilganda to'ldirilardi); endi ikkalasi bitta joydan hisoblanadi.
+
+⚠️ **Uchinchi `MissingGreenlet` tuzog'i oldindan chetlab o'tildi.**
+`PaymentAllocation` da `submission` bog'lanishi **yo'q**, uni qo'shib
+`item.submission.number` deb o'qish oson yo'l ko'rinadi — lekin bu yangi
+qurilgan allokatsiyada lazy yuklashga tushib, aynan yuqoridagi ikki xato kabi
+yiqilardi (ro'yxatda esa N+1 bo'lardi). Shuning uchun endpoint
+`_fill_allocations()` bilan **bitta so'rovda** to'ldiradi. Yangi maydonni
+allokatsiyaga qo'shmoqchi bo'lsangiz — shu funksiyani kengaytiring, bog'lanish
+qo'shmang.
+
+Migratsiya yo'q — faqat javob maydoni. `test_accountant_payment_flow` ga
+`number` va `fully_paid` tekshiruvlari qo'shildi (backend 256/256).
+
+ⓘ Ataylab qilinmadi (egasining qaroriga qoldirildi): (1) kartochkada **to'lovni
+bekor qilish** tugmasi — `api.voidPayment()` klientda bor, lekin UI'da hech
+qayerdan chaqirilmaydi, ya'ni xato to'lovni ilovadan tuzatib bo'lmaydi;
+(2) allokatsiya qatoridan hisobotning o'ziga o'tish — ekran almashganda
+kartochka holati yo'qoladi (`DebtScreen` unmount bo'ladi).

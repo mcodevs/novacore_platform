@@ -37,6 +37,8 @@ export function DebtScreen({ onDone }: Props) {
   const [summary, setSummary] = useState<DebtSummary | null>(null);
   const [history, setHistory] = useState<Payment[] | null>(null);
   const [picked, setPicked] = useState<EmployeeDebt | null>(null);
+  //  tarixdan ochilgan to'lov kartochkasi (faqat o'qish uchun)
+  const [paid, setPaid] = useState<Payment | null>(null);
   const [items, setItems] = useState<DebtItem[] | null>(null);
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [amount, setAmount] = useState('');
@@ -123,6 +125,54 @@ export function DebtScreen({ onDone }: Props) {
   // tushadi. Filtrlash shu yerda: server bitta ro'yxat qaytaradi.
   const debtors = (summary?.employees ?? []).filter((row) => Number(row.debt) > 0);
   const advances = (summary?.employees ?? []).filter((row) => Number(row.advance) > 0);
+
+  // --- To'lov kartochkasi: pul qaysi ishlarga tushdi ---
+  //
+  // ⚠️ Faqat o'qish uchun. To'lov hech qachon tahrirlanmaydi (P5) — xato bo'lsa
+  // `void` qilinadi va qarz qayta ochiladi.
+  if (paid) {
+    return (
+      <>
+        <div className="header">
+          <button
+            type="button"
+            className="btn-back"
+            aria-label={t('back')}
+            onClick={() => setPaid(null)}
+          >
+            ←
+          </button>
+          <h1>
+            {paid.employee_name}
+            <span className="sub sub-strong">{money(paid.amount)}</span>
+          </h1>
+        </div>
+
+        <Card>
+          <Row label={t('payment_date')} value={dateTime(paid.created_at)} />
+          {paid.note ? <Row label={t('comment')} value={paid.note} /> : null}
+          {paid.voided_at ? (
+            <>
+              <Row label={t('voided')} value={dateTime(paid.voided_at)} />
+              <p className="hint">{t('payment_voided_note')}</p>
+              {paid.void_reason ? <p className="hint">💬 {paid.void_reason}</p> : null}
+            </>
+          ) : null}
+        </Card>
+
+        <Card title={t('payment_covers')}>
+          {paid.allocations.map((row) => (
+            <Row
+              key={row.submission_id}
+              label={`#${row.number || row.submission_id}`}
+              value={money(row.amount)}
+              hint={row.fully_paid ? `✅ ${t('fully_closed')}` : t('partly_closed')}
+            />
+          ))}
+        </Card>
+      </>
+    );
+  }
 
   // --- 3-qatlam: tanlangan xodimning hisobotlari ---
   if (picked) {
@@ -345,15 +395,21 @@ export function DebtScreen({ onDone }: Props) {
         <Card title={t('payment_history')}>
           {history === null ? <Skeleton count={2} /> : null}
           {history?.length === 0 ? <p className="muted">{t('no_payments')}</p> : null}
+          {/* Qator bosiladi: pul qaysi ishlarga taqsimlangani faqat kartochka
+              ichida ko'rinadi — ro'yxatda «3 ta ish» degan son yetarli emas. */}
           {history?.map((row) => (
-            <Row
+            <button
+              type="button"
+              className="link-row"
               key={row.id}
-              label={`${row.employee_name}${row.voided_at ? ` · ${t('voided')}` : ''}`}
-              value={money(row.amount)}
-              hint={`${dateTime(row.created_at)} · ${row.allocations.length} ${t('reports_count')}${
-                row.void_reason ? ` · ${row.void_reason}` : ''
-              }`}
-            />
+              onClick={() => setPaid(row)}
+            >
+              <Row
+                label={`${row.employee_name}${row.voided_at ? ` · ${t('voided')}` : ''}`}
+                value={money(row.amount)}
+                hint={`${dateTime(row.created_at)} · ${row.allocations.length} ${t('reports_count')}`}
+              />
+            </button>
           ))}
         </Card>
       ) : null}

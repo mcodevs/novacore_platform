@@ -1105,6 +1105,14 @@ async def test_accountant_payment_flow(api):
     assert history.status_code == 200
     assert len(history.json()) == 2
 
+    # ⭐ To'lov kartochkasi: allokatsiyada hisobot RAQAMI va joriy holati.
+    # Raqamsiz Mini App'da «#12» degan ichki id ko'rinardi; `fully_paid` esa
+    # ro'yxatda doim `false` bo'lib qolardi (faqat yaratishda to'ldirilardi).
+    latest = history.json()[0]["allocations"][0]
+    assert latest["number"].startswith("WO-"), latest
+    assert latest["fully_paid"] is True
+    assert latest["submission_id"] == submission_id
+
     # bekor qilish — qarz qaytadi
     voided = await api.post(
         f"/api/v1/payments/{payment_id}/void",
