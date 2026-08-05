@@ -81,5 +81,8 @@ yerda hali amalga oshirilmagan **5 ta fayl** sanalgan edi (`tolovlar_`,
 `mashina_xarajatlari_`, `qismlar_`, `oylik_xulosa_.pdf`) va eksport «fon
 vazifasi» deb yozilgandi. Aslida uchta fayl bor va ular sinxron yig'iladi.
 
+✅ **Prodda** — 2026-08-05, commit `ce80a52`, bundle `index-B5ox-vid.js`
+(lokal hash bilan bir xil). Migratsiya yo'q.
+
 Bog'liq: [[savdolashish-fokusdan-olindi]] · [[qarz-daftari-modeli]] ·
 [[usta-formasi-ux]]

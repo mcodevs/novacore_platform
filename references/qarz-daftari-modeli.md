@@ -194,7 +194,32 @@ da bekor qilindi*) · «o'z hisobimdan» chekboksi — [[shablon-va-foto-qarorla
 
 ❌ **Qolgan yagona xavf:** iOS'da kamera sinovi (ADR-0017 — zaxira yo'l yo'q).
 
-Bog'liq: [[shablon-va-foto-qarorlari]]
+## ⭐ Usta o'z qarzini ko'radi — `GET /me/balance` (2026-08-05)
+
+Qarz daftari boshidan **faqat admin/buxgalter ekrani** edi. Usta esa «menga
+qancha berishadi?» degan savolga ilovadan javob topa olmasdi — bu qarz
+daftarining butun g'oyasiga zid: qarz xodimning puli.
+
+Bosh ekranda «💰 Hisobim» kartochkasi: **Sizga qarzimiz** + **Avans**
+(avans faqat > 0 bo'lsa; qarz noli esa «Qarz yo'q» deb ko'rsatiladi — bu ham
+javob).
+
+⚠️ **Nega alohida endpoint, klientda yig'ilmaydi:**
+
+1. `listSubmissions` **sahifalangan** (20 ta) — 20 dan ko'p ishi bo'lgan
+   ustada qarz kam ko'rinardi
+2. **Avans umuman hisobotlarda yo'q** — u `Σ(to'lovlar) − Σ(allokatsiyalar)`
+
+⚠️ **Ruxsat qarori:** `/me/balance` — yagona pul endpointi bo'lib,
+`FinanceDep` **talab qilmaydi** (`EmployeeDep` yetarli), chunki bu boshqa
+birovniki emas, **o'z** raqami. `employee_id` parametri **ataylab yo'q**:
+birovnikini so'rashning yo'li bo'lmasin. Hamma xodim kesimi `/debts` da
+qoladi va u hamon `admin`/`accountant` ostida. Ikkalasi ham `test_api.py` da
+tekshiriladi.
+
+`payment.balance_of()` — `EmployeeBalance(debt, count, advance)`.
+
+Bog'liq: [[shablon-va-foto-qarorlari]] · [[eksport-ustunlari]]
 
 
 ## ⚠️ Ikki marta takrorlangan tuzoq — `MissingGreenlet`

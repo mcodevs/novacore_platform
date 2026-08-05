@@ -99,6 +99,11 @@ health-check xatosi chiqadi va o'zi tuzaladi — bu normal.
    uni faqat bot bildirishnomasidan o'qiydi. ADR-0023 dan keyin u aynan shu
    izohga qarab qaror qiladi → kelishuv tarixini kartochkaga chiqarish kerak
    bo'lishi mumkin
+3. `kelishuv_*.xlsx` eksporti butunlay savdolashish haqida («TEJALDI»,
+   «Kamaytirish %»). ADR-0019 va [[eksport-ustunlari]] mantig'i bo'yicha u ham
+   ortiqcha bo'lishi mumkin — egasi hal qiladi
+4. Ustaning bosh ekranida hero'da «Bu oy tasdiqlandi» turibdi, qarz esa
+   pastdagi kartochkada. Almashtirish taklifi berilgan, javob kutilmoqda
 
 Bog'liq: [[miniapp-dizayn-tizimi]] · [[shablon-va-foto-qarorlari]] ·
 [[narx-kelishuvi-kop-qatorli]]
