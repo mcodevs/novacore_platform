@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     fleet_backoff_base_sec: float = 2.0  # 2 → 4 → 8 … (maks 30); testlarda 0
     fleet_sync_hour: int = 4  # kunlik reyestr sinxroni (Asia/Tashkent)
 
-    default_lang: Literal["uz", "ru"] = "uz"
+    default_lang: Literal["uz", "uz_cyrl", "ru"] = "uz"
 
     @field_validator("admin_group_id", "telegram_proxy", mode="before")
     @classmethod

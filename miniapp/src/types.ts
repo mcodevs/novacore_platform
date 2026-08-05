@@ -1,6 +1,6 @@
 /** API tiplari — backend `app/api/v1/schemas.py` bilan mos. */
 
-export type Lang = 'uz' | 'ru';
+export type Lang = 'uz' | 'uz_cyrl' | 'ru';
 export type RoleKind = 'reporter' | 'admin' | 'accountant';
 
 export type SubmissionStatus =

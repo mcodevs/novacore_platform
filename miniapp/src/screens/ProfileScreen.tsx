@@ -47,6 +47,13 @@ export function ProfileScreen({ auth, onLangChange }: Props) {
           </button>
           <button
             type="button"
+            className={`chip${auth.employee.lang === 'uz_cyrl' ? ' active' : ''}`}
+            onClick={() => void switchLang('uz_cyrl')}
+          >
+            🇺🇿 Ўзбекча
+          </button>
+          <button
+            type="button"
             className={`chip${auth.employee.lang === 'ru' ? ' active' : ''}`}
             onClick={() => void switchLang('ru')}
           >

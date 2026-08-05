@@ -83,7 +83,9 @@ qo'shmang — har biri ADR bilan rad etilgan:
 
 **Konvensiyalar:** pul — `NUMERIC(14,2)`, valyuta doim UZS (ustun kerak emas) ·
 vaqt — `TIMESTAMPTZ`, saqlash UTC, ko'rsatish `Asia/Tashkent` · nomlash
-`snake_case` · i18n **uz + ru 1-kundan**.
+`snake_case` · i18n **uz (lotin) + `uz_cyrl` (kirill) + ru**. Kirillcha lug'at qo'lda
+yozilmaydi — lotinchadan avtomatik translitatsiya (`core/translit.py`,
+`src/translit.ts`).
 
 ## Testlar — majburiy
 

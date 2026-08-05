@@ -53,6 +53,14 @@ boshqa qurilmadan yuborish baribir ochiq), lekin evaziga modulni butunlay
 ishlamay qolish xavfiga qo'yadi. Foto-dalilning haqiqiy tayanchi — **admin
 ko'rigi va chek fotosi** ([[qarz-daftari-modeli]] dagi F5a).
 
+
+✅ **Prodda** — 2026-08-04, commit `f6f92fb` (main, push qilingan), bundle
+`index-DBsBvVHc.js` (lokal build hashi bilan bir xil). Migratsiya yo'q.
+
+⏳ **Kutilayotgan javob:** real iOS qurilmada «📷 Kamera» tugmasi kamerani
+ochadimi. Natija ADR-0020 ga yoziladi — lekin endi u **bloklovchi emas**:
+ishlamasa galereya orqali foto baribir yuklanadi.
+
 ## ADR-0018 — probeg shablondan olib tashlandi
 
 `odometer_value` + `odometer_photo` maydonlari, `field_mapping.odometer`,

@@ -11,7 +11,7 @@
 |---|---|---|
 | Ish joyi | Ustaning **o'z ustaxonasi** | Internet zaif → offline-tolerant, qayta urinish |
 | Qo'llar | Moyli, qo'lqopda | Katta tugmalar, kam yozish, ko'p tanlash |
-| Til | O'zbek / rus | i18n 1-kundan (ikkalasi ham kerak) |
+| Til | O'zbek (lotin/kirill) / rus | i18n 1-kundan (ikkalasi ham kerak) |
 | Telefon | O'rtacha Android | Og'ir JS bundle yaramaydi, foto siqish shart |
 | Kompyuter savodxonligi | O'rtacha/past | Qadam-baqadam forma, bir ekranda 1–2 maydon |
 

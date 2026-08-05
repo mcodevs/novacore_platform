@@ -14,6 +14,7 @@ from decimal import Decimal
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.i18n import pick
 from app.db.base import (
     Base,
     PKType,
@@ -159,7 +160,7 @@ class Role(Base, TimestampMixin):
     )
 
     def name(self, lang: str = "uz") -> str:
-        return self.name_ru if lang == "ru" else self.name_uz
+        return pick(lang, self.name_uz, self.name_ru)
 
 
 class RoleTemplate(Base):
@@ -288,7 +289,7 @@ class Template(Base, TimestampMixin):
     )
 
     def name(self, lang: str = "uz") -> str:
-        return self.name_ru if lang == "ru" else self.name_uz
+        return pick(lang, self.name_uz, self.name_ru)
 
 
 class TemplateField(Base):
@@ -586,7 +587,7 @@ class WorkCatalog(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(default=True)
 
     def name(self, lang: str = "uz") -> str:
-        return self.name_ru if lang == "ru" else self.name_uz
+        return pick(lang, self.name_uz, self.name_ru)
 
 
 class PartsCatalog(Base, TimestampMixin):
@@ -604,7 +605,7 @@ class PartsCatalog(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(default=True)
 
     def name(self, lang: str = "uz") -> str:
-        return self.name_ru if lang == "ru" else self.name_uz
+        return pick(lang, self.name_uz, self.name_ru)
 
 
 class CatalogItem(Base):
@@ -624,7 +625,7 @@ class CatalogItem(Base):
     __table_args__ = (sa.UniqueConstraint("catalog", "code", name="uq_catalog_item"),)
 
     def name(self, lang: str = "uz") -> str:
-        return self.name_ru if lang == "ru" else self.name_uz
+        return pick(lang, self.name_uz, self.name_ru)
 
 
 # --- To'lov (qarz daftari), audit --------------------------------------------

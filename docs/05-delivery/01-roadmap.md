@@ -84,7 +84,7 @@ tizimda kelishilsin.
 | **Admin CRUD** | Mashina, xodim, ish turlari |
 | **To'lov (qarz daftari)** ⭐ | Qarz = `payable_amount − paid_amount`; belgilab / FIFO / qisman to'lash; `void` ([ADR-0015](03-decisions.md#adr-0015--qarz-daftari-oy-yopish-orniga-hisobot-boyicha-tolov-)) |
 | **Eksport** | Excel: hisobotlar, to'lovlar, kelishuv tejamkorligi (sana oralig'i bo'yicha) |
-| **i18n** | uz + ru |
+| **i18n** | uz (lotin) + uz_cyrl (kirill, avtomatik) + ru |
 
 ### Kirmaydi
 - Rol konstruktori UI (rollar **seed**da: usta, ta'minotchi, admin, buxgalter)

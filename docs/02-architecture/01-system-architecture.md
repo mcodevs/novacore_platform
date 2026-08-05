@@ -125,7 +125,7 @@ novacore-platform/
 │   │   ├── screens/       # ro'yxat · forma · ko'rib chiqish · profil
 │   │   ├── form-renderer/ # ⭐ shablon JSON → UI
 │   │   ├── api/
-│   │   └── i18n/          # uz + ru
+│   │   └── i18n/          # uz + uz_cyrl + ru
 └── fly.toml
 ```
 

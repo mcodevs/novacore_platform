@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from app.api.deps import EmployeeDep, SessionDep
 from app.api.v1 import schemas, serializers
 from app.core.config import settings
+from app.core.i18n import LANGS
 from app.core.errors import Forbidden, NotInRegistry, Unauthenticated
 from app.core.security import (
     create_access_token,
@@ -112,7 +113,7 @@ async def update_me(
     payload: schemas.MeUpdate, session: SessionDep, employee: EmployeeDep
 ):
     """Hozircha faqat til — qolgan profil ma'lumotini admin boshqaradi."""
-    if payload.lang in ("uz", "ru"):
+    if payload.lang in LANGS:
         employee.lang = payload.lang
         await session.flush()
     return serializers.employee_out(employee)

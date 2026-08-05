@@ -206,10 +206,23 @@ Geo **majburiy emas** — yo'q bo'lsa hisobot baribir qabul qilinadi, faqat
 
 ### Til (i18n)
 
-- `uz` (lotin) va `ru` — **1-kundan**
-- Til `employees.lang`da saqlanadi, `/til` bilan almashadi
+- `uz` (lotin), `uz_cyrl` (**kirill**) va `ru`
+- Til `employees.lang`da saqlanadi (oddiy `text`, migratsiya kerak emas),
+  `/til` yoki Profil ekranidan almashadi
 - Telegram `initData.user.language_code` — boshlang'ich taxmin
 - Shablon yorliqlari bazada ikki tilda (`label_uz`, `label_ru`)
+
+**Kirillcha lug'at qo'lda yuritilmaydi.** `uz_cyrl` — lotinchadan avtomatik
+translitatsiya: `backend/app/core/translit.py` va `miniapp/src/translit.ts`
+(bir xil qoidalar, ikkalasi ham testlangan). Sabab: ~200 kalitni ikki nusxada
+yuritish bir necha kunda uzilib qoladi, yangi kalit esa kirillchada hech kim
+eslamasdan paydo bo'lishi kerak. Bazadagi nomlar (`name_uz`, `label_uz`) ham
+shu yo'l bilan o'giriladi — uchinchi ustun **qo'shilmaydi**.
+
+- Atoqli nomlar lotin qoladi: `KEEP_WORDS` (NovaCore, Telegram, Excel, Yandex…)
+- `{param}`, HTML teg, URL va `/buyruq` tegilmaydi
+- Biror kalitda translitatsiya noto'g'ri chiqsa — lug'atga `"uz_cyrl": "…"` ni
+  ochiq yozib qo'yish yetarli, avtomatika unga tegmaydi
 
 ## 5. Bot texnik jihatlari
 

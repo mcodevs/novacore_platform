@@ -13,6 +13,7 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.i18n import pick
 from app.db.base import ZERO, money
 from app.db.models import (
     LineKind,
@@ -65,10 +66,10 @@ class FieldSpec:
     visible_if: dict | None = None
 
     def label(self, lang: str = "uz") -> str:
-        return self.label_ru if lang == "ru" else self.label_uz
+        return pick(lang, self.label_uz, self.label_ru)
 
     def hint(self, lang: str = "uz") -> str:
-        return (self.hint_ru if lang == "ru" else self.hint_uz) or ""
+        return pick(lang, self.hint_uz, self.hint_ru) or ""
 
     @property
     def photo_min(self) -> int:
@@ -102,7 +103,7 @@ class TemplateSchema:
     fields: list[FieldSpec]
 
     def name(self, lang: str = "uz") -> str:
-        return self.name_ru if lang == "ru" else self.name_uz
+        return pick(lang, self.name_uz, self.name_ru)
 
     def get(self, code: str) -> FieldSpec | None:
         for spec in self.fields:

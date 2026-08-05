@@ -1,9 +1,24 @@
-/** uz (lotin) + ru — 1-kundan. Til `employees.lang` da saqlanadi. */
+/**
+ * uz (lotin) + uz_cyrl (kirill) + ru — til `employees.lang` da saqlanadi.
+ *
+ * Kirillcha matnlar lug'atda takrorlanmaydi: `uz` dan avtomatik
+ * translitatsiya qilinadi (`translit.ts`). Kerak bo'lsa kalitga
+ * `uz_cyrl: '...'` ni qo'lda yozib, avtomatikani bekor qilish mumkin.
+ */
 
 import type { DisplayStatus } from './display-status';
 import type { Lang } from './types';
+import { toCyrillic } from './translit';
 
-type Dict = Record<string, { uz: string; ru: string }>;
+type Entry = { uz: string; ru: string; uz_cyrl?: string };
+type Dict = Record<string, Entry>;
+
+/** Joriy tildagi matn: kirill uchun — qo'lda yozilgani yoki translitatsiya. */
+function resolve(entry: Entry | undefined, lang: Lang, fallback: string): string {
+  if (!entry) return fallback;
+  if (lang === 'uz_cyrl') return entry.uz_cyrl ?? toCyrillic(entry.uz);
+  return entry[lang] || entry.uz;
+}
 
 export const T: Dict = {
   loading: { uz: 'Yuklanmoqda…', ru: 'Загрузка…' },
@@ -383,7 +398,7 @@ export const T: Dict = {
 };
 
 // ⚠️ `partly_paid` — serverda YO'Q, ko'rsatish holati (`display-status.ts`).
-export const STATUS_LABEL: Record<DisplayStatus, { uz: string; ru: string }> = {
+export const STATUS_LABEL: Record<DisplayStatus, Entry> = {
   draft: { uz: '📝 Qoralama', ru: '📝 Черновик' },
   submitted: { uz: '⏳ Tasdiq kutmoqda', ru: '⏳ Ждёт подтверждения' },
   in_review: { uz: '👀 Ko‘rilmoqda', ru: '👀 На рассмотрении' },
@@ -418,7 +433,8 @@ let current: Lang = 'uz';
 
 export function setLocale(lang: Lang): void {
   current = lang;
-  document.documentElement.lang = lang;
+  // HTML atributi BCP 47 bo'lishi kerak: uz_cyrl → uz-Cyrl
+  document.documentElement.lang = lang === 'uz_cyrl' ? 'uz-Cyrl' : lang;
 }
 
 export function getLocale(): Lang {
@@ -427,7 +443,7 @@ export function getLocale(): Lang {
 
 export function t(key: string, params: Record<string, string | number> = {}): string {
   const entry = T[key];
-  let text = entry ? entry[current] : key;
+  let text = resolve(entry, current, key);
   for (const [name, value] of Object.entries(params)) {
     text = text.replace(`{${name}}`, String(value));
   }
@@ -435,7 +451,7 @@ export function t(key: string, params: Record<string, string | number> = {}): st
 }
 
 export function statusLabel(status: DisplayStatus): string {
-  return STATUS_LABEL[status]?.[current] ?? status;
+  return resolve(STATUS_LABEL[status], current, status);
 }
 
 /** Emoji'siz matn — rangli belgida (`StatusBadge`) nuqta emoji o'rnini bosadi. */
@@ -443,7 +459,10 @@ export function statusText(status: DisplayStatus): string {
   return statusLabel(status).replace(/^\S+\s+/, '');
 }
 
+/** Backenddan kelgan ikki tilli nom (shablon, maydon yorlig'i…). */
 export function label(value: { uz: string; ru?: string } | undefined): string {
   if (!value) return '';
-  return (current === 'ru' ? value.ru : value.uz) || value.uz;
+  if (current === 'ru') return value.ru || value.uz;
+  if (current === 'uz_cyrl') return toCyrillic(value.uz);
+  return value.uz;
 }

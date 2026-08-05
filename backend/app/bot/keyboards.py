@@ -81,6 +81,11 @@ def lang_choice() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(text="🇺🇿 O'zbekcha", callback_data=Act(name="lang", arg="uz").pack()),
+        InlineKeyboardButton(
+            text="🇺🇿 Ўзбекча", callback_data=Act(name="lang", arg="uz_cyrl").pack()
+        ),
+    )
+    builder.row(
         InlineKeyboardButton(text="🇷🇺 Русский", callback_data=Act(name="lang", arg="ru").pack()),
     )
     return builder.as_markup()

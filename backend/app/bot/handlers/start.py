@@ -14,7 +14,7 @@ from app.bot.callbacks import Act
 from app.bot.middlewares import blocked_status_message
 from app.bot.states import Registration
 from app.core.config import settings
-from app.core.i18n import t
+from app.core.i18n import LANGS, t
 from app.core.phone import normalize_phone
 from app.db.models import Employee, RoleKind
 from app.domain import audit
@@ -148,7 +148,7 @@ async def waiting_phone_fallback(message: Message, lang: str) -> None:
 
 
 @router.message(Command("til"))
-@router.message(F.text.in_({t("menu_lang", "uz"), t("menu_lang", "ru")}))
+@router.message(F.text.in_({t("menu_lang", code) for code in LANGS}))
 async def cmd_lang(message: Message, employee: Employee | None, lang: str) -> None:
     if employee is None:
         await message.answer(t("need_start", lang))
@@ -179,7 +179,7 @@ async def set_lang(
 
 
 @router.message(Command("yordam"))
-@router.message(F.text.in_({t("menu_help", "uz"), t("menu_help", "ru")}))
+@router.message(F.text.in_({t("menu_help", code) for code in LANGS}))
 async def cmd_help(message: Message, employee: Employee | None, lang: str) -> None:
     if employee is None:
         await message.answer(t("need_start", lang))
@@ -188,7 +188,7 @@ async def cmd_help(message: Message, employee: Employee | None, lang: str) -> No
 
 
 @router.message(Command("app"))
-@router.message(F.text.in_({t("menu_app", "uz"), t("menu_app", "ru")}))
+@router.message(F.text.in_({t("menu_app", code) for code in LANGS}))
 async def cmd_app(message: Message, employee: Employee | None, lang: str) -> None:
     if employee is None:
         await message.answer(t("need_start", lang))

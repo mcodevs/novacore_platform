@@ -29,8 +29,9 @@ export function duration(seconds: number | null | undefined): string {
   const total = Math.max(0, Math.round(seconds));
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
-  const h = getLocale() === 'ru' ? 'ч' : 's';
-  const m = getLocale() === 'ru' ? 'мин' : 'daq';
+  const lang = getLocale();
+  const h = lang === 'ru' ? 'ч' : lang === 'uz_cyrl' ? 'с' : 's';
+  const m = lang === 'ru' ? 'мин' : lang === 'uz_cyrl' ? 'дақ' : 'daq';
   if (hours && minutes) return `${hours} ${h} ${minutes} ${m}`;
   if (hours) return `${hours} ${h}`;
   return `${minutes} ${m}`;

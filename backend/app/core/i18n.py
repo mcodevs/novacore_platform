@@ -11,11 +11,14 @@ from decimal import Decimal
 import structlog
 
 from app.core.config import TASHKENT
+from app.core.translit import to_cyrillic
 
 _log = structlog.get_logger(__name__)
 
-LANGS = ("uz", "ru")
+#: `uz` — lotin, `uz_cyrl` — kirill (lotindan avtomatik), `ru` — rus
+LANGS = ("uz", "uz_cyrl", "ru")
 DEFAULT_LANG = "uz"
+CYRILLIC_LANG = "uz_cyrl"
 
 T: dict[str, dict[str, str]] = {
     # --- Umumiy ---
@@ -794,6 +797,21 @@ T: dict[str, dict[str, str]] = {
 }
 
 
+def _fill_cyrillic() -> None:
+    """`uz_cyrl` ni `uz` dan avtomatik yasaydi (qo'lda yozilgani ustuvor).
+
+    Yangi kalit qo'shilganda kirillcha o'zi paydo bo'ladi — qo'lda dublikat
+    yuritilmaydi. Agar biror kalitda translitatsiya noto'g'ri chiqsa, lug'atga
+    `"uz_cyrl": "..."` ni ochiq yozib qo'yish yetarli.
+    """
+    for entry in T.values():
+        if CYRILLIC_LANG not in entry and "uz" in entry:
+            entry[CYRILLIC_LANG] = to_cyrillic(entry["uz"])
+
+
+_fill_cyrillic()
+
+
 class _Missing(dict):
     """Yetishmagan kalit butun xabarni buzmasin — faqat o'sha joyda «—».
 
@@ -822,6 +840,18 @@ def t(key: str, lang: str = DEFAULT_LANG, /, **kwargs: object) -> str:
     return text
 
 
+def pick(lang: str, uz: str | None, ru: str | None = None) -> str:
+    """Bazadagi ikki tilli matn (`name_uz` / `name_ru`) dan kerakligini tanlaydi.
+
+    `uz_cyrl` uchun alohida ustun yo'q — lotinchasi translitatsiya qilinadi.
+    """
+    if lang == "ru" and ru:
+        return ru
+    if lang == CYRILLIC_LANG and uz:
+        return to_cyrillic(uz)
+    return uz or ru or ""
+
+
 def fmt_money(value: Decimal | float | int | None, lang: str = DEFAULT_LANG) -> str:
     """250000 → «250 000 so'm»."""
     if value is None:
@@ -848,8 +878,12 @@ def fmt_duration(seconds: int | None, lang: str = DEFAULT_LANG) -> str:
     seconds = max(0, int(seconds))
     hours, rem = divmod(seconds, 3600)
     minutes = rem // 60
-    h = "s" if lang == "uz" else "ч"
-    m = "daq" if lang == "uz" else "мин"
+    if lang == "ru":
+        h, m = "ч", "мин"
+    elif lang == CYRILLIC_LANG:
+        h, m = "с", "дақ"
+    else:
+        h, m = "s", "daq"
     if hours and minutes:
         return f"{hours} {h} {minutes} {m}"
     if hours:
