@@ -262,3 +262,18 @@ kartochka holati yo'qoladi (`DebtScreen` unmount bo'ladi).
 `index-De__Bx1I.js` (lokal build hashi bilan bir xil). Migratsiya yo'q.
 `/api/v1/payments` avtorizatsiyasiz 401 qaytaradi — yangi maydonlar ochilib
 qolmagan.
+
+## To'lov kartochkasidan ish hisobotiga kirish (2026-08-05)
+
+«Қайси ишларга» qatorlari bosiladigan bo'ldi → `detail` marshruti (hisobot
+kartochkasi). Sabab: `#WO-2026-000032` raqamining o'zi «qaysi ish» degan
+savolga javob bermaydi — mashina, sana va qatorlar faqat kartochkada.
+
+⚠️ **Umumiy tuzoq (boshqa ekranlarga ham tegishli):** App marshrutni
+almashtirganda ekran komponenti **butunlay yechiladi**, ichki holati bilan.
+Bu yerda qaytishda ikki qadam yo'qolardi — «To'langan» yorlig'i va ochiq
+to'lov kartochkasi. Yechim: modul darajasidagi `lastTab` / `lastPaidId` va
+tarix yuklangach **bir martalik** tiklash (aks holda bo'limga oddiy kirganda
+kartochka o'z-o'zidan ochilib qolardi).
+
+Bog'liq: [[miniapp-dizayn-tizimi]] · [[kirill-lokal-translit]]

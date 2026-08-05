@@ -174,7 +174,10 @@ export function App() {
       ) : null}
 
       {route.name === 'debts' ? (
-        <DebtScreen onDone={(message) => showToast(message)} />
+        <DebtScreen
+          onDone={(message) => showToast(message)}
+          onOpenSubmission={(id) => push({ name: 'detail', id })}
+        />
       ) : null}
 
       {route.name === 'reports' ? (

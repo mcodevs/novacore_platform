@@ -21,6 +21,8 @@ import { Card, MoneyInput, Row, Skeleton } from '../ui';
 
 interface Props {
   onDone(message: string): void;
+  /** To'lov kartochkasidagi ish qatoridan hisobotni ochish. */
+  onOpenSubmission(id: number): void;
 }
 
 // ⚠️ `savings` («kelishuv tejamkorligi») ataylab yo'q: u savdolashish
@@ -32,8 +34,14 @@ type Tab = 'debts' | 'advance' | 'paid';
 
 const TABS: Tab[] = ['debts', 'advance', 'paid'];
 
-export function DebtScreen({ onDone }: Props) {
-  const [tab, setTab] = useState<Tab>('debts');
+/** Ekran tashqarisidagi «oxirgi joy». Hisobot ochilganda `DebtScreen` butunlay
+ *  yechiladi (App marshrutni almashtiradi), qaytganda esa admin o'zi qolgan
+ *  joyni ko'rishi kerak — aks holda ikki qadam (yorliq + to'lov) yo'qoladi. */
+let lastTab: Tab = 'debts';
+let lastPaidId: number | null = null;
+
+export function DebtScreen({ onDone, onOpenSubmission }: Props) {
+  const [tab, setTab] = useState<Tab>(lastTab);
   const [summary, setSummary] = useState<DebtSummary | null>(null);
   const [history, setHistory] = useState<Payment[] | null>(null);
   const [picked, setPicked] = useState<EmployeeDebt | null>(null);
@@ -61,6 +69,21 @@ export function DebtScreen({ onDone }: Props) {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(() => {
+    lastTab = tab;
+  }, [tab]);
+
+  // Hisobotdan qaytganda ochiq turgan to'lov kartochkasi tiklanadi (tarix
+  // yuklangach — id emas, obyektning o'zi kerak).
+  useEffect(() => {
+    if (lastPaidId === null || paid || !history) return;
+    const found = history.find((row) => row.id === lastPaidId) ?? null;
+    // Bir marta ishlaydi: keyin bo'limga oddiy kirishda kartochka o'z-o'zidan
+    // ochilib qolmasligi kerak.
+    lastPaidId = null;
+    setPaid(found);
+  }, [history, paid]);
 
   const openEmployee = useCallback(async (row: EmployeeDebt) => {
     setPicked(row);
@@ -138,7 +161,10 @@ export function DebtScreen({ onDone }: Props) {
             type="button"
             className="btn-back"
             aria-label={t('back')}
-            onClick={() => setPaid(null)}
+            onClick={() => {
+              lastPaidId = null;
+              setPaid(null);
+            }}
           >
             ←
           </button>
@@ -160,14 +186,25 @@ export function DebtScreen({ onDone }: Props) {
           ) : null}
         </Card>
 
+        {/* Qator bosiladi → o'sha ish hisoboti. To'lov «qaysi ishga» ketgani
+            raqamdan aniq emas: mashina, sana va qatorlar kartochkada. */}
         <Card title={t('payment_covers')}>
           {paid.allocations.map((row) => (
-            <Row
+            <button
+              type="button"
+              className="link-row"
               key={row.submission_id}
-              label={`#${row.number || row.submission_id}`}
-              value={money(row.amount)}
-              hint={row.fully_paid ? `✅ ${t('fully_closed')}` : t('partly_closed')}
-            />
+              onClick={() => {
+                lastPaidId = paid.id;
+                onOpenSubmission(row.submission_id);
+              }}
+            >
+              <Row
+                label={`#${row.number || row.submission_id}`}
+                value={money(row.amount)}
+                hint={row.fully_paid ? `✅ ${t('fully_closed')}` : t('partly_closed')}
+              />
+            </button>
           ))}
         </Card>
       </>
