@@ -1,17 +1,21 @@
-"""ADR-0017 — foto **faqat kameradan**, galereya yopiq.
+"""ADR-0020 — foto **kameradan ham, galereyadan ham**.
 
-Galereya tugmasi Mini App'dan olib tashlangan, lekin klientga ishonilmaydi:
-API ham `source=gallery` ni rad etishi kerak.
+ADR-0017 (faqat kamera) almashtirildi: `capture="environment"` iOS WebView'da
+kamerani ochmasligi mumkin edi, zaxira yo'l esa umuman yo'q edi — foto yuklab
+bo'lmasa, ta'mir hisoboti ham yuborilmasdi.
+
+Manba **rad etilmaydi**, lekin **yozib qo'yiladi**: klient aytgan qiymatga
+ishonib bo'lmaydi, ammo tekshiruvda foydali.
 """
 
 from __future__ import annotations
 
-import pytest
+import io
+
 from fastapi import UploadFile
 
 from app.api.v1 import media as media_api
-from app.core.errors import ValidationFailed
-from app.db.models import MediaSource
+from app.db.models import Media, MediaSource
 from app.domain.submission import service as submission_service
 from tests.conftest import get_template, make_employee
 
@@ -25,23 +29,33 @@ async def _draft(session):
     return employee, submission
 
 
-async def test_gallery_upload_is_rejected(session, tmp_path):
-    """Galereyadan yuklash API darajasida bloklanadi."""
-    import io
+async def _upload(session, employee, submission, source: str):
+    return await media_api.upload(
+        session=session,
+        employee=employee,
+        submission_id=submission.id,
+        field_code="photo_problem",
+        kind="problem",
+        source=source,
+        file=UploadFile(filename="a.jpg", file=io.BytesIO(JPEG)),
+    )
 
+
+async def test_gallery_upload_is_accepted(session, tmp_path):
+    """Galereyadan yuklash ishlaydi — ilgari API uni rad etardi."""
     employee, submission = await _draft(session)
-    upload = UploadFile(filename="a.jpg", file=io.BytesIO(JPEG))
+    out = await _upload(session, employee, submission, MediaSource.gallery.value)
+    assert out.id is not None
 
-    with pytest.raises(ValidationFailed):
-        await media_api.upload(
-            session=session,
-            employee=employee,
-            submission_id=submission.id,
-            field_code="photo_problem",
-            kind="problem",
-            source=MediaSource.gallery.value,
-            file=upload,
-        )
+
+async def test_source_is_recorded(session, tmp_path):
+    """Qaysi tugma bosilgani saqlanadi — taqiq o'rniga iz."""
+    employee, submission = await _draft(session)
+    gallery = await _upload(session, employee, submission, MediaSource.gallery.value)
+    camera = await _upload(session, employee, submission, MediaSource.camera.value)
+
+    assert (await session.get(Media, gallery.id)).source == MediaSource.gallery
+    assert (await session.get(Media, camera.id)).source == MediaSource.camera
 
 
 def test_gallery_source_still_exists_for_history():

@@ -70,7 +70,6 @@ qo'shmang — har biri ADR bilan rad etilgan:
 | **Ko'p bosqichli tasdiqlash** | Bitta bosqich, direktorga ko'tarish yo'q |
 | **Oy yopish / davr (`periods`) / `payouts`** | ADR-0015. To'lov oyga emas, **hisobotga** bog'langan — qarz daftari |
 | **Probeg hisobotda** (`odometer_*`) | ADR-0018. Har hisobotda spidometr fotosi — eng qimmat, eng foydasiz maydon edi. `vehicles.odometer_km` (Fleet'dan) qoladi |
-| **Foto galereyadan** | ADR-0017. Faqat kamera (`capture`). Serverda ham `source=gallery` rad etiladi |
 | **Savdolashish ko'rsatkichlari UI'da** | ADR-0019. «Tejaldi», «Kamaydi», narx statistikasi, hisobotdagi narx tarixi — olib tashlandi. Kelishuv qoladi, lekin **faqat sodir bo'ladigan joyda**: admin kamaytirish oynasi, ustaning roziman/nizo kartasi, statuslar va bildirishnomalar. Hisob-kitob serverda joyida |
 
 ## Stack
@@ -156,10 +155,9 @@ qilish odamni chalkashtiradi.»*
 `<input type="file" accept="image/*" capture="environment">` Telegram
 WebView'ida (ayniqsa **iOS**) kamerani ochadimi — **hali sinalmagan**.
 
-🔴 **Zaxira yo'l umuman qolmadi.** Botdagi foto oqimi Mini App qarori bilan
-o'chgan edi; «🖼 Galereyadan» tugmasi esa ADR-0017 bilan **ataylab** olib
-tashlandi (foto faqat kameradan). Ya'ni `capture` ishlamasa — **foto umuman
-yuklab bo'lmaydi va ta'mir hisoboti yuborilmaydi**.
+🟢 **Endi bloklovchi emas** (ADR-0020, 2026-08-04): foto maydonida
+«🖼 Galereyadan» tugmasi qaytarildi, server ham `source=gallery` ni qabul
+qiladi. `capture` ishlamasa ham usta fotoni yuklay oladi va hisobot ketadi.
 
-Shuning uchun real iOS qurilmada kamera sinovi — **bloklovchi**, birinchi
-navbatdagi vazifa. Ishlamasa ADR-0017 qayta ko'rib chiqiladi.
+iOS sinovi baribir kerak — lekin natijasi endi «modul ishlamaydi» degani emas,
+«bitta tugma noqulay» degani.

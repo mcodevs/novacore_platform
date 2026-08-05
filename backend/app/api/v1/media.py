@@ -7,7 +7,7 @@ from fastapi.responses import Response
 
 from app.api.deps import EmployeeDep, SessionDep
 from app.api.v1 import schemas, serializers
-from app.core.errors import NotFound, ValidationFailed
+from app.core.errors import NotFound
 from app.db.models import MediaKind, MediaSource
 from app.domain.media import service as media_service
 from app.domain.submission import service as submission_service
@@ -28,12 +28,11 @@ async def upload(
 ):
     """Mini App fotoni siqib shu yerga yuboradi; server MIME'ni mazmuniga qarab tekshiradi.
 
-    ⚠️ ADR-0017 — foto **faqat kameradan**. Galereya klientda olib tashlangan,
-    lekin klientga ishonilmaydi: server ham `gallery` manbasini rad etadi.
+    ⭐ ADR-0020 — foto **kameradan ham, galereyadan ham** olinadi (ADR-0017 ni
+    almashtirdi). `source` rad etilmaydi, faqat **yozib qo'yiladi**: klient
+    aytgan qiymatga ishonib bo'lmaydi, lekin qaysi tugma bosilgani tekshiruvda
+    foydali. To'g'rilikni admin ko'rigi va chek fotosi ushlab turadi.
     """
-    if MediaSource(source) == MediaSource.gallery:
-        raise ValidationFailed("Foto faqat kameradan olinadi (galereya yopiq)")
-
     submission = await submission_service.get_for_actor(session, submission_id, employee)
     submission_service.ensure_editable(submission, employee)
 

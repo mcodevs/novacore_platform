@@ -94,7 +94,8 @@ shundan chiqadi.
 | Muammo tavsifi | matn | ✅ | |
 | Nosozlik kategoriyasi | tanlov | ✅ | Tormoz / Xodovoy / Elektr / Kuzov / Salon / Shina / Batareya / Boshqa |
 
-> 📷 **Kamera majburiy:** foto galereyadan emas, shu yerda olinishi kerak.
+> 📷 **Ikki yo'l:** «Suratga olish» (kamera) yoki «Galereyadan» (ADR-0020).
+> Manba yozib qo'yiladi, tekshiruv esa admin ko'rigida.
 > Texnik cheklovlar: [media hujjati](../03-integrations/03-media-and-storage.md).
 
 ### Qadam 3 — Bajarilgan ishlar va **o'z narxi**

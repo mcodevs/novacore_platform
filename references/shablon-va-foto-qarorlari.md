@@ -27,6 +27,32 @@ umuman yo'q: agar Telegram WebView'da (iOS) `capture` ishlamasa —
 → Real iOS qurilmada kamera sinovi endi **bloklovchi** vazifa. Ishlamasa
 ADR-0017 qayta ko'rib chiqiladi.
 
+
+### ♻️ ADR-0020 bilan almashtirildi (2026-08-04)
+
+Egasi qarorni **qaytardi**: foto endi kameradan ham, galereyadan ham. Yuqoridagi
+🔴 xavf aynan shu sabab yopildi — ishlamaydigan modul nazariy firibgarlikdan
+qimmatroq.
+
+- Mini App'da ikkita tugma: **📷 Kamera** (urg'u rangida — tavsiya etilgan yo'l)
+  va **🖼 Galereya** (ikkilamchi, `multiple`). Ikki alohida `<input>`, chunki
+  `capture` atributi **elementga** biriktiriladi va bosishdan oldin
+  o'zgartirib bo'lmaydi
+- Server `source=gallery` ni **rad etmaydi**, lekin `media.source` ga yozadi —
+  taqiq o'rniga **iz** (`photo_no_exif` bayrog'i bilan birga ma'no beradi)
+- Yorliqlar qisqartirildi: «Suratga olish» → «Kamera». Uzun variant 375 px'da
+  ikki qatorga sinardi ([[miniapp-dizayn-tizimi]])
+- `tests/test_media_source.py` **teskarisiga** yozildi: galereya qabul
+  qilinishi + manba to'g'ri saqlanishi. `gallery` enum baribir saqlanadi
+- CLAUDE.md: «Ataylab YO'Q» ro'yxatidan foto qatori olib tashlandi, «Ochiq
+  texnik xavf» 🔴 → 🟢
+
+⚠️ **Xulosa (kelajak uchun):** ADR-0017 dagi to'siq texnik emas, **ishonchga
+asoslangan** edi — galereyani yopish faqat qulay yo'lni yopadi (skrinshot,
+boshqa qurilmadan yuborish baribir ochiq), lekin evaziga modulni butunlay
+ishlamay qolish xavfiga qo'yadi. Foto-dalilning haqiqiy tayanchi — **admin
+ko'rigi va chek fotosi** ([[qarz-daftari-modeli]] dagi F5a).
+
 ## ADR-0018 — probeg shablondan olib tashlandi
 
 `odometer_value` + `odometer_photo` maydonlari, `field_mapping.odometer`,

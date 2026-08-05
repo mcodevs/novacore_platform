@@ -24,8 +24,9 @@ bu *amal* emas, *yetkazib berish*.
 
 ⚠️ **Yon ta'sir:** botdagi foto oqimi ham o'chdi — u
 [A-10](../05-delivery/02-open-questions.md) kamera xavfining zaxirasi edi.
-Endi zaxira faqat Mini App ichida: «🖼 Galereyadan» tugmasi.
-**Kamera sinovi endi kechiktirib bo'lmaydi.**
+Zaxira Mini App ichida: «🖼 Galereyadan» tugmasi (ADR-0020 bilan qaytarildi,
+ADR-0017 davrida u ham yo'q edi). Kamera sinovi baribir kerak, lekin u endi
+**bloklovchi emas**.
 
 ## 2. Bot buyruqlari
 
@@ -168,17 +169,18 @@ Mini App'da bu quyidagicha amalga oshiriladi:
 turlicha ishlaydi. Ba'zi holatlarda `capture` e'tiborsiz qoldirilib, galereya
 tanlash oynasi ochilishi mumkin.
 
-**Shuning uchun majburiy:**
+**Choralar:**
 
 | Chora | Tafsilot |
 |---|---|
-| 🔬 **Erta prototip** | Loyihaning **1-haftasida** haqiqiy Android va iOS'da sinash |
-| 🔁 **Zaxira yo'l** | Kamera ishlamasa → "Fotoni botga yuboring" oqimi (bot'da foto qabul qilinadi) |
+| 🔁 **Zaxira yo'l** | «🖼 Galereyadan» tugmasi — `capture` ishlamasa ham foto yuklanadi (ADR-0020) |
+| 🔬 **Qurilmada sinash** | Haqiqiy Android va iOS'da tekshirish — endi bloklovchi emas |
 | 🕵️ **Server tekshiruvi** | EXIF sanasi yo'q yoki eski → `photo_not_fresh` bayrog'i |
-| 📊 **Statistika** | `media.source` (camera/gallery/unknown) yozib boriladi |
+| 📊 **Statistika** | `media.source` (camera/gallery/unknown) yozib boriladi — taqiq emas, **iz** |
 
-> Bu — loyihaning **eng katta texnik noaniqligi**. Uni birinchi haftada
-> tekshirmaslik keyinchalik butun anti-fraud g'oyasini buzishi mumkin.
+> ADR-0020 dan keyin bu xavf **modulni to'xtatmaydi**: eng yomon holatda usta
+> galereya tugmasidan foydalanadi. Foto-dalilning kuchi admin ko'rigi va chek
+> fotosi (F5a) bilan ushlab turiladi.
 > 📌 [A-10](../05-delivery/02-open-questions.md)
 
 ### Geolokatsiya

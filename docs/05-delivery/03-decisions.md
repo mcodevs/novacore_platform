@@ -597,7 +597,11 @@ qamrab oladi.
 
 ## ADR-0017 — Foto faqat kameradan, galereya yo'q
 
-**Sana:** 2026-08-03 · **Holat:** ✅ Qabul qilindi (egasining qarori)
+**Sana:** 2026-08-03 · **Holat:** ♻️ **[ADR-0020](#adr-0020--foto-kameradan-ham-galereyadan-ham) bilan almashtirildi** (2026-08-04)
+
+> ⚠️ Bu qaror endi kuchda emas. Quyidagi matn **tarix uchun** saqlanadi: nima
+> uchun galereya bir kun olib tashlangani va qanday xavf hisobga olingani
+> ADR-0020 ni o'qishda kerak bo'ladi.
 
 ### Kontekst
 Mini App'da foto maydonida ikki tugma bor edi: **«📷 Suratga olish»**
@@ -751,6 +755,61 @@ ma'lumot joyida turibdi.
 | Hammasini qoldirib, faqat kichraytirish | Kichik shrift mavzuni o'zgartirmaydi — ko'rsatkich ekranda bo'lsa, u maqsadga o'xshaydi |
 | Kelishuv oqimini butunlay olib tashlash | Kelishuv real ehtiyoj (R2) — muammo uning **ko'rinishida** edi, o'zida emas |
 | Statistikani faqat adminga qoldirish | Usta profilidagi zarar shundan edi; adminda ham hisobot ko'rishda emas, kamaytirish lahzasida kerak |
+
+---
+
+## ADR-0020 — Foto kameradan ham, galereyadan ham
+
+**Sana:** 2026-08-04 · **Holat:** ✅ Qabul qilindi (egasining qarori) ·
+**Almashtiradi:** [ADR-0017](#adr-0017--foto-faqat-kameradan-galereya-yoq)
+
+### Kontekst
+ADR-0017 galereyani yopib qo'ygan edi: foto «hozir olingan» bo'lsin, F3
+(boshqa mashinaning surati) vektori yopilsin. Lekin shu bilan birga
+**zaxira yo'l ham yo'qoldi** — CLAUDE.md dagi «ochiq texnik xavf» aynan shu
+haqda edi:
+
+`<input capture="environment">` Telegram WebView'da, ayniqsa **iOS**'da,
+kamerani ochmasligi mumkin. Botdagi foto oqimi Mini App qarori bilan allaqachon
+o'chirilgan edi, ya'ni `capture` ishlamasa **foto umuman yuklab bo'lmaydi va
+ta'mir hisoboti yuborilmaydi** — modul butunlay ishlamay qoladi.
+
+Ya'ni tanlov: *nazariy firibgarlik xavfi* ↔ *amaliy ishlamay qolish xavfi*.
+
+### Qaror
+Foto maydonida yana **ikki tugma**: «📷 Suratga olish» (`capture`) va
+«🖼 Galereyadan» (`capture` siz, `multiple`). Server `source=gallery` ni
+**rad etmaydi**.
+
+Manba yo'qolmaydi — u **yozib qo'yiladi** (`media.source`): klient aytgan
+qiymatga ishonib bo'lmasa ham, qaysi tugma bosilgani tekshiruvda foydali va
+`photo_no_exif` bayrog'i bilan birga ma'no beradi.
+
+### Sabab
+- Ishlamaydigan modul har qanday firibgarlikdan qimmatroq: usta fotoni
+  yuklay olmasa, hisobot ham, to'lov ham yo'q
+- ADR-0017 dagi to'siq **texnik emas, ishonchga asoslangan** edi: galereyani
+  yopish faqat *qulay* yo'lni yopadi — skrinshot, boshqa qurilmadan yuborish
+  va WebView xatti-harakatlari baribir ochiq
+- Haqiqiy to'siqlar joyida qoladi: **admin ko'rigi**, chek fotosi (F5a),
+  `photo_no_exif` bayrog'i, `audit_log`
+- iOS kamera sinovi endi **bloklovchi emas** — ishlamasa ham platforma ishlaydi
+
+### Oqibatlar
+- ➕ «Ochiq texnik xavf» yopildi: zaxira yo'l bor
+- ➕ Bir nechta fotoni birdan tanlash mumkin (`multiple`)
+- ➖ F3 vektori kengaydi: eski yoki boshqa mashinaning surati oson qo'yiladi.
+  Qabul qilindi — qarshi chora admin ko'rigi
+- ⓘ `MediaSource` enum va `photo_no_exif` bayrog'i o'zgarmadi
+- ⓘ `tests/test_media_source.py` teskarisiga yozildi: endi galereya
+  **qabul qilinishi** va manba **yozilishi** tekshiriladi
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Galereyani faqat iOS'da ochish | Klient aniqlash ishonchsiz; ikki xil xulq — ikki xil xato manbai |
+| Serverda EXIF bo'yicha rad etish | Telegram va siqish EXIF'ni baribir yo'q qiladi — halol fotolar rad etilardi |
+| Galereya fotosini «shubhali» deb belgilash | `photo_no_exif` allaqachon bor; ikkinchi bayroq yangi ma'lumot bermaydi |
 
 ---
 

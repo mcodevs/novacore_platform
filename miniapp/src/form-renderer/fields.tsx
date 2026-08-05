@@ -262,6 +262,7 @@ export function PhotoField({
   onMediaChange,
 }: FieldProps) {
   const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState('');
 
@@ -270,8 +271,12 @@ export function PhotoField({
   const kind = String(field.options?.kind ?? 'other');
   const items = media.filter((m) => m.field_code === field.code);
 
-  // ⚠️ Galereya YO'Q (2026-08-03 qarori) — foto faqat kameradan olinadi,
-  // shu bilan foto-dalil kuchini saqlaydi.
+  /** ⭐ Ikki manba: kamera va galereya (ADR-0020, ADR-0017 ni almashtirdi).
+   *
+   * `source` serverga **rostini** ayta olmaydi — klientga ishonib bo'lmaydi —
+   * lekin qaysi tugma bosilgani yozib qo'yiladi (`media.source`) va tekshiruvda
+   * ko'rinadi. Foto-dalilning kuchi endi taqiq bilan emas, admin ko'rigi va
+   * chek fotosi bilan ushlab turiladi. */
   async function upload(files: FileList | null, source: 'camera' | 'gallery') {
     if (!files?.length) return;
     setBusy(true);
@@ -312,10 +317,21 @@ export function PhotoField({
         >
           {busy ? t('uploading') : t('photo_take')}
         </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => galleryRef.current?.click()}
+          disabled={busy || items.length >= max}
+        >
+          {t('photo_gallery')}
+        </button>
       </div>
 
-      {/* ⚠️ `capture="environment"` — galereya ochilmaydi, faqat kamera.
-          Zaxira tugma ataylab yo'q: foto «hozir olingan» bo'lishi shart. */}
+      {/* Ikki alohida `input`: `capture` atributi **elementga** biriktiriladi,
+          uni bosishdan oldin o'zgartirib bo'lmaydi.
+          ⚠️ `capture="environment"` ba'zi klientlarda (ayniqsa iOS WebView)
+          kamerani ochmasligi mumkin — galereya tugmasi shu holatda ham foto
+          yuklash imkonini qoldiradi (ADR-0020). */}
       <input
         ref={cameraRef}
         type="file"
@@ -323,6 +339,14 @@ export function PhotoField({
         capture="environment"
         hidden
         onChange={(e) => void upload(e.target.files, 'camera')}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => void upload(e.target.files, 'gallery')}
       />
 
       {failed ? <p className="error">{failed}</p> : null}

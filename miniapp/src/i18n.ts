@@ -278,10 +278,12 @@ export const T: Dict = {
   // Forma
   form_title: { uz: 'Hisobot', ru: 'Отчёт' },
   step: { uz: 'Qadam', ru: 'Шаг' },
-  photo_take: { uz: '📷 Suratga olish', ru: '📷 Сделать снимок' },
+  photo_take: { uz: '📷 Kamera', ru: '📷 Камера' },
+  photo_gallery: { uz: '🖼 Galereya', ru: '🖼 Галерея' },
+  // ADR-0020: galereya ochildi, lekin taklif qilinadigan yo'l — kamera.
   photo_hint: {
-    uz: 'Foto shu yerda kamerada olinishi kerak',
-    ru: 'Фото нужно снять камерой прямо сейчас',
+    uz: 'Iloji bo‘lsa shu yerda kamerada oling',
+    ru: 'По возможности снимите камерой прямо здесь',
   },
   photo_count: { uz: '{n} / {max} ta foto', ru: '{n} / {max} фото' },
   uploading: { uz: 'Yuklanmoqda…', ru: 'Загрузка…' },
