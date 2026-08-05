@@ -217,9 +217,9 @@ async def export_debts(
 ) -> tuple[str, bytes]:
     """`qarzlar_<sana>.xlsx` — buxgalteriyaga.
 
-    Birinchi varaq — **hozirgi** qarz holati (sana oralig'iga bog'liq emas:
-    qarz yopilmaguncha ochiq turadi). Ikkinchi varaq — to'lovlar tarixi;
-    oraliq berilgan bo'lsa, faqat shu oraliqdagi to'lovlar.
+    Birinchi varaq — **hozirgi** holat (sana oralig'iga bog'liq emas: qarz
+    yopilmaguncha ochiq turadi). Ikkinchi varaq — to'lovlar tarixi; oraliq
+    berilgan bo'lsa, faqat shu oraliqdagi to'lovlar.
     """
     summary = await payment_service.debt_summary(session)
 
@@ -228,50 +228,43 @@ async def export_debts(
     ws.title = "Qarzlar"
     ws.append(["Qarzdorlar — hozirgi holat"])
     ws["A1"].font = Font(bold=True, size=14)
-    ws.append([])
-    ws.append(["Xodim", "Ishlar soni", "Qarz"])
+    #  ⚠️ Manfiy «Sof qarz» — xato emas, holat: xodimda bizning pulimiz
+    #  turibdi. Izohsiz buxgalter uni xato deb o'ylashi mumkin.
+    ws.append(["Sof qarz = Qarz − Avans. Manfiy son — xodimda bizning pulimiz turibdi (P7)."])
+    ws.append(["Xodim", "Ishlar soni", "Qarz", "Avans", "Sof qarz"])
     for cell in ws[3]:
         cell.font = HEADER_FONT
         cell.alignment = Alignment(horizontal="center")
 
-    #  ⚠️ `debt_summary` ro'yxatiga avansi bor, lekin qarzi yo'q xodim ham
-    #  tushadi (P7) — u yerda `count = 0`, `debt = 0`. Bunday qator qarzdorlar
-    #  jadvalida «0 ish, 0 qarz» bo'lib turardi va «kimga qancha qarzmiz?»
-    #  degan savolni loyqalatardi. Avans o'z varag'ida (Mini App'dagi kabi:
-    #  alohida tab, 2026-08-04).
+    #  ⚠️ Avansi bor, lekin qarzi yo'q xodim ham shu ro'yxatda (P7) — unda
+    #  `count = 0`, `debt = 0`. Ilgari bunday qator «0 · 0» bo'lib turardi va
+    #  ma'nosiz ko'rinardi; endi «Avans» ustuni uni tushuntiradi.
     for entry in summary.employees:
-        if entry.count == 0:
-            continue
-        ws.append([entry.full_name, entry.count, float(entry.debt)])
+        net = entry.debt - entry.advance
+        ws.append(
+            [
+                entry.full_name,
+                entry.count,
+                float(entry.debt),
+                float(entry.advance),
+                float(net),
+            ]
+        )
     ws.append([])
-    ws.append(["JAMI", "", float(summary.total)])
+    ws.append(
+        [
+            "JAMI",
+            "",
+            float(summary.total),
+            float(summary.advance_total),
+            float(summary.total - summary.advance_total),
+        ]
+    )
     ws[f"A{ws.max_row}"].font = HEADER_FONT
-    for row in ws.iter_rows(min_row=4, min_col=3, max_col=3):
+    for row in ws.iter_rows(min_row=4, min_col=3, max_col=5):
         for cell in row:
             cell.number_format = MONEY_FMT
     _autosize(ws)
-
-    # Avans — qarzdan ortiq to'langan pul (P7)
-    ws_adv = wb.create_sheet("Avans")
-    ws_adv.append(["Avans — ishlatilmagan qoldiq"])
-    ws_adv["A1"].font = Font(bold=True, size=14)
-    ws_adv.append(["Yangi ish tasdiqlanganda avtomatik ushlab qolinadi (P7)."])
-    ws_adv.append(["Xodim", "Avans"])
-    for cell in ws_adv[3]:
-        cell.font = HEADER_FONT
-        cell.alignment = Alignment(horizontal="center")
-
-    for entry in summary.employees:
-        if entry.advance <= ZERO:
-            continue
-        ws_adv.append([entry.full_name, float(entry.advance)])
-    ws_adv.append([])
-    ws_adv.append(["JAMI", float(summary.advance_total)])
-    ws_adv[f"A{ws_adv.max_row}"].font = HEADER_FONT
-    for row in ws_adv.iter_rows(min_row=4, min_col=2, max_col=2):
-        for cell in row:
-            cell.number_format = MONEY_FMT
-    _autosize(ws_adv)
 
     # To'lovlar tarixi
     ws2 = wb.create_sheet("To'lovlar")

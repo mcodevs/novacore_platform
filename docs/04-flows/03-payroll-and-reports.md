@@ -326,7 +326,7 @@ orqali hujjat bo'lib keladi.
 | Fayl | Mazmuni | Kim uchun |
 |---|---|---|
 | `tamirlar_<from>_<to>.xlsx` | Hisobotlar + ish qatorlari (ikki varaq) | Admin |
-| `qarzlar_<sana>.xlsx` | Qarzdorlar + **avans** + to'lovlar tarixi (uch varaq) | Buxgalteriya |
+| `qarzlar_<sana>.xlsx` | Qarz + **avans** bitta jadvalda, va to'lovlar tarixi | Buxgalteriya |
 | `kelishuv_<from>_<to>.xlsx` | Narx kelishuvi tejamkorligi + xodimlar kesimi | Direktor |
 
 ### `tamirlar_*.xlsx` — ustunlar
@@ -356,21 +356,29 @@ Avtomatik tasdiq · Yuborilgan`
 >
 > «Mashina» ustuni **qo'shildi** (2-varaq): mashina kesimida filtrlash uchun.
 
-### `qarzlar_*.xlsx` — uchta varaq
+### `qarzlar_*.xlsx` — ikkita varaq
 
 | Varaq | Mazmuni |
 |---|---|
-| **Qarzlar** | `Xodim · Ishlar soni · Qarz` + JAMI. **Hozirgi holat** — sana oralig'iga bog'liq emas (qarz yopilmaguncha ochiq turadi) |
-| **Avans** ⭐ | `Xodim · Avans` + JAMI — ishlatilmagan qoldiq (P7) |
+| **Qarzlar** | `Xodim · Ishlar soni · Qarz · Avans · Sof qarz` + JAMI. **Hozirgi holat** — sana oralig'iga bog'liq emas (qarz yopilmaguncha ochiq turadi) |
 | **To'lovlar** | To'lovlar tarixi; oraliq berilgan bo'lsa faqat shu oraliqdagilar |
 
-⚠️ **Avans nega alohida varaqda:** `debt_summary` ro'yxatiga avansi bor, lekin
-qarzi yo'q xodim ham tushadi — u yerda `count = 0`, `debt = 0`. Bunday qator
-qarzdorlar jadvalida «0 ish · 0 qarz» bo'lib turardi va *«kimga qancha
-qarzmiz?»* degan savolni loyqalatardi. Mini App'da bu 2026-08-04 da alohida
-tab bilan hal qilingan edi — eksport ham shu qarorga keltirildi (2026-08-05).
+⭐ **Qarz va avans — bitta jadvalda** (2026-08-05, egasining tanlovi). Avans
+avval alohida varaqda sinab ko'rilgan edi; buxgalter uchun **bitta qatorda
+xodimning butun holati** turgani qulayroq bo'ldi.
 
-Ya'ni **«Qarzlar» varag'ida faqat haqiqiy qarzdorlar** (`count > 0`) turadi.
+```
+Sof qarz = Qarz − Avans
+```
+
+⚠️ **Manfiy «Sof qarz» — xato emas, holat:** xodimda bizning pulimiz turibdi
+(P7). Shu sababli sarlavha ostida izoh qatori bor — u bo'lmasa buxgalter
+manfiy sonni xato deb o'ylashi mumkin.
+
+ⓘ Amalda qarz va avans **bir vaqtda** bo'lmaydi: `apply_advance` avansni ochiq
+qarzlarga darhol taqsimlaydi (to'lovda ham, tasdiqlashda ham). Ya'ni har
+qatorda ikkitasidan biri nol. Ustunlar baribir ikkalasi ham turadi — qaysi
+biri nol ekani **javobning o'zi**.
 
 Ustunlar tarkibi `tests/test_export.py` da qotirilgan — eksport hech qayerda
 ko'rinmaydi, xato faqat buxgalter faylni ochganda bilinadi.

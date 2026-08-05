@@ -182,40 +182,50 @@ async def _overpaid(session):  # noqa: ANN001, ANN202
     return mechanic_id
 
 
-async def test_debts_export_has_advance_sheet(session):
-    """⭐ Egasining talabi: xodimdagi avans ham shu hujjatda ko'rinsin."""
+#: Qarz va avans — BITTA jadvalda (2026-08-05, egasining tanlovi)
+DEBTS_HEADER = ["Xodim", "Ishlar soni", "Qarz", "Avans", "Sof qarz"]  # noqa: RUF012
+
+
+def _debt_rows(payload: bytes) -> list[dict]:
+    ws = openpyxl.load_workbook(io.BytesIO(payload))["Qarzlar"]
+    return [
+        dict(zip(DEBTS_HEADER, row, strict=True))
+        for row in ws.iter_rows(min_row=4, values_only=True)
+        if row[0]
+    ]
+
+
+async def test_debts_export_shows_advance_in_the_same_table(session):
+    """⭐ Egasining talabi: avans ham shu hujjatda, **bitta jadvalda**.
+
+    Alohida «Avans» varag'i sinab ko'rilgan edi (2026-08-05) — egasi bitta
+    jadvalni tanladi: buxgalter bitta qatorda xodimning butun holatini ko'radi.
+    """
     await _overpaid(session)
     _name, payload = await export_service.export_debts(session)
     wb = openpyxl.load_workbook(io.BytesIO(payload))
 
-    assert wb.sheetnames == ["Qarzlar", "Avans", "To'lovlar"]
-    ws = wb["Avans"]
-    assert [cell.value for cell in ws[3]] == ["Xodim", "Avans"]
+    assert wb.sheetnames == ["Qarzlar", "To'lovlar"]  # alohida «Avans» varag'i yo'q
+    ws = wb["Qarzlar"]
+    assert [cell.value for cell in ws[3]] == DEBTS_HEADER
+    #  Manfiy «Sof qarz» xato deb o'ylanmasin — izoh sarlavha ostida turadi
+    assert "Sof qarz" in str(ws["A2"].value)
 
-    rows = [(r[0], r[1]) for r in ws.iter_rows(min_row=4, values_only=True) if r[0]]
-    names = {name for name, _ in rows if name != "JAMI"}
-    assert names  # avansi bor xodim bor
-    total = next(value for name, value in rows if name == "JAMI")
-    assert total == 50000
-    assert ws.cell(row=4, column=2).number_format == "#,##0"
+    rows = _debt_rows(payload)
+    person = next(r for r in rows if r["Xodim"] != "JAMI")
+    assert person["Qarz"] == 0
+    assert person["Avans"] == 50000
+    assert person["Sof qarz"] == -50000  # bizda emas, xodimda turgan pul
 
-
-async def test_debtors_sheet_skips_advance_only_employee(session):
-    """Avansi bor, qarzi yo'q xodim qarzdorlar jadvalida «0 · 0» bo'lib turmasin."""
-    await _overpaid(session)
-    _name, payload = await export_service.export_debts(session)
-    ws = openpyxl.load_workbook(io.BytesIO(payload))["Qarzlar"]
-
-    body = [r for r in ws.iter_rows(min_row=4, values_only=True) if r[0] and r[0] != "JAMI"]
-    assert body == []  # yagona xodimning qarzi yopilgan → qarzdor yo'q
-
-    total = next(r[2] for r in ws.iter_rows(min_row=4, values_only=True) if r[0] == "JAMI")
-    assert total == 0
+    total = next(r for r in rows if r["Xodim"] == "JAMI")
+    assert (total["Qarz"], total["Avans"], total["Sof qarz"]) == (0, 50000, -50000)
+    for column in (3, 4, 5):
+        assert ws.cell(row=4, column=column).number_format == "#,##0"
 
 
 async def test_advance_is_spent_and_shows_as_reduced_debt(session):
-    """P7 eksportda: avans yangi qarzga ishlatiladi → «Avans» varag'idan chiqadi,
-    «Qarzlar» da esa qarz ayrilgan holda turadi."""
+    """P7 eksportda: avans yangi qarzga ishlatiladi → «Avans» ustuni nolga
+    tushadi, «Qarz» esa ayrilgan holda turadi."""
     mechanic_id = await _overpaid(session)
     mechanic = await session.get(Employee, mechanic_id)
     vehicle = await make_vehicle(session, plate="01C789DE")
@@ -230,10 +240,9 @@ async def test_advance_is_spent_and_shows_as_reduced_debt(session):
     assert second.paid_amount == Decimal("50000.00")
 
     _name, payload = await export_service.export_debts(session)
-    wb = openpyxl.load_workbook(io.BytesIO(payload))
-
-    debtors = [r for r in wb["Qarzlar"].iter_rows(min_row=4, values_only=True) if r[0] == mechanic.full_name]
-    assert debtors and debtors[0][2] == 250000  # 300 000 − 50 000 avans
-
-    advances = [r for r in wb["Avans"].iter_rows(min_row=4, values_only=True) if r[0] == mechanic.full_name]
-    assert advances == []  # avans sarflandi
+    person = next(
+        r for r in _debt_rows(payload) if r["Xodim"] == mechanic.full_name
+    )
+    assert person["Qarz"] == 250000  # 300 000 − 50 000 avans
+    assert person["Avans"] == 0
+    assert person["Sof qarz"] == 250000

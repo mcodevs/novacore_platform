@@ -1,6 +1,6 @@
 ---
 name: eksport-ustunlari
-description: 2026-08-05 — eksportdan savdolashish ustunlari olib tashlandi, «Mashina» va «Avans» varag'i qo'shildi; sarlavhalar testda qotirildi
+description: 2026-08-05 — eksportdan savdolashish ustunlari olib tashlandi, «Mashina» qo'shildi, qarz+avans bitta jadvalda; sarlavhalar testda qotirildi
 metadata:
   type: project
 ---
@@ -63,16 +63,32 @@ yozilsin.»*
 tushadi (P7) — u yerda `count = 0`, `debt = 0`. Eksport shuni o'zgarishsiz
 chizardi va prod faylida `Islom · 0 · 0` degan ma'nosiz qator turardi.
 
-Yechim [[qarz-daftari-modeli]] dagi UI qarori bilan bir xil (2026-08-04:
-avans alohida tabda — aralash qatorlar «kimga qancha qarzmiz?» savolini
-ko'mib qo'yardi):
+**Ikkita variant sinaldi, egasi ikkinchisini tanladi:**
 
-- **Qarzlar** varag'ida endi faqat haqiqiy qarzdorlar (`count > 0`)
-- **Avans** — alohida varaq: `Xodim · Avans` + JAMI, ustida P7 izohi
-- Fayl uch varaqli bo'ldi: `Qarzlar · Avans · To'lovlar`
+1. ~~Alohida «Avans» varag'i~~ — [[qarz-daftari-modeli]] dagi UI qarori bilan
+   bir xil (2026-08-04: avans alohida tabda). Mantiqiy, lekin Excel telefon
+   ekrani emas
+2. ✅ **Bitta jadval:** `Xodim · Ishlar soni · Qarz · Avans · Sof qarz`
 
-> 📌 Bir xil ma'lumot ikki xil savolga javob beradi. «Kimga qarzmiz» va «kimda
-> bizning pulimiz turibdi» — ikki xil jadval, bitta ro'yxat emas.
+Sabab: buxgalter uchun **bitta qatorda xodimning butun holati** turgani
+qulayroq — saralash va filtrlash ham shunda ishlaydi. Fayl ikki varaqli
+qoldi: `Qarzlar · To'lovlar`.
+
+```
+Sof qarz = Qarz − Avans     # manfiy → xodimda bizning pulimiz turibdi
+```
+
+⚠️ Manfiy son xato deb o'ylanmasin — sarlavha ostida izoh qatori bor. Buni
+test ham tekshiradi (`"Sof qarz" in ws["A2"].value`), aks holda kelajakda
+kimdir izohni «ortiqcha» deb olib tashlaydi.
+
+ⓘ Amalda qarz va avans **bir vaqtda bo'lmaydi**: `apply_advance` avansni ochiq
+qarzlarga darhol taqsimlaydi. Har qatorda ikkitasidan biri nol — qaysi biri
+nol ekani javobning o'zi.
+
+> 📌 Saboq: telefon ekranidagi qaror (alohida tab) Excel'ga **avtomatik
+> ko'chmaydi**. Bir jadvalda 5 ta ustun — telefonda devor, monitorda esa
+> aynan kerak narsa.
 
 ## Hujjat
 
@@ -83,6 +99,9 @@ vazifasi» deb yozilgandi. Aslida uchta fayl bor va ular sinxron yig'iladi.
 
 ✅ **Prodda** — 2026-08-05, commit `ce80a52`, bundle `index-B5ox-vid.js`
 (lokal hash bilan bir xil). Migratsiya yo'q.
+
+⚠️ `ce80a52` **alohida «Avans» varaqli** variantni chiqargan edi. Bitta
+jadvalga o'tish undan keyin qilindi — keyingi deployda chiqadi.
 
 Bog'liq: [[savdolashish-fokusdan-olindi]] · [[qarz-daftari-modeli]] ·
 [[usta-formasi-ux]]
