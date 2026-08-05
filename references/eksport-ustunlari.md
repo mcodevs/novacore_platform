@@ -97,11 +97,14 @@ yerda hali amalga oshirilmagan **5 ta fayl** sanalgan edi (`tolovlar_`,
 `mashina_xarajatlari_`, `qismlar_`, `oylik_xulosa_.pdf`) va eksport «fon
 vazifasi» deb yozilgandi. Aslida uchta fayl bor va ular sinxron yig'iladi.
 
-✅ **Prodda** — 2026-08-05, commit `ce80a52`, bundle `index-B5ox-vid.js`
-(lokal hash bilan bir xil). Migratsiya yo'q.
+✅ **Prodda** — 2026-08-05, ikki bosqichda:
 
-⚠️ `ce80a52` **alohida «Avans» varaqli** variantni chiqargan edi. Bitta
-jadvalga o'tish undan keyin qilindi — keyingi deployda chiqadi.
+| Commit | Nima chiqdi |
+|---|---|
+| `ce80a52` | Ustunlar tozalandi, «Mashina», **alohida «Avans» varag'i** · bundle `index-B5ox-vid.js` |
+| `d44a90c` | Avans **bitta jadvalga** ko'chdi (`Qarz · Avans · Sof qarz`) — faqat backend, bundle o'zgarmadi |
+
+Migratsiya yo'q. Ikkalasi ham bir kunda: birinchisi sinov bo'lib chiqdi.
 
 Bog'liq: [[savdolashish-fokusdan-olindi]] · [[qarz-daftari-modeli]] ·
 [[usta-formasi-ux]]
