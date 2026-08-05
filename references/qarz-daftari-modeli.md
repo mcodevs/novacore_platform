@@ -277,3 +277,6 @@ tarix yuklangach **bir martalik** tiklash (aks holda bo'limga oddiy kirganda
 kartochka o'z-o'zidan ochilib qolardi).
 
 Bog'liq: [[miniapp-dizayn-tizimi]] · [[kirill-lokal-translit]]
+
+✅ **Prodda** — 2026-08-05, commit `8988364` (main), bundle `CpS4c5lb`.
+Migratsiya yo'q, faqat Mini App.
