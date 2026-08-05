@@ -1132,3 +1132,76 @@ async def test_payment_requires_finance_role(api):
         json={"employee_id": 1, "amount": 1000},
     )
     assert response.status_code == 403
+
+
+# --- ⭐ O'z pul holati (`/me/balance`) -----------------------------------------
+
+
+async def test_mechanic_sees_own_debt_and_advance(api):
+    """Usta bosh ekranda «bizning qarzimiz» va «avans»ni ko'radi.
+
+    ⚠️ Bu yagona pul endpointi bo'lib, u **buxgalter huquqisiz** ochiladi:
+    boshqa birovniki emas, o'z raqami. Qolgan `/debts`, `/payments` — hamon
+    `FinanceDep` ostida (pastdagi test).
+    """
+    mechanic = await login(api, MECHANIC_TG)
+    admin = await login(api, ADMIN_TG)
+    accountant = await login(api, ACCOUNTANT_TG)
+    m_token, a_token, acc_token = (
+        mechanic["access_token"],
+        admin["access_token"],
+        accountant["access_token"],
+    )
+    employee_id = mechanic["employee"]["id"]
+
+    empty = await api.get("/api/v1/me/balance", headers=auth_header(m_token))
+    assert empty.status_code == 200, empty.text
+    assert float(empty.json()["debt"]) == 0.0
+    assert float(empty.json()["advance"]) == 0.0
+
+    submission_id = await _submit_repair(api, m_token, price=250000)
+    await api.post(
+        f"/api/v1/submissions/{submission_id}/approve",
+        headers=auth_header(a_token),
+        json={},
+    )
+
+    owed = (await api.get("/api/v1/me/balance", headers=auth_header(m_token))).json()
+    assert float(owed["debt"]) == 250000.0
+    assert owed["count"] == 1
+    assert float(owed["advance"]) == 0.0
+
+    # qarzdan ko'p to'lanadi → ortig'i avans (P7)
+    await api.post(
+        "/api/v1/payments",
+        headers=auth_header(acc_token),
+        json={"employee_id": employee_id, "amount": 300000},
+    )
+    after = (await api.get("/api/v1/me/balance", headers=auth_header(m_token))).json()
+    assert float(after["debt"]) == 0.0
+    assert after["count"] == 0
+    assert float(after["advance"]) == 50000.0
+
+
+async def test_balance_is_own_only(api):
+    """Har kim faqat o'z raqamini oladi — `employee_id` parametri yo'q."""
+    mechanic = await login(api, MECHANIC_TG)
+    admin = await login(api, ADMIN_TG)
+    a_token = admin["access_token"]
+
+    submission_id = await _submit_repair(api, mechanic["access_token"], price=250000)
+    await api.post(
+        f"/api/v1/submissions/{submission_id}/approve",
+        headers=auth_header(a_token),
+        json={},
+    )
+
+    #  Ustaning qarzi adminning `/me/balance` iga tushmaydi
+    admin_balance = (await api.get("/api/v1/me/balance", headers=auth_header(a_token))).json()
+    assert float(admin_balance["debt"]) == 0.0
+
+    #  Umumiy qarz ro'yxati esa hamon buxgalter huquqini talab qiladi
+    forbidden = await api.get(
+        "/api/v1/debts", headers=auth_header(mechanic["access_token"])
+    )
+    assert forbidden.status_code == 403

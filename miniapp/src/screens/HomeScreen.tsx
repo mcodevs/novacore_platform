@@ -6,7 +6,7 @@ import * as api from '../api';
 import { displayStatus } from '../display-status';
 import { money, shortMoney } from '../format';
 import { t } from '../i18n';
-import type { AuthResponse, Dashboard, Submission } from '../types';
+import type { AuthResponse, Balance, Dashboard, Submission } from '../types';
 import { Card, Hero, ReportRow, Row, Skeleton, Tile } from '../ui';
 
 interface Props {
@@ -39,11 +39,15 @@ export function HomeScreen({
   const [mine, setMine] = useState<Submission[] | null>(null);
   const [pending, setPending] = useState<Submission[] | null>(null);
   const [board, setBoard] = useState<Dashboard | null>(null);
+  const [balance, setBalance] = useState<Balance | null>(null);
   const [picking, setPicking] = useState(false);
 
   useEffect(() => {
     if (isReporter) {
       api.listSubmissions({ author_id: 'me', limit: 20 }).then(setMine).catch(() => setMine([]));
+      //  ⚠️ Serverdan alohida so'raladi, `mine` dan yig'ilmaydi: ro'yxat
+      //  sahifalangan (20 ta) va avans umuman hisobotlarda yo'q.
+      api.myBalance().then(setBalance).catch(() => setBalance(null));
     }
     if (seesAll) {
       api.dashboard().then(setBoard).catch(() => setBoard(null));
@@ -183,8 +187,33 @@ export function HomeScreen({
             />
           </div>
 
-          {/* Shaxsiy pul yakuni hero'da (usta) yoki profil statistikasida
-              (admin) turadi — bu yerda takrorlanmaydi. */}
+          {/* ⭐ Ustaning eng muhim ikki raqami: bizning undan qarzimiz va
+              uning hisobidagi avans (P7). Ilgari usta buni umuman ko'rmasdi —
+              qarz daftari faqat admin/buxgalter ekranida edi.
+              Nol qiymat ham ko'rsatiladi («Qarz yo'q» — bu ham javob), lekin
+              avans qatori faqat bor bo'lganda chiqadi: nol avans hech kimga
+              savol emas. */}
+          {balance ? (
+            <Card title={t('my_money')}>
+              <Row
+                label={t('owed_to_you')}
+                value={balance.debt > 0 ? money(balance.debt) : t('no_debt')}
+                tone={balance.debt > 0 ? 'accent' : undefined}
+                hint={
+                  balance.count > 0
+                    ? `${balance.count} ${t('reports_count')}`
+                    : undefined
+                }
+              />
+              {balance.advance > 0 ? (
+                <Row
+                  label={t('advance')}
+                  value={money(balance.advance)}
+                  hint={t('advance_hint_own')}
+                />
+              ) : null}
+            </Card>
+          ) : null}
 
           {picking ? (
             <Card title={t('choose_template')}>

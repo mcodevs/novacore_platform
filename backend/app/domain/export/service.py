@@ -88,6 +88,10 @@ async def export_submissions(
     wb = Workbook()
     ws = wb.active
     ws.title = "Ta'mirlar"
+    # ⚠️ «So'ralgan ish haqi» va «Kamaytirildi» ustunlari ataylab YO'Q
+    # (2026-08-05, ADR-0019 ruhi): hisobotning mavzusi — bajarilgan ish va
+    # qarz, savdolashish emas. Kelishuv raqamlari kerak bo'lsa — «Ish
+    # qatorlari» varag'ida qator kesimida turibdi.
     _write_header(
         ws,
         [
@@ -98,9 +102,7 @@ async def export_submissions(
             "Keldi",
             "Ketdi",
             "Downtime (soat)",
-            "So'ralgan ish haqi",
             "Tasdiqlangan ish haqi",
-            "Kamaytirildi",
             "Qismlar",
             "Jami",
             "Qarz asosi",
@@ -134,11 +136,7 @@ async def export_submissions(
                 _fmt_dt(sub.arrived_at),
                 _fmt_dt(sub.left_at),
                 round(downtime / 3600, 1) if downtime is not None else "",
-                float(sub.proposed_labor_amount),
                 float(approved) if approved is not None else "",
-                float(sub.proposed_labor_amount - (approved or ZERO))
-                if approved is not None
-                else "",
                 float(sub.parts_amount),
                 float(sub.total_amount),
                 float(sub.payable_amount),
@@ -149,26 +147,30 @@ async def export_submissions(
             ]
         )
 
-    for row in ws.iter_rows(min_row=2, min_col=9, max_col=16):
+    #  Pul ustunlari: «Tasdiqlangan ish haqi» … «Qolgan qarz» (8–13).
+    #  ⚠️ Ilgari bu oraliq bir ustunga surilgan edi (9–16): birinchi pul
+    #  ustuni formatsiz qolib, matnli «Avtomatik tasdiq» ga format berilardi.
+    for row in ws.iter_rows(min_row=2, min_col=8, max_col=13):
         for cell in row:
             cell.number_format = MONEY_FMT
     _autosize(ws)
 
-    # Ish qatorlari alohida varaqda
+    # Ish qatorlari alohida varaqda.
+    # ⚠️ «So'ralgan», «Kamaytirish sababi», «Rozilik» ustunlari ataylab YO'Q
+    # (2026-08-05): varaq savdolashish jurnali emas, **bajarilgan ish** ro'yxati.
+    # «Mashina» ustuni qo'shildi — mashina kesimida filtrlash uchun.
     ws2 = wb.create_sheet("Ish qatorlari")
     _write_header(
         ws2,
         [
             "Hisobot",
+            "Mashina",
             "Xodim",
             "Tur",
             "Nomi",
             "Soni",
-            "So'ralgan",
             "Tasdiqlangan",
             "O'z hisobidan",
-            "Kamaytirish sababi",
-            "Rozilik",
         ],
     )
     line_stmt = (
@@ -179,21 +181,25 @@ async def export_submissions(
     )
     for line, sub in (await session.execute(line_stmt)).all():
         author = await session.get(Employee, sub.author_id)
+        line_vehicle = (
+            await session.get(Vehicle, sub.subject_vehicle_id)
+            if sub.subject_vehicle_id
+            else None
+        )
         ws2.append(
             [
                 sub.number,
+                line_vehicle.plate_display if line_vehicle else "",
                 author.full_name if author else "",
                 line.kind.value,
                 line.name,
                 float(line.qty),
-                float(line.proposed_amount),
                 float(line.approved_amount) if line.approved_amount is not None else "",
                 "ha" if line.self_funded else "",
-                line.price_change_reason or "",
-                line.mechanic_accept_mode.value if line.mechanic_accept_mode else "",
             ]
         )
-    for row in ws2.iter_rows(min_row=2, min_col=6, max_col=7):
+    #  Yagona pul ustuni — «Tasdiqlangan» (7). «Soni» (6) pul emas.
+    for row in ws2.iter_rows(min_row=2, min_col=7, max_col=7):
         for cell in row:
             cell.number_format = MONEY_FMT
     _autosize(ws2)
@@ -215,6 +221,8 @@ async def export_debts(
     qarz yopilmaguncha ochiq turadi). Ikkinchi varaq — to'lovlar tarixi;
     oraliq berilgan bo'lsa, faqat shu oraliqdagi to'lovlar.
     """
+    summary = await payment_service.debt_summary(session)
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Qarzlar"
@@ -226,8 +234,14 @@ async def export_debts(
         cell.font = HEADER_FONT
         cell.alignment = Alignment(horizontal="center")
 
-    summary = await payment_service.debt_summary(session)
+    #  ⚠️ `debt_summary` ro'yxatiga avansi bor, lekin qarzi yo'q xodim ham
+    #  tushadi (P7) — u yerda `count = 0`, `debt = 0`. Bunday qator qarzdorlar
+    #  jadvalida «0 ish, 0 qarz» bo'lib turardi va «kimga qancha qarzmiz?»
+    #  degan savolni loyqalatardi. Avans o'z varag'ida (Mini App'dagi kabi:
+    #  alohida tab, 2026-08-04).
     for entry in summary.employees:
+        if entry.count == 0:
+            continue
         ws.append([entry.full_name, entry.count, float(entry.debt)])
     ws.append([])
     ws.append(["JAMI", "", float(summary.total)])
@@ -236,6 +250,28 @@ async def export_debts(
         for cell in row:
             cell.number_format = MONEY_FMT
     _autosize(ws)
+
+    # Avans — qarzdan ortiq to'langan pul (P7)
+    ws_adv = wb.create_sheet("Avans")
+    ws_adv.append(["Avans — ishlatilmagan qoldiq"])
+    ws_adv["A1"].font = Font(bold=True, size=14)
+    ws_adv.append(["Yangi ish tasdiqlanganda avtomatik ushlab qolinadi (P7)."])
+    ws_adv.append(["Xodim", "Avans"])
+    for cell in ws_adv[3]:
+        cell.font = HEADER_FONT
+        cell.alignment = Alignment(horizontal="center")
+
+    for entry in summary.employees:
+        if entry.advance <= ZERO:
+            continue
+        ws_adv.append([entry.full_name, float(entry.advance)])
+    ws_adv.append([])
+    ws_adv.append(["JAMI", float(summary.advance_total)])
+    ws_adv[f"A{ws_adv.max_row}"].font = HEADER_FONT
+    for row in ws_adv.iter_rows(min_row=4, min_col=2, max_col=2):
+        for cell in row:
+            cell.number_format = MONEY_FMT
+    _autosize(ws_adv)
 
     # To'lovlar tarixi
     ws2 = wb.create_sheet("To'lovlar")

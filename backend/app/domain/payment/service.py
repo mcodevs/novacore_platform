@@ -127,6 +127,36 @@ async def _employees_with_advance(session: AsyncSession) -> list[Employee]:
     return list((await session.execute(stmt)).scalars().all())
 
 
+@dataclass
+class EmployeeBalance:
+    """Bitta xodimning pul holati — o'zi ko'radigan ikki raqam.
+
+    ⚠️ Serverda hisoblanadi (R7). Klient buni `listSubmissions` dan yig'a
+    olmaydi: ro'yxat sahifalangan (20 ta) va avans umuman hisobotlarda emas.
+    """
+
+    debt: Decimal = ZERO
+    count: int = 0
+    advance: Decimal = ZERO
+
+
+async def balance_of(session: AsyncSession, employee_id: int) -> EmployeeBalance:
+    """Xodimdan qancha qarzdormiz va uning hisobida qancha avans bor."""
+    debt, count = (
+        await session.execute(
+            sa.select(
+                sa.func.coalesce(sa.func.sum(_debt_expr()), 0),
+                sa.func.count(Submission.id),
+            ).where(*_open_debt_where(), Submission.author_id == employee_id)
+        )
+    ).one()
+    return EmployeeBalance(
+        debt=money(debt),
+        count=int(count or 0),
+        advance=await advance_of(session, employee_id),
+    )
+
+
 async def employee_debts(session: AsyncSession, employee_id: int) -> list[Submission]:
     """Xodimning to'lanmagan hisobotlari — **eng eskisidan** (FIFO tartibi)."""
     stmt = (

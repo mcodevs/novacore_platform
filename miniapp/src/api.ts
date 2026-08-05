@@ -4,6 +4,7 @@ import { tg } from './telegram';
 import { unwrap } from './unwrap';
 import type {
   AuthResponse,
+  Balance,
   Broadcast,
   Dashboard,
   Employee,
@@ -150,6 +151,13 @@ export async function login(): Promise<AuthResponse> {
 export const me = () => request<AuthResponse>('/me');
 export const setLang = (lang: Lang) =>
   request<Employee>('/me', { method: 'PATCH', body: JSON.stringify({ lang }) });
+
+/** ⭐ O'z pul holati: bizning qarzimiz + avans (P7).
+ *
+ *  Buxgalter huquqi kerak emas — bu boshqa birovniki emas, o'z raqami.
+ *  Serverda hisoblanadi: hisobotlar ro'yxati sahifalangan va avans umuman
+ *  hisobotlarda emas. */
+export const myBalance = () => request<Balance>('/me/balance');
 
 // --- Spravochniklar ---
 

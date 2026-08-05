@@ -24,20 +24,36 @@
 ┌─────────────────────────────┐
 │  🔧 NovaCore — Usta         │   ← rol nomi shu yerda ko'rinadi
 ├─────────────────────────────┤
-│  🚗 Ustaxonada          1   │   ← mashina keldi, ish tugamagan
+│  💰 Bu oy      3 450 000    │   ← tasdiqlangan (hero)
+├─────────────────────────────┤
 │  📝 Qoralamalar         1   │
 │  💬 Narx kelishuvi      2   │   ← ❗ javob kutmoqda
 │  ⏳ Tasdiq kutmoqda     4   │
 │  ✅ Bu oy tasdiqlangan  12  │
 ├─────────────────────────────┤
-│  💰 Bu oy                   │
-│     So'radim:   3 850 000   │
-│     Tasdiqlandi:3 450 000   │
-│     Kamaydi:       −10.4%   │
+│  💰 Hisobim                 │   ⭐ `GET /me/balance`
+│     Sizga qarzimiz 1 200 000│      ← to'lanmagan tasdiqlangan ishlar
+│     3 ta ish                │
+│     Avans             70 000│      ← faqat > 0 bo'lsa
 ├─────────────────────────────┤
 │  [ 🚗 Mashina keldi ]       │
 └─────────────────────────────┘
 ```
+
+⭐ **«Hisobim» kartochkasi** (2026-08-05): ilgari usta o'z qarzini umuman
+ko'rmasdi — qarz daftari faqat admin/buxgalter ekranida edi va usta «menga
+qancha berishadi?» degan savolga javob topa olmasdi.
+
+- **Sizga qarzimiz** — to'lanmagan tasdiqlangan ishlar yig'indisi. Nol bo'lsa
+  ham ko'rsatiladi («Qarz yo'q» — bu ham javob)
+- **Avans** — faqat noldan katta bo'lsa. Nol avans hech kimga savol emas
+
+⚠️ Ikkala raqam ham **serverda** hisoblanadi (`GET /me/balance`): hisobotlar
+ro'yxati sahifalangan (20 ta) va avans umuman hisobotlarda emas — klientda
+yig'ib bo'lmaydi.
+
+> ⚠️ «So'radim / Kamaydi» ko'rsatkichlari bu ekrandan olib tashlangan
+> (ADR-0019) — savdolashish ustaning bosh ekranidagi mavzu emas.
 
 ## 3. Oqim: mashina keldi → ish → mashina ketdi → hisobot
 

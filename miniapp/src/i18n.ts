@@ -147,6 +147,13 @@ export const T: Dict = {
     uz: 'Yangi ish tasdiqlanganda avansdan avtomatik ushlab qolinadi.',
     ru: 'При подтверждении новой работы аванс списывается автоматически.',
   },
+  // Ustaning o'z ekranidagi matn — «xodim» emas, «siz» tilida
+  my_money: { uz: '💰 Hisobim', ru: '💰 Мой счёт' },
+  owed_to_you: { uz: 'Sizga qarzimiz', ru: 'Наш долг вам' },
+  advance_hint_own: {
+    uz: 'Keyingi tasdiqlangan ishdan ushlab qolinadi',
+    ru: 'Спишется со следующей подтверждённой работы',
+  },
   debtors: { uz: 'Qarzdorlar', ru: 'Должники' },
   advance_holders: { uz: 'Avansi borlar', ru: 'С авансом' },
   no_advance: { uz: 'Avans yo‘q', ru: 'Авансов нет' },

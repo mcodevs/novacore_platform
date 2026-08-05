@@ -319,16 +319,61 @@ Yetkazib beruvchilar kesimida ham ko'rsatiladi — narx solishtirish uchun.
 
 ## 6. Eksport
 
+Faqat **eksport** — import yo'q. Fayl nomida sana oralig'i turadi
+(`<boshi>_<oxiri>`, Toshkent vaqti); `periods` yo'q (ADR-0015). Excel Telegram
+orqali hujjat bo'lib keladi.
+
 | Fayl | Mazmuni | Kim uchun |
 |---|---|---|
-| `tamirlar_2026_07.xlsx` | Barcha hisobotlar, to'liq ma'lumot | Admin |
-| `tolovlar_2026_07.xlsx` | Usta × summa | Buxgalteriya |
-| `mashina_xarajatlari_2026_07.xlsx` | Mashina × xarajat | Direktor |
-| `qismlar_2026_07.xlsx` | Qism × narx × yetkazib beruvchi | Ta'minot |
-| `oylik_xulosa_2026_07.pdf` | 1 sahifalik xulosa | Direktor |
+| `tamirlar_<from>_<to>.xlsx` | Hisobotlar + ish qatorlari (ikki varaq) | Admin |
+| `qarzlar_<sana>.xlsx` | Qarzdorlar + **avans** + to'lovlar tarixi (uch varaq) | Buxgalteriya |
+| `kelishuv_<from>_<to>.xlsx` | Narx kelishuvi tejamkorligi + xodimlar kesimi | Direktor |
 
-Eksport **fon vazifasi** sifatida bajariladi (katta hajm), tayyor bo'lgach
-Telegram orqali fayl yuboriladi.
+### `tamirlar_*.xlsx` — ustunlar
+
+**1-varaq «Ta'mirlar»** — bitta hisobot = bitta qator:
+
+`Raqam · Holat · Xodim · Mashina · Keldi · Ketdi · Downtime (soat) ·
+Tasdiqlangan ish haqi · Qismlar · Jami · Qarz asosi · To'langan · Qolgan qarz ·
+Avtomatik tasdiq · Yuborilgan`
+
+**2-varaq «Ish qatorlari»** — bitta ish/qism = bitta qator:
+
+`Hisobot · Mashina · Xodim · Tur · Nomi · Soni · Tasdiqlangan · O'z hisobidan`
+
+> 🚫 **Ataylab yo'q ustunlar** (2026-08-05, egasining qarori — ADR-0019 ruhi:
+> hisobot mavzusi *bajarilgan ish va qarz*, savdolashish emas):
+>
+> | Varaq | Olib tashlangan |
+> |---|---|
+> | Ta'mirlar | «So'ralgan ish haqi», «Kamaytirildi» |
+> | Ish qatorlari | «So'ralgan», «Kamaytirish sababi», «Rozilik» |
+>
+> Bu ma'lumot bazada qoladi (`proposed_amount`, `price_change_reason`,
+> `mechanic_accept_mode`) va `audit_log` / `approvals` da to'liq ko'rinadi —
+> faqat kundalik Excel'dan chiqarildi. Kelishuv raqamlari kerak bo'lsa —
+> `kelishuv_*.xlsx` bor.
+>
+> «Mashina» ustuni **qo'shildi** (2-varaq): mashina kesimida filtrlash uchun.
+
+### `qarzlar_*.xlsx` — uchta varaq
+
+| Varaq | Mazmuni |
+|---|---|
+| **Qarzlar** | `Xodim · Ishlar soni · Qarz` + JAMI. **Hozirgi holat** — sana oralig'iga bog'liq emas (qarz yopilmaguncha ochiq turadi) |
+| **Avans** ⭐ | `Xodim · Avans` + JAMI — ishlatilmagan qoldiq (P7) |
+| **To'lovlar** | To'lovlar tarixi; oraliq berilgan bo'lsa faqat shu oraliqdagilar |
+
+⚠️ **Avans nega alohida varaqda:** `debt_summary` ro'yxatiga avansi bor, lekin
+qarzi yo'q xodim ham tushadi — u yerda `count = 0`, `debt = 0`. Bunday qator
+qarzdorlar jadvalida «0 ish · 0 qarz» bo'lib turardi va *«kimga qancha
+qarzmiz?»* degan savolni loyqalatardi. Mini App'da bu 2026-08-04 da alohida
+tab bilan hal qilingan edi — eksport ham shu qarorga keltirildi (2026-08-05).
+
+Ya'ni **«Qarzlar» varag'ida faqat haqiqiy qarzdorlar** (`count > 0`) turadi.
+
+Ustunlar tarkibi `tests/test_export.py` da qotirilgan — eksport hech qayerda
+ko'rinmaydi, xato faqat buxgalter faylni ochganda bilinadi.
 
 ## 7. Kelajakdagi kengaytmalar (v4+)
 

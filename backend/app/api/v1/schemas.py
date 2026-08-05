@@ -212,6 +212,17 @@ class ApprovalOut(BaseModel):
 # --- Qarz daftari (ADR-0015) --------------------------------------------------
 
 
+class BalanceOut(BaseModel):
+    """`GET /me/balance` — xodimning O'Z pul holati (boshqalarniki emas)."""
+
+    #: Bizning shu xodimdan qarzimiz — to'lanmagan tasdiqlangan ishlar yig'indisi
+    debt: Decimal
+    #: Qarz qaysi ishlardan yig'ilgan (nechta hisobot)
+    count: int
+    #: Ishlatilmagan avans — qarzdan ortiq to'langan pul (P7)
+    advance: Decimal
+
+
 class EmployeeDebtOut(BaseModel):
     employee_id: int
     full_name: str

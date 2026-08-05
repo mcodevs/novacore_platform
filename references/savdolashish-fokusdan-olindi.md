@@ -7,6 +7,10 @@ metadata:
 
 # Savdolashish endi fokusda emas — ADR-0019
 
+> ♻️ **Davomi bor:** 2026-08-05 da shu mantiq **Excel eksportga** ham yetdi —
+> [[eksport-ustunlari]]. Bir joydan olib tashlangan ko'rsatkich boshqa
+> chiqishda qolib ketishi mumkinligini yodda tuting.
+
 **Sana:** 2026-08-04 · Egasining qarori · `docs/05-delivery/03-decisions.md`
 
 ## Muammo

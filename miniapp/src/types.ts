@@ -285,6 +285,16 @@ export interface DebtSummary {
   employees: EmployeeDebt[];
 }
 
+/** `GET /me/balance` — xodimning O'Z pul holati. */
+export interface Balance {
+  /** Bizning shu xodimdan qarzimiz — to'lanmagan tasdiqlangan ishlar */
+  debt: number;
+  /** Qarz nechta hisobotdan yig'ilgan */
+  count: number;
+  /** Ishlatilmagan avans (P7) */
+  advance: number;
+}
+
 /** Qarz ro'yxatidagi bitta hisobot — eng eskisidan (FIFO tartibi). */
 export interface DebtItem {
   submission_id: number;

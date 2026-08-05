@@ -32,6 +32,12 @@ POST /api/v1/auth/telegram   { init_data: "query_id=..." }
 | `POST` `/auth/refresh` | refresh → yangi access |
 | `POST` `/auth/logout` | refresh'ni bekor qilish |
 | `GET` `/me` | Profil, rol, ko'rinadigan shablonlar, sozlamalar |
+| `GET` `/me/balance` | ⭐ **O'z** pul holati: `{ debt, count, advance }` — bizning shu xodimdan qarzimiz va uning avansi (P7) |
+
+⚠️ `/me/balance` — buxgalter huquqisiz ochiladi (har kim **o'zinikini** ko'radi).
+`employee_id` parametri **yo'q**: boshqa birovning raqamini olishning yo'li
+bo'lmasin. Hamma xodim kesimi `/debts` da qoladi va u `admin` / `accountant`
+talab qiladi.
 
 Batafsil: [06-security.md](06-security.md)
 
@@ -192,7 +198,7 @@ qaytarilmaydi, tarix o'zgarmaydi (R9).
 
 | Metod | Yo'l | Tavsif |
 |---|---|---|
-| `GET` | `/debts` | Qarzdorlar: `{ total_debt, employees: [{ id, name, debt, count }] }` |
+| `GET` | `/debts` | Qarzdorlar: `{ total_debt, employees: [{ id, name, debt, count }] }`. **Faqat `admin` / `accountant`** — xodim o'zinikini `GET /me/balance` dan oladi (§2) |
 | `GET` | `/debts/{employee_id}` | Shu xodimning to'lanmagan hisobotlari, **eng eskisidan** (FIFO tartibi) |
 | `POST` | `/payments` | To'lov qayd etish — pastdagi uch rejim |
 | `GET` | `/payments?employee_id=&from=&to=` | To'lovlar tarixi |

@@ -21,6 +21,7 @@ from app.core.security import (
 from app.db.base import as_utc, utcnow
 from app.db.models import Employee, RefreshToken, Template
 from app.domain import audit
+from app.domain.payment import service as payment_service
 from app.domain.template import builder
 
 router = APIRouter(tags=["auth"])
@@ -127,4 +128,18 @@ async def me(session: SessionDep, employee: EmployeeDep):
         refresh_token="",
         employee=serializers.employee_out(employee),
         templates=[serializers.template_out(tpl, employee.lang) for tpl in templates],
+    )
+
+
+@router.get("/me/balance", response_model=schemas.BalanceOut)
+async def my_balance(session: SessionDep, employee: EmployeeDep):
+    """⭐ Xodimning **o'z** pul holati: bizning qarzimiz + uning avansi (P7).
+
+    `EmployeeDep` — buxgalter huquqi kerak emas, chunki bu boshqa birovning
+    emas, **o'z** raqami. `/finance/debts` esa hamma xodimni ko'rsatgani uchun
+    `FinanceDep` ostida qoladi.
+    """
+    balance = await payment_service.balance_of(session, employee.id)
+    return schemas.BalanceOut(
+        debt=balance.debt, count=balance.count, advance=balance.advance
     )
