@@ -53,7 +53,7 @@ sarlavhasi bo'yicha tekshiradi — indeks emas, **nom** bilan.
 > ro'yxati bilan avtomatik bog'lanmaydi. Ustun qo'shsangiz — format oralig'ini
 > ham suring.
 
-## `qarzlar_*.xlsx` — «Avans» varag'i qo'shildi
+## `qarzlar_*.xlsx` — avans qo'shildi (ikki variant sinaldi)
 
 Egasi prod faylini ochib: *«Xodimda mavjud bo'lgan avans ham ushbu hujjatda
 yozilsin.»*
