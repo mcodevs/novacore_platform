@@ -146,3 +146,6 @@ tekshiruv, avtoto'ldirish) natijani yozishdan oldin uning **hali dolzarbligi**
 tekshirilishi shart.
 
 Bog'liq: [[qarz-daftari-modeli]]
+
+✅ **Prodda** — 2026-08-05, commit `36d2db1` (main), bundle `69Mjl1cg`.
+Faqat Mini App, backend tegilmadi.
