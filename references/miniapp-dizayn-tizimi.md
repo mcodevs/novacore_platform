@@ -121,3 +121,28 @@ tizimi emas, mustaqil modal; ranglari ataylab qattiq (qora fon), tema
 o'zgarishidan qat'i nazar bir xil bo'lishi kerak.
 
 Bog'liq: [[narx-kelishuvi-kop-qatorli]]
+
+## Mashina raqami qidiruvi — so'rovlar poygasi (2026-08-05)
+
+Prodda ko'rindi: to'liq raqam yozilgach «Mashina reyestrda topilmadi» chiqardi,
+oxirgi belgini o'chirib qayta yozganda esa topardi.
+
+Sabab — **javoblarning tartibsizligi**, raqam yoki serverda emas. Har bosilgan
+harf uchun so'rov ketardi (`01718K`, `01718KN`, `01718KNA`); to'liq raqamning
+«topildi» javobi kelib bo'lgach, undan oldingi qisqa raqamning «topilmadi»
+javobi kechikib kelib natijani **bosib ketardi**.
+
+Yechim (`form-renderer/fields.tsx` → `VehicleField`):
+
+- **Navbat raqami** (`ticketRef`) — faqat eng oxirgi so'rov natijani yozadi.
+  Asosiy tuzatish shu, kechikish emas
+- 350 ms kechikish — 3 so'rov o'rniga 1 ta, oraliq xato chaqnamaydi
+- `onChange` **ref orqali** effektga uzatiladi: har renderda yangi funksiya
+  bo'lgani uchun bog'lanishga tushsa qidiruv cheksiz qayta ishga tushardi
+- Raqam 6 belgidan qisqarsa — topilgan mashina tanlovi bekor qilinadi
+
+⚠️ **Umumiy qoida:** yozilayotgan matnga bog'liq HAR QANDAY so'rovda (qidiruv,
+tekshiruv, avtoto'ldirish) natijani yozishdan oldin uning **hali dolzarbligi**
+tekshirilishi shart.
+
+Bog'liq: [[qarz-daftari-modeli]]

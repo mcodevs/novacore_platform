@@ -152,22 +152,61 @@ export function VehicleField({ field, value, error, onChange }: FieldProps) {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
 
-  async function lookup(raw: string) {
-    const normalized = raw.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
-    setPlate(normalized);
-    if (normalized.length < 6) return;
-    setStatus('loading');
-    try {
-      const found = await api.lookupVehicle(normalized);
-      setVehicle(found);
+  //  `onChange` har renderda yangi funksiya — effekt bog'lanishiga tushsa
+  //  qidiruv cheksiz qayta ishga tushardi.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  //  Har so'rovga navbat raqami: faqat ENG OXIRGISI natijani yozadi.
+  const ticketRef = useRef(0);
+
+  /** Raqam yozilganda qidiruv.
+   *
+   * ⚠️ Ikkita tuzoq shu yerda tug'ilgan edi (2026-08-05, prodda ko'rindi):
+   *
+   * 1. Har bosilgan harf uchun so'rov ketardi va javoblar **tartibsiz**
+   *    qaytardi: to'liq raqam topilgach, undan oldingi «01718KN» ning
+   *    «topilmadi» javobi kelib natijani bosib ketardi — ekranda «reyestrda
+   *    yo'q» qolardi. Oxirgi belgini o'chirib qayta yozganda esa bitta
+   *    so'rov ketib, to'g'ri ko'rinardi.
+   * 2. Yozib bo'lgunicha oraliq «topilmadi» xatosi chaqnab turardi.
+   *
+   * Yechim: kechikish (yozish tugagach) + navbat raqami (eskirgan javob
+   * tashlab yuboriladi).
+   */
+  useEffect(() => {
+    if (plate.length < 6) {
+      // Topilgan mashina bor edi-yu, raqam qisqartirildi — tanlov bekor.
+      if (vehicle) {
+        setVehicle(null);
+        onChangeRef.current(null);
+      }
       setStatus('idle');
-      onChange({ vehicle_id: found.id, plate: found.plate_number });
-    } catch {
-      setVehicle(null);
-      setStatus('error');
-      onChange(null);
+      return undefined;
     }
-  }
+
+    const ticket = ++ticketRef.current;
+    setStatus('loading');
+    const timer = setTimeout(() => {
+      api
+        .lookupVehicle(plate)
+        .then((found) => {
+          if (ticket !== ticketRef.current) return; // eskirgan javob
+          setVehicle(found);
+          setStatus('idle');
+          onChangeRef.current({ vehicle_id: found.id, plate: found.plate_number });
+        })
+        .catch(() => {
+          if (ticket !== ticketRef.current) return;
+          setVehicle(null);
+          setStatus('error');
+          onChangeRef.current(null);
+        });
+    }, 350);
+
+    return () => clearTimeout(timer);
+    // `vehicle` ataylab bog'lanishda yo'q: u shu effektning natijasi, kirishi emas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plate]);
 
   return (
     <div className="card">
@@ -177,7 +216,7 @@ export function VehicleField({ field, value, error, onChange }: FieldProps) {
         autoCapitalize="characters"
         placeholder={t('plate_placeholder')}
         value={plate}
-        onChange={(e) => void lookup(e.target.value)}
+        onChange={(e) => setPlate(e.target.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase())}
       />
       {status === 'error' ? <p className="error">{t('vehicle_not_found')}</p> : null}
       {vehicle ? (
