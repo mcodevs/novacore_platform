@@ -86,7 +86,10 @@ Faqat UI'dan tugmani olib tashlash yetarli emasdi.
   (`notify_price_disputed`) — Mini App API'si `approvals` ni umuman
   qaytarmaydi. Kelishuv tarixi kerak bo'lsa — alohida ish
 
-Hujjatlarda: A-19/A-23 javobi teskarisiga o'zgartirildi, N3a qoidasi qo'shildi.
+Hujjatlarda: A-19/A-23 javobi teskarisiga o'zgartirildi, N3a qoidasi (va
+CLAUDE.md da R2c invarianti) qo'shildi.
+
+✅ **Prodda** — 2026-08-05, commit `546a928`. Migratsiya yo'q.
 
 Bog'liq: [[shablon-va-foto-qarorlari]] · [[qarz-daftari-modeli]] ·
 [[usta-formasi-ux]]

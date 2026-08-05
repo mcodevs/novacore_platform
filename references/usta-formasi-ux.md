@@ -79,4 +79,26 @@ snapshot'ini **ustidan yozadi** — tarixdagi hisobotlar jimgina o'zgaradi.
 `test_old_submission_uses_its_own_schema_version` `template.version` dan
 o'qiydigan qilib qayta yozildi (ilgari `== 1` deb qotib qolgan edi).
 
-Bog'liq: [[miniapp-dizayn-tizimi]] · [[shablon-va-foto-qarorlari]]
+## ✅ Prodda — 2026-08-05
+
+Commit `546a928` (main, push qilingan), bundle `index-CzKWPYog.js` +
+`index-2u-vX6kA.css` — **lokal build hashi bilan bir xil** (Docker Mini App'ni
+o'zi yig'adi, shuning uchun hash mos kelishi serverda aynan sinalgan kod
+turganini bildiradi).
+
+Migratsiya yo'q. `seed_completed` logda — `car_repair` **v2** nashr etildi,
+`usable_version` endi 2 ni qaytaradi. Boot paytida (~6 s: alembic + seed) bitta
+health-check xatosi chiqadi va o'zi tuzaladi — bu normal.
+
+⏳ **Egasi hal qiladigan ikkita savol:**
+
+1. Ta'minotchi shablonida (`part_purchase.json` → `photo_receipt`) chek hamon
+   `required: true`. ADR-0021 faqat ustaning ta'mir hisobotiga tegdi —
+   ta'minotchi do'kondan nakladnoy bilan oladi, shuning uchun tegilmadi
+2. Nizo sababi Mini App'da ko'rinmaydi (API `approvals` ni qaytarmaydi), admin
+   uni faqat bot bildirishnomasidan o'qiydi. ADR-0023 dan keyin u aynan shu
+   izohga qarab qaror qiladi → kelishuv tarixini kartochkaga chiqarish kerak
+   bo'lishi mumkin
+
+Bog'liq: [[miniapp-dizayn-tizimi]] · [[shablon-va-foto-qarorlari]] ·
+[[narx-kelishuvi-kop-qatorli]]
