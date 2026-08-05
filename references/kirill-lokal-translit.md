@@ -53,3 +53,14 @@ o'zgarmadi — Mini App `label()` da o'zi o'giradi.
 - Hujjat: `docs/03-integrations/02-telegram-bot-miniapp.md` §4 va CLAUDE.md
 
 Bog'liq: [[miniapp-dizayn-tizimi]] · [[shablon-va-foto-qarorlari]]
+
+✅ **Prodda** — 2026-08-05, commit `e6db7fe` (main, push qilingan), Mini App
+bundle `x361xKt8`. **Migratsiya yo'q** — `employees.lang` matn ustuni,
+yangi qiymat `uz_cyrl` shunchaki yozila boshlaydi. Orqaga qaytarish ham
+xavfsiz: eski kod noma'lum tilni ko'rsa `uz` ga tushadi (`t()` dagi
+`DEFAULT_LANG` fallback).
+
+⏳ **Kutilayotgan javob:** kirillcha matnlar jonli ekranda o'qishga qanchalik
+tabiiy — mexanik translitatsiya ruschadan kirgan so'zlarda g'aliz chiqishi
+mumkin (`reyestr` → `реестр` uchun istisno allaqachon qo'yilgan). Noqulaylari
+lug'atga ochiq `"uz_cyrl"` bilan yozib qo'yiladi, qoida o'zgartirilmaydi.
