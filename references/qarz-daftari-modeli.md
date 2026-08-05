@@ -257,3 +257,8 @@ bekor qilish** tugmasi — `api.voidPayment()` klientda bor, lekin UI'da hech
 qayerdan chaqirilmaydi, ya'ni xato to'lovni ilovadan tuzatib bo'lmaydi;
 (2) allokatsiya qatoridan hisobotning o'ziga o'tish — ekran almashganda
 kartochka holati yo'qoladi (`DebtScreen` unmount bo'ladi).
+
+✅ **Prodda** — 2026-08-04, commit `e592f83` (main, sinxron), bundle
+`index-De__Bx1I.js` (lokal build hashi bilan bir xil). Migratsiya yo'q.
+`/api/v1/payments` avtorizatsiyasiz 401 qaytaradi — yangi maydonlar ochilib
+qolmagan.
