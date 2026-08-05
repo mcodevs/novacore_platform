@@ -68,12 +68,14 @@ async def test_photo_max_enforced(session):
 
 
 async def test_textarea_min_length(session):
+    """Eng kam uzunlik 3 ta belgi (2026-08-05): ilgari 10 edi va usta «Tozalandi»
+    deb yoza olmasdi. Tekshiruvning o'zi esa joyida qoladi — bo'sh «.» o'tmaydi."""
     mechanic = await make_employee(session, role_code="mechanic")
     vehicle = await make_vehicle(session)
     template = await get_template(session, "car_repair")
     submission = await submission_service.create_draft(session, mechanic, template)
     await fill_valid_repair(session, submission, mechanic, vehicle)
-    engine.set_value(submission, "comment", "qisqa")
+    engine.set_value(submission, "comment", "ok")
     await session.flush()
 
     with pytest.raises(ValidationFailed) as excinfo:
@@ -145,24 +147,30 @@ async def test_next_field_walks_the_form(session):
 
 
 async def test_old_submission_uses_its_own_schema_version(session):
-    """Versiyalash — shablon o'zgarsa eski hisobot buzilmasin."""
+    """Versiyalash — shablon o'zgarsa eski hisobot buzilmasin.
+
+    ⚠️ Test seed'dagi versiya raqamiga bog'lanmaydi: `car_repair` vaqti-vaqti
+    bilan yangi versiyaga o'tadi (masalan 2026-08-05 da v2 — «Tavsiya» maydoni
+    olib tashlandi). Muhimi — **eskisi o'z snapshot'ida qolishi**.
+    """
     mechanic = await make_employee(session, role_code="mechanic")
     vehicle = await make_vehicle(session)
     submission = await create_ready_submission(session, mechanic, vehicle)
     await submission_service.submit(session, submission, mechanic)
-    assert submission.template_version == 1
 
     template = await get_template(session, "car_repair")
-    old_schema = (
-        await engine.load_schema(session, template.id, 1)
-    )
+    old_version = submission.template_version
+    assert old_version == template.version  # yangi hisobot — joriy versiyada
 
-    # shablon 2-versiyaga o'tadi: yangi majburiy maydon qo'shildi
+    old_schema = await engine.load_schema(session, template.id, old_version)
+
+    # shablon keyingi versiyaga o'tadi: yangi majburiy maydon qo'shildi
     raw = dict(old_schema.__dict__)
+    next_version = old_version + 1
     new_json = {
         "code": "car_repair",
-        "name": {"uz": "Ta'mir hisoboti v2", "ru": "Отчёт v2"},
-        "version": 2,
+        "name": {"uz": "Ta'mir hisoboti (yangi)", "ru": "Отчёт (новый)"},
+        "version": next_version,
         "fields": [
             {
                 "code": "new_required",
@@ -172,21 +180,23 @@ async def test_old_submission_uses_its_own_schema_version(session):
             }
         ],
     }
-    session.add(TemplateVersion(template_id=template.id, version=2, schema_json=new_json))
-    template.version = 2
+    session.add(
+        TemplateVersion(template_id=template.id, version=next_version, schema_json=new_json)
+    )
+    template.version = next_version
     await session.flush()
 
-    # eski hisobot hamon 1-versiya sxemasi bilan o'qiladi
+    # eski hisobot hamon o'z versiyasidagi sxema bilan o'qiladi
     schema = await engine.schema_for_submission(session, submission)
-    assert schema.version == 1
+    assert schema.version == old_version
     assert schema.get("comment") is not None
     assert schema.get("new_required") is None
     assert raw["code"] == "car_repair"
 
-    # yangi hisobot esa 2-versiyada ochiladi
+    # yangi hisobot esa keyingi versiyada ochiladi
     fresh = await submission_service.create_draft(session, mechanic, template)
     fresh_schema = await engine.schema_for_submission(session, fresh)
-    assert fresh_schema.version == 2
+    assert fresh_schema.version == next_version
     assert fresh_schema.get("new_required") is not None
 
 

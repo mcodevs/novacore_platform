@@ -125,18 +125,18 @@ Yangi rol = yangi JSON, yangi kod emas.
       "label": { "uz": "Usta izohi" },
       "type": "textarea",
       "required": true,
-      "validation": { "min_length": 10 }
-    },
-    {
-      "code": "recommendation",
-      "section": "after",
-      "label": { "uz": "Tavsiya (keyingi ish)" },
-      "type": "textarea",
-      "required": false
+      "validation": { "min_length": 3 }
     }
   ]
 }
 ```
+
+> ⚠️ `min_length` 10 emas, **3**: usta uchun «Tozalandi» ham to'liq javob.
+> Uzunlik talabi sifatni oshirmasdi, faqat yuborishga to'sqinlik qilardi.
+>
+> ⚠️ «Tavsiya (keyingi ish)» maydoni **olib tashlandi** (`car_repair` v2,
+> 2026-08-05): u ixtiyoriy edi va amalda hech kim to'ldirmasdi, lekin oxirgi
+> qadamni uzaytirib turardi.
 
 ## 3. Maydon turlari — to'liq spetsifikatsiya
 
@@ -245,27 +245,28 @@ Klient (Mini App)          Server (FastAPI)
                               • rol ruxsati
                               • mashina reyestrda bormi
                               • foto haqiqatan yuklanganmi
-                              • ⭐ chek fotosi (F5a, pastda)
                               • narx chetlanishi bayrog'i
 ```
 
 **Hech qachon** klient hisoblagan summaga ishonilmaydi — server `submission_lines`dan
 qayta hisoblaydi.
 
-### 6a. Chek fotosi — «o'z hisobimdan» qismi uchun ⭐
+### 6a. Chek fotosi — so'raladi, lekin talab qilinmaydi
 
-Hisobotda `self_funded` va narxi noldan katta **qism qatori** bo'lsa, chek
-fotosi **majburiy** bo'ladi (`receipt_required`). Bu — ADR-0016 ochgan F5a
-teshigining yagona to'sig'i.
+⚠️ **Bu yerda ilgari `receipt_required` tekshiruvi turardi.** `self_funded` va
+narxi noldan katta qism qatori bo'lsa, chek fotosi majburiy edi va usta chek
+qo'shmaguncha **butun hisobot** yuborilmasdi.
 
-Qoida **maydonning `required` bayrog'iga emas, qatorlarga** bog'langan:
-chek maydoni shablonda ixtiyoriy turadi va faqat kerak bo'lganda talab
-qilinadi. Chek borligi **maydon** bo'yicha aniqlanadi (`options.kind =
-"receipt"` bo'lgan `photo` maydoni) — media `kind` i klientdan keladi va
-unga ishonilmaydi (R7).
+[ADR-0021](../05-delivery/03-decisions.md#adr-0021--chek-fotosi-majburiy-emas)
+(2026-08-05) buni bekor qildi: chek yo'qligi ustaning aybi emas — bozorda,
+mahalla do'konida chek berilmaydi. To'siq firibgarni emas, halol ustani
+ushlab qolardi.
 
-Shablonda chek maydoni bo'lmasa — media turiga qaytadi va xato qism
-qatorlari maydonida ko'rsatiladi.
+Chek maydoni shablonda qoladi va hintda so'raladi. Serverda **hech qanday
+tekshiruv yo'q** — F5a ga qarshi yagona to'siq admin ko'rigi.
+
+> 🚫 Bu tekshiruvni qaytarmang. Qaytarish kerak bo'lsa — avval ADR-0021 ni
+> o'qing va uni bekor qiluvchi yangi ADR yozing.
 
 ## 7. Shablon konstruktori (admin UI)
 

@@ -30,7 +30,7 @@ payable_amount  =  tasdiqlangan ish haqi          (labor qatorlari)
 | Qator turi | «O'z hisobimdan» | Narx maydoni | Qarzga kiradi |
 |---|---|---|---|
 | `labor` (ish haqi) | — | ochiq | ✅ ha |
-| `part` (qism) | ✅ qo'yilgan | ochiq + **chek fotosi majburiy** | ✅ ha |
+| `part` (qism) | ✅ qo'yilgan | ochiq (chek so'raladi, majburiy emas — [ADR-0021](../05-delivery/03-decisions.md#adr-0021--chek-fotosi-majburiy-emas)) | ✅ ha |
 | `part` (qism) | ⬜ qo'yilmagan | **yopiq** | ❌ yo'q |
 
 Ya'ni **narx bor = qarz bor**

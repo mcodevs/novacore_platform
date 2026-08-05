@@ -248,7 +248,9 @@ Belgi **serverda narxdan kelib chiqadi** (R7 — klientga ishonilmaydi):
 `self_funded = kind == part AND (belgi qo'yilgan OR narx > 0)`; belgisiz qism
 narxi `0` ga tushiriladi. Shu sababli zid holat imkonsiz.
 
-`self_funded = true` bo'lsa — **chek fotosi majburiy** (shablon validatsiyasi).
+`self_funded = true` bo'lsa chek fotosi **so'raladi, lekin majburiy emas**
+([ADR-0021](../05-delivery/03-decisions.md#adr-0021--chek-fotosi-majburiy-emas)
+— 2026-08-05 gacha majburiy edi).
 Ta'minotchining xaridi doim narx bilan kiritilgani uchun avtomatik
 `self_funded` bo'ladi → u ham qarzdorlar ro'yxatiga tushadi.
 

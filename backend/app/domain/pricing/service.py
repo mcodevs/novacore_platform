@@ -1,8 +1,9 @@
 """⭐ Narx kelishuvi — platformaning yuragi.
 
 N1 `proposed_amount` o'zgarmaydi · N2 sabab majburiy · N3 nizoda admin qayta
-ko'radi · N4 48 soat sukut → avtomatik rozilik · N5 oshirish yo'q ·
-N6 har qadam audit'da · N8 admin hisoboti kelishuvga kirmaydi ·
+ko'radi · **N3a admin bir tomonlama yakunlay olmaydi (ADR-0023)** · N4 48 soat
+sukut → avtomatik rozilik · N5 oshirish yo'q · N6 har qadam audit'da ·
+N8 admin hisoboti kelishuvga kirmaydi ·
 N9 tayanch narx `reporter`ga API'da ham berilmaydi.
 """
 
@@ -416,6 +417,82 @@ async def accept_price(
     await session.flush()
     # P7 — kelishuv tugadi va hisobot APPROVED bo'ldi: avans ishlatilsin
     await payment_service.apply_advance(session, submission.author_id)
+    return submission
+
+
+async def accept_author_price(
+    session: AsyncSession,
+    submission: Submission,
+    actor: Employee,
+    *,
+    comment: str | None = None,
+) -> Submission:
+    """⭐ Admin **ustaning narxiga rozi bo'ladi** → APPROVED, kamaytirishsiz.
+
+    ADR-0023 (N3a): nizoda «yakuniy qaror» yo'q. Kelishuv — ikki tomonlama, va
+    admin uni bir tomonlama yopa olmaydi. Uning ikkita yo'li bor:
+
+    1. **Yangi narx** taklif qilish (`propose_price`) — savdolashish davom etadi
+    2. **Ustaning narxini qabul qilish** — shu funksiya
+
+    Kamaytirish izlari qatordan tozalanadi (`approved = proposed`), chunki
+    yakuniy narx — ustanikisi. Kelishuv tarixi `approvals` da qoladi (N6/R9),
+    `price_negotiated` bayrog'i ham o'chirilmaydi: savdolashish bo'lgan.
+    """
+    if not permissions.can_review(actor):
+        raise Forbidden("Faqat admin narxni qabul qiladi")
+    permissions.ensure_not_self_approval(actor, submission)  # R1
+    payment_service.ensure_not_paid(submission)  # N7
+
+    allowed = (SubmissionStatus.PRICE_NEGOTIATION, SubmissionStatus.PRICE_DISPUTED)
+    if submission.status not in allowed:
+        raise InvalidStateTransition(f"{submission.status.value} → approved mumkin emas")
+
+    now = utcnow()
+    for line in submission.lines:
+        line.approved_unit_price = line.proposed_unit_price
+        line.approved_amount = line.proposed_amount
+        line.price_change_reason = None
+        line.price_changed_by = None
+        line.mechanic_accepted_at = None
+        line.mechanic_accept_mode = None
+
+    engine.recalculate_amounts(submission)
+    submission.status = SubmissionStatus.APPROVED
+    submission.decided_at = now
+    await vehicle_domain.release(session, submission)
+
+    text = (comment or "").strip() or None
+    session.add(
+        Approval(
+            submission_id=submission.id,
+            actor_id=actor.id,
+            decision=ApprovalDecision.price_accepted,
+            amount_before=submission.proposed_labor_amount,
+            amount_after=submission.labor_amount,
+            comment=text,
+        )
+    )
+    await audit.log(
+        session,
+        action="submission.accept_author_price",
+        entity_type="submission",
+        entity_id=submission.id,
+        actor_id=actor.id,
+        after={"labor_amount": str(submission.labor_amount)},
+    )
+    await notify.enqueue(
+        session,
+        template_code="notify_approved",
+        employee_id=submission.author_id,
+        payload={
+            "submission_id": submission.id,
+            "number": submission.number,
+            "amount": str(submission.labor_amount or ZERO),
+        },
+    )
+    await session.flush()
+    await payment_service.apply_advance(session, submission.author_id)  # P7
     return submission
 
 

@@ -30,9 +30,16 @@ export function LinesField({ field, lines, error, onSave }: Props) {
   const allowCustom = field.options?.allow_custom !== false;
 
   const [adding, setAdding] = useState(false);
-  const [query, setQuery] = useState('');
+  /** ⭐ Yozilgan matnning **o'zi** — tanlov (2026-08-05).
+   *
+   *  Ilgari nom faqat chip bosilgach «tanlangan» hisoblanardi: usta «Benzonasos»
+   *  deb yozib, siyohrang «✍️ Benzonasos» chipini bosish kerakligini tushunmay,
+   *  pastga o'tib ketardi va qator qo'shilmasdi. Endi katalog chiplari — faqat
+   *  tez to'ldirish taklifi, majburiy qadam emas.
+   */
+  const [name, setName] = useState('');
+  const [catalogId, setCatalogId] = useState<number | null>(null);
   const [catalog, setCatalog] = useState<WorkCatalogItem[]>([]);
-  const [picked, setPicked] = useState<{ name: string; catalog_id: number | null } | null>(null);
   const [price, setPrice] = useState('');
   const [qty, setQty] = useState('1');
   const [selfFunded, setSelfFunded] = useState(false);
@@ -40,6 +47,9 @@ export function LinesField({ field, lines, error, onSave }: Props) {
 
   // Qismda narx maydoni belgi bilan ochiladi; ish haqida — doim (ADR-0016)
   const priceOpen = kind === 'part' ? selfFunded : withPrice;
+  //  `allow_custom: false` bo'lgan shablonda erkin matn qabul qilinmaydi —
+  //  bunday maydonda katalogdan tanlash majburiy bo'lib qoladi.
+  const ready = name.trim().length >= 2 && (allowCustom || catalogId !== null);
 
   const mine = lines.filter((line) => line.kind === kind);
   const total = mine.reduce((sum, line) => sum + Number(line.proposed_amount), 0);
@@ -48,10 +58,19 @@ export function LinesField({ field, lines, error, onSave }: Props) {
     if (!adding) return;
     const timer = setTimeout(() => {
       const loader = kind === 'labor' ? api.workCatalog : api.partsCatalog;
-      loader(query).then(setCatalog).catch(() => setCatalog([]));
+      loader(name).then(setCatalog).catch(() => setCatalog([]));
     }, 250);
     return () => clearTimeout(timer);
-  }, [adding, query, kind]);
+  }, [adding, name, kind]);
+
+  function reset() {
+    setAdding(false);
+    setName('');
+    setCatalogId(null);
+    setPrice('');
+    setQty('1');
+    setSelfFunded(false);
+  }
 
   /** ⚠️ `self_funded` ni saqlash SHART: server qatorlarni o'chirib qayta
    *  yaratadi, belgi tushib qolsa qarz yo'qoladi. */
@@ -67,27 +86,22 @@ export function LinesField({ field, lines, error, onSave }: Props) {
   }
 
   async function addLine() {
-    if (!picked) return;
+    if (!ready) return;
     setBusy(true);
     const next: LineInput[] = [
       ...lines.map(toInput),
       {
         kind,
-        name: picked.name,
+        name: name.trim(),
         qty: Number(qty) || 1,
         unit_price: priceOpen ? Number(price) || 0 : 0,
-        catalog_id: picked.catalog_id,
+        catalog_id: catalogId,
         self_funded: kind === 'part' ? selfFunded : false,
       },
     ];
     await onSave(next);
     setBusy(false);
-    setAdding(false);
-    setPicked(null);
-    setPrice('');
-    setQty('1');
-    setSelfFunded(false);
-    setQuery('');
+    reset();
   }
 
   async function removeLine(id: number) {
@@ -140,45 +154,45 @@ export function LinesField({ field, lines, error, onSave }: Props) {
       ) : null}
 
       {!adding ? (
-        <button type="button" className="btn-secondary" onClick={() => setAdding(true)}>
+        <button type="button" className="btn-secondary lines-add" onClick={() => setAdding(true)}>
           {kind === 'labor' ? t('add_work') : t('add_part')}
         </button>
       ) : (
-        <div style={{ marginTop: 10 }}>
+        <div className="lines-add">
           <input
             type="text"
-            placeholder={t('search')}
-            value={picked ? picked.name : query}
+            placeholder={allowCustom ? t('line_name_placeholder') : t('search')}
+            value={name}
             onChange={(e) => {
-              setPicked(null);
-              setQuery(e.target.value);
+              setName(e.target.value);
+              setCatalogId(null); // qo'lda tahrirlangan nom — katalog qatori emas
             }}
           />
-          {!picked ? (
-            <div className="chips" style={{ marginTop: 8 }}>
-              {catalog.slice(0, 8).map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="chip"
-                  onClick={() => setPicked({ name: item.name, catalog_id: item.id })}
-                >
-                  {item.name}
-                </button>
-              ))}
-              {allowCustom && query.trim().length > 2 ? (
-                <button
-                  type="button"
-                  className="chip active"
-                  onClick={() => setPicked({ name: query.trim(), catalog_id: null })}
-                >
-                  ✍️ {query.trim()}
-                </button>
-              ) : null}
-            </div>
+
+          {/*  Katalog — taklif, to'siq emas: bosilsa nom to'ldiriladi, bosilmasa
+              usta o'zi yozgani bilan davom etadi. */}
+          {catalog.length ? (
+            <>
+              <p className="hint">{t('quick_choice')}</p>
+              <div className="chips" style={{ marginTop: 'var(--s-2)' }}>
+                {catalog.slice(0, 8).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`chip${catalogId === item.id ? ' active' : ''}`}
+                    onClick={() => {
+                      setName(item.name);
+                      setCatalogId(item.id);
+                    }}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            </>
           ) : null}
 
-          {picked && kind === 'part' ? (
+          {ready && kind === 'part' ? (
             <input
               type="number"
               inputMode="decimal"
@@ -189,7 +203,7 @@ export function LinesField({ field, lines, error, onSave }: Props) {
           ) : null}
 
           {/* ⭐ ADR-0016 — belgi narx maydonini ochadi */}
-          {picked && kind === 'part' ? (
+          {ready && kind === 'part' ? (
             <label className="check-row" style={{ marginTop: 10 }}>
               <input
                 type="checkbox"
@@ -206,12 +220,14 @@ export function LinesField({ field, lines, error, onSave }: Props) {
             </label>
           ) : null}
 
-          {picked && priceOpen ? (
+          {ready && priceOpen ? (
             <>
               <label className="field" style={{ marginTop: 10 }}>
-                {t('my_price')}
+                {t('my_price')} *
               </label>
-              <MoneyInput value={price} onChange={setPrice} placeholder="250 000" />
+              {/* ⚠️ Placeholder matnli: «250 000» raqami to'ldirilgan qiymatdek
+                  ko'rinib, usta narxni yozmay o'tib ketardi. */}
+              <MoneyInput value={price} onChange={setPrice} placeholder={t('price_placeholder')} />
             </>
           ) : null}
 
@@ -219,18 +235,11 @@ export function LinesField({ field, lines, error, onSave }: Props) {
             <button
               type="button"
               onClick={() => void addLine()}
-              disabled={busy || !picked || (priceOpen && !price)}
+              disabled={busy || !ready || (priceOpen && !price)}
             >
               {t('add')}
             </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => {
-                setAdding(false);
-                setPicked(null);
-              }}
-            >
+            <button type="button" className="btn-secondary" onClick={reset}>
               {t('cancel')}
             </button>
           </div>

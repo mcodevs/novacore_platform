@@ -21,7 +21,7 @@ stateDiagram-v2
     PRICE_NEGOTIATION --> APPROVED: muallif rozi / 48 soat sukut
     PRICE_NEGOTIATION --> PRICE_DISPUTED: muallif rozi emas
     PRICE_DISPUTED --> PRICE_NEGOTIATION: admin yangi taklif
-    PRICE_DISPUTED --> APPROVED: admin yakuniy qaror
+    PRICE_DISPUTED --> APPROVED: admin USTANING narxiga rozi
     PRICE_DISPUTED --> REOPENED: hisobot qaytarildi
     SUBMITTED --> REOPENED: qaytarildi
     IN_REVIEW --> REOPENED
@@ -58,7 +58,8 @@ stateDiagram-v2
 | **`IN_REVIEW → PRICE_NEGOTIATION`** | Admin | `new < proposed`, **sabab majburiy** | `approvals(price_proposed)`, bildirishnoma, 48 soatlik taymer |
 | **`PRICE_NEGOTIATION → APPROVED`** | Muallif yoki tizim | Rozilik yoki 48 soat sukut | `mechanic_accept_mode = manual / auto_48h` |
 | **`PRICE_NEGOTIATION → PRICE_DISPUTED`** | Muallif | Izoh majburiy | Adminga bildirishnoma |
-| **`PRICE_DISPUTED → APPROVED`** | Admin | **Yakuniy qaror adminda**, izoh majburiy | Muallifga bildirishnoma |
+| **`PRICE_DISPUTED → APPROVED`** ⭐ | Admin | **Faqat ustaning narxiga rozilik** (`accept-author-price`): `approved = proposed`, kamaytirish bekor. ⚠️ Admin o'z summasini yakuniy qila **olmaydi** — `approve` bu holatni qabul qilmaydi (N3a, [ADR-0023](../05-delivery/03-decisions.md#adr-0023--nizoda-yakuniy-qaror-yoq)) | `approvals(price_accepted)`, muallifga bildirishnoma |
+| **`PRICE_DISPUTED → PRICE_NEGOTIATION`** | Admin | Yangi narx + sabab | Kelishuv sikli qaytadan, 48 soatlik taymer yangilanadi |
 | `→ REOPENED` | Admin | Izoh majburiy | Tahrirlash ochiladi |
 | `→ REJECTED` | Admin | Izoh majburiy | To'lovdan chiqadi |
 | `APPROVED → PAID` | Tizim | `paid_amount == payable_amount` | To'lov qayd etilganda avtomatik |

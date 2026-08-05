@@ -24,7 +24,9 @@ interface Props {
   onEdit(id: number): void;
 }
 
-type Prompt = 'reduce' | 'reject' | 'reopen' | 'dispute' | 'final' | null;
+//  ⚠️ `final` («yakuniy qaror») ataylab yo'q — ADR-0023: admin nizoni bir
+//  tomonlama yopa olmaydi.
+type Prompt = 'reduce' | 'reject' | 'reopen' | 'dispute' | null;
 
 export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
   const [submission, setSubmission] = useState<Submission | null>(null);
@@ -80,6 +82,9 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
   const canReview =
     isAdmin && ['submitted', 'in_review', 'price_disputed'].includes(submission.status);
   const canNegotiate = isAuthor && submission.status === 'price_negotiation';
+  //  Nizoda adminning ikkitagina yo'li bor: yangi narx yoki ustaning narxi.
+  //  Tasdiqlash va rad etish bu holatda serverda ham qabul qilinmaydi.
+  const inDispute = submission.status === 'price_disputed';
 
   return (
     <>
@@ -289,18 +294,27 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
         <Card>
           {prompt === null ? (
             <>
+              {/* ⭐ ADR-0023 — nizoda «yakuniy qaror» YO'Q. Kelishuv ikki
+                  tomonlama: admin yo yangi narx beradi, yo ustanikiga rozi
+                  bo'ladi. Rad etish ham bu holatda yo'q (server ham qabul
+                  qilmaydi) — ish bajarilgan, gap faqat summada. */}
+              {inDispute ? <p className="hint">{t('dispute_admin_hint')}</p> : null}
               <button
                 type="button"
                 disabled={busy}
-                onClick={() =>
-                  submission.status === 'price_disputed'
-                    ? setPrompt('final')
-                    : void run(() => api.approve(submissionId), t('done'))
-                }
+                onClick={async () => {
+                  if (!inDispute) {
+                    void run(() => api.approve(submissionId), t('done'));
+                    return;
+                  }
+                  if (await confirmAction(t('accept_author_price_confirm'))) {
+                    void run(() => api.acceptAuthorPrice(submissionId), t('done'));
+                  }
+                }}
               >
-                {submission.status === 'price_disputed' ? t('final_decision') : t('approve')}
+                {t(inDispute ? 'accept_author_price' : 'approve')}
               </button>
-              <div className="btn-row" style={{ marginTop: 8 }}>
+              <div className="btn-row" style={{ marginTop: 'var(--s-3)' }}>
                 <button
                   type="button"
                   className="btn-secondary"
@@ -309,7 +323,7 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
                     setAmounts({});
                   }}
                 >
-                  {t('reduce_price')}
+                  {t(inDispute ? 'propose_new_price' : 'reduce_price')}
                 </button>
                 <button
                   type="button"
@@ -319,14 +333,16 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
                   {t('reopen')}
                 </button>
               </div>
-              <button
-                type="button"
-                className="btn-danger"
-                style={{ marginTop: 8 }}
-                onClick={() => setPrompt('reject')}
-              >
-                {t('reject')}
-              </button>
+              {!inDispute ? (
+                <button
+                  type="button"
+                  className="btn-danger"
+                  style={{ marginTop: 'var(--s-3)' }}
+                  onClick={() => setPrompt('reject')}
+                >
+                  {t('reject')}
+                </button>
+              ) : null}
             </>
           ) : null}
 
@@ -445,22 +461,22 @@ export function DetailScreen({ auth, submissionId, onDone, onEdit }: Props) {
             </>
           ) : null}
 
-          {prompt === 'reject' || prompt === 'reopen' || prompt === 'final' ? (
+          {prompt === 'reject' || prompt === 'reopen' ? (
             <>
               <label className="field">{t('reason')}</label>
               <textarea value={comment} onChange={(e) => setComment(e.target.value)} />
               <button
                 type="button"
                 disabled={busy || comment.trim().length < 5}
-                onClick={() => {
-                  if (prompt === 'reject') {
-                    void run(() => api.reject(submissionId, comment.trim()), t('done'));
-                  } else if (prompt === 'reopen') {
-                    void run(() => api.reopen(submissionId, comment.trim()), t('done'));
-                  } else {
-                    void run(() => api.approve(submissionId, comment.trim()), t('done'));
-                  }
-                }}
+                onClick={() =>
+                  void run(
+                    () =>
+                      prompt === 'reject'
+                        ? api.reject(submissionId, comment.trim())
+                        : api.reopen(submissionId, comment.trim()),
+                    t('done'),
+                  )
+                }
               >
                 {t('done')}
               </button>

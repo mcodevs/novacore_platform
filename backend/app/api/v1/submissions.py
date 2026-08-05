@@ -288,6 +288,28 @@ async def accept_price(submission_id: int, session: SessionDep, employee: Employ
     return serializers.submission_out(submission)
 
 
+@router.post(
+    "/submissions/{submission_id}/accept-author-price", response_model=schemas.SubmissionOut
+)
+async def accept_author_price(
+    submission_id: int,
+    payload: schemas.CommentRequest,
+    session: SessionDep,
+    employee: EmployeeDep,
+):
+    """⭐ Admin ustaning narxiga rozi bo'ladi (ADR-0023).
+
+    Nizodan chiqishning ikkinchi yo'li — birinchisi `propose-price`. Adminda
+    «yakuniy qaror» tugmasi YO'Q: `approve` endi `price_disputed` ni qabul
+    qilmaydi.
+    """
+    submission = await submission_service.get_for_actor(session, submission_id, employee)
+    await pricing_service.accept_author_price(
+        session, submission, employee, comment=payload.comment
+    )
+    return serializers.submission_out(submission)
+
+
 @router.post("/submissions/{submission_id}/dispute-price", response_model=schemas.SubmissionOut)
 async def dispute_price(
     submission_id: int,

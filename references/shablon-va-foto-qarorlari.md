@@ -51,7 +51,9 @@ qimmatroq.
 asoslangan** edi — galereyani yopish faqat qulay yo'lni yopadi (skrinshot,
 boshqa qurilmadan yuborish baribir ochiq), lekin evaziga modulni butunlay
 ishlamay qolish xavfiga qo'yadi. Foto-dalilning haqiqiy tayanchi — **admin
-ko'rigi va chek fotosi** ([[qarz-daftari-modeli]] dagi F5a).
+ko'rigi** ([[qarz-daftari-modeli]] dagi F5a). *Chek fotosi ham shu ro'yxatda
+edi — 2026-08-05 da u ham xuddi shu mantiq bilan majburiylikdan chiqarildi
+(pastda).*
 
 
 ✅ **Prodda** — 2026-08-04, commit `f6f92fb` (main, push qilingan), bundle
@@ -79,23 +81,31 @@ lekin endi hech qaysi shablon uni ishlatmaydi.
 
 Bog'liq: [[qarz-daftari-modeli]]
 
-## Chek fotosi majburiyligi — F5a yopildi (2026-08-03)
+## Chek fotosi — majburiy edi, endi emas (ADR-0021, 2026-08-05)
 
-ADR-0016 ochgan teshik endi **serverda** yopildi. `engine._receipt_issues()`:
-hisobotda `self_funded` va narxi > 0 bo'lgan qism qatori bo'lsa, chek fotosisiz
-hisobot **yuborilmaydi** (`receipt_required`).
+⚠️ **Bu qoida bir marta kiritilib, ikki kundan keyin bekor qilindi.** Ikkalasini
+ham bilish kerak, aks holda «foydali edi-ku» deb qaytariladi.
 
-Ikkita loyihaviy qaror:
+**2026-08-03 — kiritildi.** ADR-0016 ochgan F5a teshigi serverda yopildi:
+`engine._receipt_issues()` — `self_funded` va narxi > 0 qism qatori bo'lsa,
+chek fotosisiz hisobot **yuborilmasdi** (`receipt_required`).
 
-1. **Qoida qatorlarga bog'langan**, maydonning `required` bayrog'iga emas —
-   chek maydoni shablonda ixtiyoriy turadi va faqat kerak bo'lganda talab
-   qilinadi. Shablon qanday bo'lishidan qat'i nazar ishlaydi.
-2. **Chek borligi maydon bo'yicha aniqlanadi** (`options.kind = "receipt"`
-   bo'lgan `photo` maydoni), media `kind` i bo'yicha emas — u klientdan keladi
-   va unga ishonilmaydi (R7). Bu testda ham bilinib qoldi: `conftest.add_photo`
-   doim `MediaKind.other` yozadi.
+**2026-08-05 — olib tashlandi.** Egasining qarori. Sabab: Toshkentda qism
+bozordan/do'kondan olinadi, u yerda chek berilmaydi. To'siq firibgarni emas
+(u istalgan chekning fotosini qo'yadi), **halol ustani** ushlab qolardi: ish
+bajarilgan, mashina ketgan, hisobot esa yuborilmaydi. Yagona to'siq endi —
+**admin ko'rigi**.
 
-`car_repair.json` ga ixtiyoriy `photo_receipt` maydoni qo'shildi (12 maydon).
+Saqlanib qolgani: `car_repair.json` dagi ixtiyoriy `photo_receipt` maydoni va
+hintdagi iltimos. Serverda **hech qanday tekshiruv yo'q**.
+
+> 🚫 Qaytarmang. Kerak bo'lsa avval ADR-0021 ni o'qing.
+
+Bekor qilingan qoidaning ikkita loyihaviy qarori (yana kerak bo'lsa —
+tarixdan): qoida maydonning `required` bayrog'iga emas **qatorlarga**
+bog'langan edi; chek borligi esa **maydon** bo'yicha aniqlanardi
+(`options.kind = "receipt"`), media `kind` i bo'yicha emas — u klientdan
+keladi va unga ishonilmaydi (R7).
 
 ## Mini App — «o'z hisobimdan» chekboksi
 

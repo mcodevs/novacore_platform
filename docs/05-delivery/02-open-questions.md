@@ -131,7 +131,14 @@ yo'q** — bitta bosqich.
 
 ### ✅ A-19 / A-23. Narx nizosida oxirgi so'z
 
-**Javob:** **Oxirgi so'z adminda.**
+**Javob (♻️ 2026-08-05 da o'zgartirildi):** **Oxirgi so'z hech kimda emas.**
+
+Ilgari javob «oxirgi so'z adminda» edi va admin nizodagi hisobotni o'z
+summasida tasdiqlay olardi. Egasi buni bekor qildi
+([ADR-0023](03-decisions.md#adr-0023--nizoda-yakuniy-qaror-yoq)): kelishuv ikki
+tomonlama, admin uni bir tomonlama yopa olmaydi. Uning ikkita yo'li bor —
+**yangi narx berish** yoki **ustaning narxiga rozi bo'lish**. Nizo qotib
+qolsa — `REOPENED`.
 
 ---
 

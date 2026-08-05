@@ -1,8 +1,12 @@
 # 03. Admin oqimi
 
 Admin — tizimning **yagona nazorat nuqtasi**. Ko'p bosqichli tasdiqlash yo'q,
-direktorga ko'tarish yo'q: hisobotni admin ko'radi, narxni admin kelishadi,
-oxirgi so'z adminda. Buxgalter ko'radi, eksport qiladi va to'lovlarni qayd etadi.
+direktorga ko'tarish yo'q: hisobotni admin ko'radi, narxni admin kelishadi.
+Buxgalter ko'radi, eksport qiladi va to'lovlarni qayd etadi.
+
+⚠️ **«Yagona nazorat nuqtasi» ≠ «oxirgi so'z».** Narx nizosida adminda yakuniy
+qaror **yo'q** ([ADR-0023](../05-delivery/03-decisions.md#adr-0023--nizoda-yakuniy-qaror-yoq)):
+u yo yangi narx taklif qiladi, yo ustaning narxiga rozi bo'ladi.
 
 ## 1. Asosiy ekran (dashboard)
 
@@ -96,9 +100,14 @@ To'liq mexanizm: [04-flows/04-price-negotiation.md](../04-flows/04-price-negotia
 Hisobot → PRICE_NEGOTIATION, ustaga bildirishnoma
         ↓
 Usta ✅ Roziman   → APPROVED (180 000)
-Usta ❌ Rozi emas → admin qayta ko'radi → yakuniy qaror adminda
+Usta ❌ Rozi emas → admin qayta ko'radi. Ikkita yo'l (N3a):
+                    ✏️ Yangi narx        → sikl qaytadan
+                    ✅ Usta narxiga rozi → APPROVED (250 000)
 48 soat javobsiz  → avtomatik rozilik
 ```
+
+⚠️ Nizoda **«Tasdiqlash» ham, «Rad etish» ham yo'q** — server ham qabul
+qilmaydi. Ish bajarilgan, gap faqat summada.
 
 ⚠️ Admin narxni **oshira olmaydi** (R2). Usta xato kam so'ragan bo'lsa —
 hisobot `REOPENED` qilinadi va usta o'zi tuzatadi.

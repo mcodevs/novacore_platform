@@ -179,8 +179,9 @@ tanlash oynasi ochilishi mumkin.
 | 📊 **Statistika** | `media.source` (camera/gallery/unknown) yozib boriladi — taqiq emas, **iz** |
 
 > ADR-0020 dan keyin bu xavf **modulni to'xtatmaydi**: eng yomon holatda usta
-> galereya tugmasidan foydalanadi. Foto-dalilning kuchi admin ko'rigi va chek
-> fotosi (F5a) bilan ushlab turiladi.
+> galereya tugmasidan foydalanadi. Foto-dalilning kuchi **admin ko'rigi** bilan
+> ushlab turiladi (chek fotosi ham to'siq edi — ADR-0021 dan keyin u faqat
+> so'raladi, majburiy emas).
 > 📌 [A-10](../05-delivery/02-open-questions.md)
 
 ### Geolokatsiya

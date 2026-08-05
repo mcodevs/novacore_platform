@@ -714,6 +714,13 @@ button:disabled:active {
   margin-bottom: 0;
 }
 
+/* «+ Ish qo'shish» / «+ Qism qo'shish» va uning o'rniga ochiladigan forma.
+   ⚠️ `.hint` da faqat `margin-top` bor, shuning uchun tugma yuqoridagi izohga
+   yopishib qolardi — kartochka ichi «devor» bo'lib ko'rinardi. */
+.lines-add {
+  margin-top: var(--s-4);
+}
+
 /* Uzun yorliqli tugmalar (eksport turlari: «Qarzlar va to'lovlar»,
    «Kelishuv tejamkorligi»). `auto-fit` + katta minimum: tor ekranda ustma-ust
    to'liq enli bo'ladi, keng ekranda ikkitadan — matn hech qachon sinmaydi. */
@@ -944,6 +951,18 @@ label.field {
 .card > h2 + .hint {
   margin-top: 0;
   margin-bottom: var(--s-3);
+}
+
+/* ⚠️ Bir xil xato ikki marta chiqdi (2026-08-05: qatorlar kartochkasi, keyin
+   kelishuv kartochkasi): `.hint` da faqat `margin-top` bor, shuning uchun
+   undan keyingi amal elementi matnga **yopishib** qoladi. Har joyda qo'lda
+   `marginTop` yozish o'rniga — bitta umumiy qoida. */
+.hint + button,
+.hint + .btn-row,
+.hint + .btn-grid,
+.hint + textarea,
+.hint + input {
+  margin-top: var(--s-4);
 }
 
 /* Ikkinchi darajali izoh — asosiysining ostida, maydaroq. Ikkala izoh bir xil
@@ -1289,18 +1308,35 @@ label.field {
 .stepper {
   display: flex;
   gap: var(--s-2);
-  margin-bottom: var(--gap);
+  margin-bottom: var(--s-3);
 }
 
-.stepper span {
+/* Qadamlar mustaqil bo'lgach (2026-08-05) indikator navigatsiyaga aylandi:
+   3 px chiziqni barmoq bilan bosib bo'lmaydi, shuning uchun teginish maydoni
+   shaffof `padding` bilan kengaytiriladi — rang esa `content-box` da qoladi. */
+.stepper button {
   flex: 1;
+  box-sizing: content-box;
   height: 3px;
+  min-height: 0;
+  width: auto;
+  padding: var(--s-3) 0;
+  margin: 0;
+  border: none;
   border-radius: 2px;
   background: var(--surface-3);
+  background-clip: content-box;
+  box-shadow: none;
 }
 
-.stepper span.done {
+.stepper button.done {
   background: var(--accent);
+  background-clip: content-box;
+}
+
+.stepper button:active {
+  transform: none;
+  opacity: 0.7;
 }
 
 /* --- Skeleton / toast --------------------------------------------------- */

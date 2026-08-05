@@ -254,6 +254,14 @@ export const proposePrice = (
 export const acceptPrice = (id: number) =>
   request<Submission>(`/submissions/${id}/accept-price`, { method: 'POST' });
 
+/** ⭐ Admin ustaning narxiga rozi bo'ladi (ADR-0023) — nizoni yopishning
+ *  yagona muqobili yangi narx taklif qilish. «Yakuniy qaror» yo'q. */
+export const acceptAuthorPrice = (id: number, comment?: string) =>
+  request<Submission>(`/submissions/${id}/accept-author-price`, {
+    method: 'POST',
+    body: JSON.stringify({ comment: comment ?? null }),
+  });
+
 export const disputePrice = (id: number, comment: string) =>
   request<Submission>(`/submissions/${id}/dispute-price`, {
     method: 'POST',

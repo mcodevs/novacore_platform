@@ -1,6 +1,13 @@
 """Tasdiqlash oqimi — R1, R1a, R4 va holat o'tishlari.
 
-Bitta bosqich: direktorga ko'tarish yo'q, oxirgi so'z adminda.
+Bitta bosqich: direktorga ko'tarish yo'q.
+
+⚠️ **Narx nizosi bu yerda yakunlanmaydi.** Ilgari admin `PRICE_DISPUTED` dagi
+hisobotni izoh bilan tasdiqlab, o'z summasini yakuniy qilib qo'ya olardi
+(«yakuniy qaror»). ADR-0023 buni olib tashladi: kelishuv ikki tomonlama, admin
+uni bir tomonlama yopa olmaydi. Nizodan chiqish yo'llari —
+`pricing.propose_price` (yangi narx) yoki `pricing.accept_author_price`
+(ustaning narxiga rozilik).
 """
 
 from __future__ import annotations
@@ -25,10 +32,10 @@ from app.domain.template import engine
 
 MIN_COMMENT_LEN = 5
 
+#  `PRICE_DISPUTED` bu ro'yxatda EMAS — ADR-0023 (yuqoridagi izoh).
 REVIEWABLE = (
     SubmissionStatus.SUBMITTED,
     SubmissionStatus.IN_REVIEW,
-    SubmissionStatus.PRICE_DISPUTED,
 )
 
 
@@ -76,9 +83,6 @@ async def approve(
 
     if submission.status not in REVIEWABLE:
         raise InvalidStateTransition(f"{submission.status.value} → approved mumkin emas")
-
-    if submission.status == SubmissionStatus.PRICE_DISPUTED:
-        comment = _require_comment(comment)  # nizoda yakuniy qaror izohi majburiy
 
     status_before = submission.status.value
     _approve_lines(submission)

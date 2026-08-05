@@ -15,21 +15,20 @@ sequenceDiagram
     U->>P: 1. [🚗 Mashina keldi]
     Note over P: arrived_at = server vaqti<br/>mashina → IN_SERVICE<br/>downtime taymeri boshlandi
 
-    U->>P: 2. Mashina raqami
+    U->>P: 2. Mashina raqami → [💾 Saqlash]
     Note over P: Fleet'dan marka/model/haydovchi<br/>o'zi to'ladi (Faza 3, faqat o'qish)
-    U->>P: 3. Foto (oldin), muammo
+    Note over U,P: Qadamlar MUSTAQIL: har biri<br/>qoralamaga saqlanadi va ilova yopiladi.<br/>Usta ishga qaytadi (ADR-0022)
+    U->>P: 3. Foto (oldin), muammo → [💾 Saqlash]
 
     opt Ehtiyot qism kerak
         T->>P: 3a. Qism xaridi hisoboti (narx + chek)
         Note over P: alohida submission,<br/>ta'mir hisobotiga bog'lanadi
     end
 
-    U->>P: 4. Bajarilgan ishlar + O'Z NARXI
+    U->>P: 4. Bajarilgan ishlar + O'Z NARXI → [💾 Saqlash]
     U->>P: 5. Foto (keyin), izoh
-    U->>P: 6. [🚙 Mashina ketdi]
-    Note over P: left_at = server vaqti<br/>mashina → ACTIVE<br/>downtime = left_at − arrived_at
-
-    U->>P: 7. Hisobotni yuborish
+    U->>P: 6–7. [🚙 Mashina ketdi — yuborish]
+    Note over P: left_at = server vaqti<br/>mashina → ACTIVE<br/>downtime = left_at − arrived_at<br/>so'ng darhol submit
     P->>P: validatsiya + bayroqlar
     P->>A: bildirishnoma + narx tarixi
 
@@ -39,7 +38,7 @@ sequenceDiagram
         A->>P: 8a. Kamaytirish + sabab
         P->>U: "Admin 180 000 taklif qildi"
         U->>P: 8b. ✅ Roziman / ❌ Rozi emasman
-        Note over P: 48 soat sukut → avtomatik rozilik<br/>Nizoda oxirgi so'z ADMINDA
+        Note over P: 48 soat sukut → avtomatik rozilik<br/>Nizoda admin: yangi narx YOKI ustaning narxi<br/>«yakuniy qaror» YO'Q (N3a)
     end
     P->>U: "Hisobotingiz tasdiqlandi"
 
@@ -56,6 +55,11 @@ sequenceDiagram
 | 1 | Mashina keldi | `submission.arrived_at` | Usta | **Downtime boshlanishi** |
 | 6 | Mashina ketdi | `submission.left_at` | Usta | **Downtime tugashi** |
 | 7 | Hisobot yuborildi | `submission.submitted_at` | Usta | Hujjatlashtirish kechikishi |
+
+⚠️ 6 va 7 — foydalanuvchi uchun **bitta tugma** («🚙 Mashina ketdi — yuborish»,
+ADR-0022): klient ketma-ket `mark-left` va `submit` chaqiradi. Ikkita vaqt
+belgisi qoladi, chunki ular turli narsani o'lchaydi (downtime ≠ hujjatlashtirish
+kechikishi) — bir tugmada bosilgani uchun farq deyarli nol bo'ladi.
 | 8a | Narx taklif qilindi | `approvals(price_proposed)` | Admin | Admin reaksiyasi |
 | 8b | Narx kelishildi | `line.mechanic_accepted_at` | Usta | Kelishuv vaqti |
 | 8 | Tasdiqlandi | `approvals(approved)` | Admin | Tasdiqlash vaqti |
@@ -139,7 +143,9 @@ SUBMITTED → admin ko'radi
                                   ├─ usta rozi → APPROVED
                                   ├─ 48 soat sukut → APPROVED
                                   └─ usta rozi emas → PRICE_DISPUTED
-                                                        → admin yakuniy qaror
+                                       ├─ admin yangi narx → PRICE_NEGOTIATION
+                                       ├─ admin usta narxiga rozi → APPROVED
+                                       └─ (qotib qolsa) → REOPENED
 ```
 
 To'liq mexanizm: [04-price-negotiation.md](04-price-negotiation.md)

@@ -100,12 +100,46 @@ export function validateSection(
       errors[field.code] = t('required');
       continue;
     }
+    //  ⚠️ Ilgari bu yerda quruq «10+» chiqardi — usta nima qilish kerakligini
+    //  tushunmasdi. Xato matni har doim **buyruq** bo'lsin.
     const minLength = Number(field.validation?.min_length ?? 0);
     if (minLength && String(value).trim().length < minLength) {
-      errors[field.code] = `${minLength}+`;
+      errors[field.code] = t('min_chars', { n: minLength });
     }
   }
   return errors;
+}
+
+/** Bo'limda xato bormi. */
+function sectionHasErrors(errors: Record<string, string>): boolean {
+  return Object.keys(errors).some((key) => errors[key]);
+}
+
+/** ⭐ Birinchi to'ldirilmagan bo'lim.
+ *
+ *  Qadamlar mustaqil bo'lgach (2026-08-05) forma «saqla va chiq» rejimida
+ *  ishlaydi: qoralama qayta ochilganda usta qoldirgan joyidan davom etsin,
+ *  yana 1-qadamdan boshlamasin. Hammasi to'la bo'lsa — oxirgi (yuborish) qadam.
+ */
+export function firstIncompleteStep(
+  schema: TemplateSchema,
+  values: Record<string, unknown>,
+  lines: Line[],
+  media: MediaItem[],
+): number {
+  const sections = sectionsOf(schema);
+  const index = sections.findIndex((section) =>
+    sectionHasErrors(validateSection(schema, section, values, lines, media)),
+  );
+  return index < 0 ? sections.length - 1 : index;
+}
+
+/** Maydon qaysi qadamda — server xatosini o'sha qadamda ko'rsatish uchun. */
+export function stepOfField(schema: TemplateSchema, code: string): number {
+  const index = sectionsOf(schema).findIndex((section) =>
+    fieldsOfSection(schema, section).some((field) => field.code === code),
+  );
+  return index < 0 ? 0 : index;
 }
 
 /** `submission_picker` nomzodlarini shu hisobotdagi mashina bo'yicha filtrlash. */

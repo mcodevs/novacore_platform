@@ -163,27 +163,65 @@ async def test_reminder_sent_once(session):
     assert await pricing_service.negotiations_needing_reminder(session) == []
 
 
-async def test_dispute_then_admin_final_decision(session):
-    """N3 — nizoda avtomatik rad etish yo'q, oxirgi so'z adminda."""
+async def test_admin_cannot_close_dispute_unilaterally(session):
+    """⭐ N3a / ADR-0023 — nizoda «yakuniy qaror» YO'Q.
+
+    Ilgari admin nizodagi hisobotni izoh bilan tasdiqlab, o'z kamaytirilgan
+    summasini yakuniy qilib qo'ya olardi. Endi `approve` bu holatni umuman
+    qabul qilmaydi: kelishuv ikki tomonlama.
+    """
     mechanic, admin, submission = await _submitted(session)
     line = submission.lines[0]
     await pricing_service.propose_price(
         session, submission, admin, changes=[(line.id, Decimal("180000"))], comment="tarixga ko'ra"
     )
-
     await pricing_service.dispute_price(
         session, submission, mechanic, comment="Boltlar zanglagan edi, kesib olindi"
     )
     assert submission.status == SubmissionStatus.PRICE_DISPUTED
 
-    # yakuniy qarorda izoh majburiy
-    with pytest.raises(BusinessRuleViolated):
+    with pytest.raises(InvalidStateTransition):
         await approval_service.approve(session, submission, admin)
+    with pytest.raises(InvalidStateTransition):
+        await approval_service.approve(session, submission, admin, comment="baribir shunday")
 
-    await approval_service.approve(
-        session, submission, admin, comment="Gaplashdik, 200 000 ga kelishdik"
+    # rad etish ham yo'q — ish bajarilgan, gap faqat summada
+    with pytest.raises(InvalidStateTransition):
+        await approval_service.reject(session, submission, admin, comment="rozi emasman")
+
+    assert submission.status == SubmissionStatus.PRICE_DISPUTED
+
+
+async def test_admin_accepts_author_price_ends_dispute(session):
+    """⭐ ADR-0023 — nizodan chiqishning ikkinchi yo'li: ustaning narxiga rozilik."""
+    mechanic, admin, submission = await _submitted(session)
+    line = submission.lines[0]
+    await pricing_service.propose_price(
+        session, submission, admin, changes=[(line.id, Decimal("180000"))], comment="tarixga ko'ra"
     )
+    await pricing_service.dispute_price(
+        session, submission, mechanic, comment="Ish murakkab edi, vaqt ketdi"
+    )
+
+    await pricing_service.accept_author_price(session, submission, admin)
+    await session.refresh(submission)
+
     assert submission.status == SubmissionStatus.APPROVED
+    # kamaytirish bekor: yakuniy summa — ustanikisi
+    assert line.approved_amount == line.proposed_amount == Decimal("250000.00")
+    assert line.price_change_reason is None
+    assert submission.labor_amount == Decimal("250000.00")
+    # savdolashish bo'lgani bayroqda qoladi, tarix `approvals` da
+    assert submission.price_negotiated is True
+    decisions = [a.decision for a in await _approvals(session, submission.id)]
+    assert ApprovalDecision.price_accepted in decisions
+
+
+async def test_accept_author_price_needs_negotiation(session):
+    """Kelishuv boshlanmagan hisobotda bu amal yo'q — oddiy `approve` bor."""
+    _mechanic, admin, submission = await _submitted(session)
+    with pytest.raises(InvalidStateTransition):
+        await pricing_service.accept_author_price(session, submission, admin)
 
 
 async def test_admin_can_re_propose_after_dispute(session):

@@ -57,8 +57,14 @@ sequenceDiagram
         else Usta rozi emas
             U->>P: ❌ Izoh: "boltlar zanglagan edi"
             P->>A: qayta ko'rib chiqish
-            Note over A: og'zaki suhbat + yakuniy qaror
-            A->>P: yakuniy summa
+            Note over A: og'zaki suhbat.<br/>⚠️ Adminda «yakuniy qaror» YO'Q (N3a)
+            alt Admin ustaning narxiga rozi
+                A->>P: ✅ Usta narxiga roziman (250 000)
+                P->>P: APPROVED (250 000)
+            else Admin yangi narx beradi
+                A->>P: ✏️ 210 000 + sabab
+                Note over U,A: sikl qaytadan — kelishmaguncha davom etadi
+            end
         end
     end
     Note over P: 48 soat javob bo'lmasa → avtomatik rozilik
@@ -174,6 +180,7 @@ Batafsil: [ta'minotchi oqimi](../01-product/05-supplier-role.md)
 | N1 | `proposed_amount` hech qachon o'zgarmaydi | Statistika asosi |
 | N2 | Narx kamaytirilsa — **sabab majburiy** | Usta nima uchunligini bilishi kerak |
 | N3 | Usta rozilik bermasa — admin qayta ko'radi (avtomatik rad emas) | Adolat |
+| **N3a** | ⭐ **Admin nizoni bir tomonlama yopa olmaydi.** Nizoda ikkita yo'l bor: yangi narx taklif qilish yoki **ustaning narxiga rozi bo'lish**. `approve` va `reject` bu holatni qabul qilmaydi ([ADR-0023](../05-delivery/03-decisions.md#adr-0023--nizoda-yakuniy-qaror-yoq)) | Kelishuv — ikki tomonlama. Bir tomon uni yakunlay olsa, u kelishuv emas |
 | N4 | 48 soat javob bo'lmasa — avtomatik rozilik | To'lov qotib qolmasin |
 | N5 | Admin narxni **oshira olmaydi** | Til biriktirish oldini olish |
 | N6 | Kelishuvning har qadami `audit_log`da | Nizolar uchun dalil |
@@ -190,10 +197,22 @@ Batafsil: [ta'minotchi oqimi](../01-product/05-supplier-role.md)
 Kelishuv **faqat admin** bilan bo'ladi. Summaga qarab yuqori rahbarga
 ko'tarish mexanizmi **yo'q** ([A-15](../05-delivery/02-open-questions.md)).
 
-Nizoda **oxirgi so'z adminda** ([A-23](../05-delivery/02-open-questions.md)):
-usta rozi bo'lmasa admin qayta ko'radi (odatda og'zaki suhbatdan keyin) va
-yakuniy summani belgilaydi. Usta baribir rozi bo'lmasa — hisobot `REOPENED`
-qilinadi.
+⚠️ **Nizoda oxirgi so'z hech kimda emas** — 2026-08-05 da A-23 javobi
+o'zgartirildi ([ADR-0023](../05-delivery/03-decisions.md#adr-0023--nizoda-yakuniy-qaror-yoq)).
+Usta rozi bo'lmasa admin **faqat ikki narsa** qila oladi:
+
+| Adminning yo'li | Natija |
+|---|---|
+| ✏️ **Yangi narx** (`propose-price`) | `PRICE_NEGOTIATION` — to'p yana ustada, 48 soat taymeri qaytadan |
+| ✅ **Usta narxiga roziman** (`accept-author-price`) | `APPROVED`, `approved = proposed` — kamaytirish bekor |
+
+Ya'ni savdolashish **ikki tomon kelishmaguncha** davom etadi. Odatda kelishuv
+og'zaki bo'ladi, ilova esa natijani qayd etadi.
+
+> **Nizo qotib qolsa?** Yagona chiqish yo'li — `REOPENED`: hisobot muallifga
+> qaytariladi va u qaytadan to'ldiradi. Bu «adminning yakuniy qarori» emas:
+> narx qayta yoziladi, hisobot esa nolgacha qaytadi. Avtomatik taymer yo'q —
+> `PRICE_DISPUTED` da 48 soatlik avtomatik rozilik **ishlamaydi**.
 
 ⚠️ **Adminning o'z hisoboti kelishuvga kirmaydi:** u **avtomatik tasdiqlanadi**
 (`approved = proposed`, `auto_approved = true`) — kelishadigan ikkinchi tomon

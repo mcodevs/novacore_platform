@@ -41,7 +41,9 @@ kompaniya qaytaradi. Uning xaridi doim narx bilan kiritilgani uchun avtomatik
 `self_funded` — alohida qoida yozilmadi, bitta qoida ikkala rolni qamradi.
 
 ⚠️ **ADR-0010 teshigi qisman qayta ochildi** (F5a): usta kompaniya olgan qismga
-soxta belgi qo'yishi mumkin. Yagona to'siq — **chek fotosi** + admin ko'rigi.
+soxta belgi qo'yishi mumkin. Yagona to'siq — **admin ko'rigi**. *(Chek fotosi
+2026-08-03 da majburiy qilingan, 2026-08-05 da ADR-0021 bilan bekor qilingan —
+[[shablon-va-foto-qarorlari]].)*
 
 ## Avans (P7) — 2026-08-03 qo'shimchasi
 
@@ -187,8 +189,8 @@ Zaxira: MPG `20260803-153435F` (deploy oldidan).
 Backfill to'g'ri ishladi: yagona mavjud hisobot (`WO-2026-000022`, `paid`,
 240 000) `payable = paid = 240000` bo'ldi — qarz bo'lib qayta paydo bo'lmadi.
 
-✅ 253 backend + 8 miniapp test · chek fotosi majburiyligi (F5a) ·
-«o'z hisobimdan» chekboksi — [[shablon-va-foto-qarorlari]]
+✅ 253 backend + 8 miniapp test · chek fotosi majburiyligi (F5a — *2026-08-05
+da bekor qilindi*) · «o'z hisobimdan» chekboksi — [[shablon-va-foto-qarorlari]]
 
 ❌ **Qolgan yagona xavf:** iOS'da kamera sinovi (ADR-0017 — zaxira yo'l yo'q).
 

@@ -29,7 +29,7 @@ e'tiborini yo'naltiradi. 100 ta hisobotning 95 tasi toza bo'lsa, admin
 | F3 | Eski/boshqa mashinadan foto qo'yish | pHash, sha256, EXIF sanasi |
 | F4 | Bir ishni ikki marta yozish | Dublikat aniqlash (mashina + kategoriya + vaqt) |
 | F5 | **Qismni qimmatroq ko'rsatish** | ⭐ **Tuzilmaviy yechim:** kompaniya olgan qismga usta narx **umuman kirita olmaydi** — ta'minotchi kiritadi |
-| F5a | **Kompaniya olgan qismga «o'z hisobimdan» belgisini qo'yish** | ⚠️ ADR-0016 ochgan teshik. **Chek fotosi majburiy** + admin ko'rigi. Yagona to'siq — shuning uchun admin buni alohida tekshiradi |
+| F5a | **Kompaniya olgan qismga «o'z hisobimdan» belgisini qo'yish** | ⚠️ ADR-0016 ochgan teshik. **Admin ko'rigi** — yagona to'siq, shuning uchun admin buni alohida tekshiradi. Chek fotosi so'raladi, lekin **majburiy emas** ([ADR-0021](../05-delivery/03-decisions.md#adr-0021--chek-fotosi-majburiy-emas)) |
 | F6 | Qismni almashtirmasdan yozish | "Keyin" fotosi, kafolat, rework kuzatuvi |
 | F7 | Admin bilan til biriktirish | **Admin narxni oshira olmaydi (R2)**, audit log, buxgalter ko'rinishi |
 | F8 | O'z hisobotini o'zi tasdiqlash | `approver ≠ author` (R1). ⚠️ **Admin hisoboti avtomatik tasdiqlanadi** — bu yerda nazorat yo'q, faqat shaffoflik (`auto_approved` belgisi + oylik hisobotda alohida satr) |
@@ -43,7 +43,11 @@ e'tiborini yo'naltiradi. 100 ta hisobotning 95 tasi toza bo'lsa, admin
 >
 > ⚠️ **Istisno — F5a:** usta qismni o'z hisobidan olsa, narx kirita oladi
 > ([ADR-0016](../05-delivery/03-decisions.md#adr-0016--usta-oz-hisobidan-olgan-qism-ham-qarzga-kiradi)).
-> Bu yerda tuzilmaviy himoya yo'q — faqat **chek fotosi** va admin ko'rigi.
+> Bu yerda tuzilmaviy himoya yo'q — **butun og'irlik admin ko'rigida**.
+> Chek fotosi ilgari majburiy edi, endi emas
+> ([ADR-0021](../05-delivery/03-decisions.md#adr-0021--chek-fotosi-majburiy-emas)):
+> bozorda chek berilmasligi ustani butun hisobotni yubora olmaydigan holga
+> solardi. Chek bor bo'lsa — kuchli dalil, yo'q bo'lsa — admin savol beradi.
 
 ## 3. Bayroqlar katalogi
 

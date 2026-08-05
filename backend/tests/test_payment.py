@@ -109,7 +109,7 @@ async def test_price_on_part_implies_self_funded(session):
 
 
 async def test_self_funded_part_adds_to_debt(session):
-    """ADR-0016 — usta o'z puliga olgan qism qarzga qo'shiladi (chek bilan)."""
+    """ADR-0016 — usta o'z puliga olgan qism qarzga qo'shiladi."""
     mechanic, admin = await _team(session)
     vehicle = await _next_vehicle(session)
     submission = await create_ready_submission(
@@ -125,7 +125,7 @@ async def test_self_funded_part_adds_to_debt(session):
         unit_price=Decimal("400000"),
         self_funded=True,
     )
-    await add_photo(session, submission, mechanic, "photo_receipt")  # F5a
+    await add_photo(session, submission, mechanic, "photo_receipt")  # chek — ixtiyoriy
     await submission_service.submit(session, submission, mechanic)
     await approval_service.approve(session, submission, admin)
     await session.refresh(submission)
@@ -133,9 +133,14 @@ async def test_self_funded_part_adds_to_debt(session):
     assert submission.payable_amount == Decimal("600000.00")
 
 
-async def test_self_funded_part_requires_receipt(session):
-    """⭐ F5a — chek fotosisiz o'z hisobidan olingan qismli hisobot yuborilmaydi."""
-    mechanic, _admin = await _team(session)
+async def test_self_funded_part_without_receipt_is_allowed(session):
+    """⭐ ADR-0021 — chek fotosi MAJBURIY EMAS: usta doim chek ola bilmaydi.
+
+    Ilgari (F5a) chekcsiz hisobot umuman yuborilmasdi va usta butun ishini
+    yubora olmay qolardi. Endi chek — kutiladigan dalil, to'siq esa admin
+    ko'rigi. Qarz baribir hisoblanadi (R5).
+    """
+    mechanic, admin = await _team(session)
     vehicle = await _next_vehicle(session)
     submission = await create_ready_submission(
         session, mechanic, vehicle, works=[("Ish haqi", Decimal("200000"))]
@@ -151,9 +156,12 @@ async def test_self_funded_part_requires_receipt(session):
         self_funded=True,
     )
 
-    with pytest.raises(ValidationFailed) as excinfo:
-        await submission_service.submit(session, submission, mechanic)
-    assert excinfo.value.fields["photo_receipt"] == "receipt_required"
+    await submission_service.submit(session, submission, mechanic)  # cheksiz — xato yo'q
+    assert submission.status == SubmissionStatus.SUBMITTED
+
+    await approval_service.approve(session, submission, admin)
+    await session.refresh(submission)
+    assert submission.payable_amount == Decimal("600000.00")
 
 
 async def test_company_part_needs_no_receipt(session):

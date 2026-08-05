@@ -1,6 +1,6 @@
 ---
 name: narx-kelishuvi-kop-qatorli
-description: 2026-08-03 — kelishuv bitta xizmat emas, butun hisobot bo'yicha; effective_sum xatosi topildi
+description: 2026-08-03 — kelishuv butun hisobot bo'yicha, effective_sum xatosi; 2026-08-05 — nizoda «yakuniy qaror» yo'q (ADR-0023)
 metadata:
   type: project
 ---
@@ -56,4 +56,37 @@ Telegram'da bitta `BackButton` bor, lekin endi ikki qatlam undan foydalanadi
 qo'shildi: `pushBackHandler(fn)` → eng yuqoridagisi ishlaydi. App ham shunga
 o'tkazildi. Aks holda «Orqaga» bosilganda foto ham, ekran ham yopilib ketardi.
 
-Bog'liq: [[shablon-va-foto-qarorlari]] · [[qarz-daftari-modeli]]
+## ⭐ Nizoda «yakuniy qaror» yo'q — ADR-0023 (2026-08-05)
+
+Egasining qarori, **domen qoidasining o'zgarishi** (UX emas): *«Yakuniy qarorni
+admin qabul qilmaydi. Ikki tomon kelishmagunicha savdolashish davom etadi.»*
+
+Ilgari `PRICE_DISPUTED` da admin izoh yozib `approve()` qilardi va **o'zining
+kamaytirilgan summasi** yakuniy bo'lardi. Ya'ni ustaning «Rozi emasman»
+tugmasi amalda hech narsani o'zgartirmasdi — kelishuv nomigagina kelishuv edi.
+
+Endi nizoda ikkita yo'l:
+
+| Yo'l | Kod | Natija |
+|---|---|---|
+| ✏️ Yangi narx | `pricing.propose_price` (o'zgarmadi) | `PRICE_NEGOTIATION`, sikl qaytadan |
+| ✅ Usta narxiga rozilik | **`pricing.accept_author_price`** (yangi) | `APPROVED`, `approved = proposed`, kamaytirish izlari tozalanadi |
+
+⚠️ **Eng muhim tafsilot:** `approval.REVIEWABLE` dan `PRICE_DISPUTED` olib
+tashlandi — `approve()` va `reject()` endi bu holatni **serverda** rad etadi.
+Faqat UI'dan tugmani olib tashlash yetarli emasdi.
+
+- Rozilik `ApprovalDecision.price_accepted` sifatida yoziladi — enum
+  o'zgarmadi, **migratsiya yo'q**
+- `price_negotiated` bayrog'i o'chirilmaydi: savdolashish bo'lgan, tarix
+  `approvals` da
+- ➖ Nizo **cheksiz** turishi mumkin: `PRICE_DISPUTED` da 48 soatlik taymer
+  ishlamaydi. Yagona chiqish — `REOPENED`
+- ⓘ Admin nizo sababini faqat **bot bildirishnomasida** ko'radi
+  (`notify_price_disputed`) — Mini App API'si `approvals` ni umuman
+  qaytarmaydi. Kelishuv tarixi kerak bo'lsa — alohida ish
+
+Hujjatlarda: A-19/A-23 javobi teskarisiga o'zgartirildi, N3a qoidasi qo'shildi.
+
+Bog'liq: [[shablon-va-foto-qarorlari]] · [[qarz-daftari-modeli]] ·
+[[usta-formasi-ux]]

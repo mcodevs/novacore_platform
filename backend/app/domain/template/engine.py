@@ -18,7 +18,6 @@ from app.db.base import ZERO, money
 from app.db.models import (
     LineKind,
     Media,
-    MediaKind,
     Submission,
     SubmissionLine,
     Template,
@@ -395,49 +394,12 @@ def validate(
             if not isinstance(value, dict) or not value.get("submission_id"):
                 issues.append(ValidationIssue(spec.code, "field_required", {}))
 
-    issues.extend(_receipt_issues(schema, data, media, lines))
+    # ⚠️ Bu yerda ilgari F5a tekshiruvi turardi: «o'z hisobimdan» olingan qism
+    # bo'lsa chek fotosi **majburiy** edi. 2026-08-05 da olib tashlandi
+    # (ADR-0021): usta chekni har doim ham ololmaydi (bozor, do'kon chek
+    # bermaydi) va butun hisobot shu sababli yuborilmay qolardi. Chek endi
+    # kutiladigan, lekin majburiy bo'lmagan dalil — to'siq admin ko'rigida.
     return issues
-
-
-def _receipt_issues(
-    schema: TemplateSchema, data: dict, media: list[Media], lines: list[SubmissionLine]
-) -> list[ValidationIssue]:
-    """F5a — «o'z hisobimdan» olingan qism uchun **chek fotosi majburiy**.
-
-    ADR-0016 ADR-0010 ning tuzilmaviy himoyasini yumshatdi: usta endi qismga
-    narx kirita oladi. Yagona to'siq — chek. Shuning uchun tekshiruv maydonning
-    `required` bayrog'iga emas, **qatorlarga** bog'langan: chek faqat o'z
-    hisobidan olingan qism bo'lsa talab qilinadi.
-
-    Chek borligini **maydon** bo'yicha aniqlaymiz (media `kind` klientdan
-    keladi — unga ishonilmaydi, R7).
-    """
-    own_parts = [
-        ln
-        for ln in lines
-        if ln.kind == LineKind.part and ln.self_funded and (ln.proposed_amount or ZERO) > ZERO
-    ]
-    if not own_parts:
-        return []
-
-    live = {m.id for m in media if m.deleted_at is None}
-    receipt_spec = next(
-        (s for s in schema.fields if s.type == "photo" and s.options.get("kind") == "receipt"),
-        None,
-    )
-
-    if receipt_spec is not None:
-        attached = [i for i in (data.get(receipt_spec.code) or []) if i in live]
-        target = receipt_spec.code
-    else:
-        # Shablonda chek maydoni yo'q — media turiga qaytamiz, xato qatorlarda
-        attached = [m.id for m in media if m.deleted_at is None and m.kind == MediaKind.receipt]
-        fallback = schema.field_for_line_kind(LineKind.part)
-        target = fallback.code if fallback else "parts"
-
-    if attached:
-        return []
-    return [ValidationIssue(target, "receipt_required", {"n": len(own_parts)})]
 
 
 # --- Promoted ustunlar (field_mapping) --------------------------------------

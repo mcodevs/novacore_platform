@@ -229,7 +229,9 @@ Faqat **status** platformadan Fleet'ga yoziladi.
 
 ## ADR-0009 — Narx kelishuvi (usta ↔ admin)
 
-**Sana:** 2026-07-31 · **Holat:** ✅ Qabul qilindi ([A-04](02-open-questions.md) javobi)
+**Sana:** 2026-07-31 · **Holat:** ♻️ Qabul qilindi, nizo qismi
+[ADR-0023](#adr-0023--nizoda-yakuniy-qaror-yoq) bilan o'zgartirilgan
+([A-04](02-open-questions.md) javobi)
 
 ### Kontekst
 NovaCore'da usta **har ish uchun** to'lov oladi va **narxni o'zi belgilaydi**.
@@ -266,7 +268,7 @@ Qo'shimcha qarorlar:
 | Variant | Nega rad etildi |
 |---|---|
 | Narxnoma qat'iy, usta tanlaydi | Bozor narxi ko'rinmaydi, kelishuv imkoni yo'q — egasi talabiga zid |
-| Admin qarori yakuniy (usta tasdig'isiz) | Nizolarda dalil yo'q, adolatsiz his qilinadi |
+| Admin qarori yakuniy (usta tasdig'isiz) | Nizolarda dalil yo'q, adolatsiz his qilinadi. *(♻️ 2026-08-05: nizoda ham shunday bo'lib chiqdi — [ADR-0023](#adr-0023--nizoda-yakuniy-qaror-yoq))* |
 | Tayanch narx ustaga ochiq | Barcha narxlar tayanchga yopishadi, arzonlashtirish imkoni yo'qoladi |
 | Admin narxni oshira olishi | Til biriktirib summa ko'tarish yo'li ochiladi |
 
@@ -541,7 +543,7 @@ Qism qatorida **«o'z hisobimdan»** belgisi bo'ladi va u narx maydonini ochadi:
 
 | Belgi | Narx maydoni | Qarzga kiradi | Ma'nosi |
 |---|---|---|---|
-| ✅ qo'yilgan | ochiladi, **chek fotosi majburiy** | ✅ ha | Usta o'z puliga oldi → qaytariladi |
+| ✅ qo'yilgan | ochiladi, chek so'raladi (majburiy emas — [ADR-0021](#adr-0021--chek-fotosi-majburiy-emas)) | ✅ ha | Usta o'z puliga oldi → qaytariladi |
 | ⬜ qo'yilmagan | **yopiq** (narx kiritilmaydi) | ❌ yo'q | Kompaniya oldi → ta'minotchi hisobotida |
 
 Ya'ni **narx bor = qarz bor**. Belgi va pul — bitta harakat.
@@ -569,6 +571,8 @@ qamrab oladi.
   narx **umuman kirita olmaydi**
 - Ochilib qolgan teshik (usta soxta belgi qo'yib narx yozishi) **chek fotosi**
   bilan yopiladi — ta'minotchida allaqachon shu talab bor
+  *(♻️ 2026-08-05: chek majburiyligi olib tashlandi, teshikni endi faqat admin
+  ko'rigi yopadi — [ADR-0021](#adr-0021--chek-fotosi-majburiy-emas))*
 - Narxsiz qism qatori kelishuvga (`proposed_amount = 0`) kirmaydi → R2
   `CHECK` buzilmaydi: admin keyin narx "oshira" olmaydi
 
@@ -578,11 +582,10 @@ qamrab oladi.
 - ➖ F5 teshigi qisman qayta ochiladi: chek fotosi — yagona to'siq. Admin
   ko'rikda buni tekshirishi shart
 
-> ✅ **Amalga oshirildi (2026-08-03):** chek talabi serverda majburiy —
-> `self_funded` va narxli qism qatori bo'lsa `receipt_required` xatosi
-> beriladi va hisobot **yuborilmaydi**. Qoida qatorlarga bog'langan, shablon
-> maydonining `required` bayrog'iga emas
-> ([03-report-templates §6a](../02-architecture/03-report-templates.md#6a-chek-fotosi--oz-hisobimdan-qismi-uchun-)).
+> ♻️ **2026-08-05 — bekor qilindi.** Chek talabi 2026-08-03 da serverda
+> majburiy qilingan edi (`receipt_required`). Bozorda chek berilmagani uchun bu
+> halol ustani bloklardi —
+> [ADR-0021](#adr-0021--chek-fotosi-majburiy-emas) tekshiruvni olib tashladi.
 - ➖ Mashina xarajati analitikasida kompaniya olgan qism narxi shu hisobotda
   yo'q — u ta'minotchi hisobotidan keladi (`related_submission_id`)
 
@@ -791,8 +794,9 @@ qiymatga ishonib bo'lmasa ham, qaysi tugma bosilgani tekshiruvda foydali va
 - ADR-0017 dagi to'siq **texnik emas, ishonchga asoslangan** edi: galereyani
   yopish faqat *qulay* yo'lni yopadi — skrinshot, boshqa qurilmadan yuborish
   va WebView xatti-harakatlari baribir ochiq
-- Haqiqiy to'siqlar joyida qoladi: **admin ko'rigi**, chek fotosi (F5a),
-  `photo_no_exif` bayrog'i, `audit_log`
+- Haqiqiy to'siqlar joyida qoladi: **admin ko'rigi**, `photo_no_exif`
+  bayrog'i, `audit_log` (chek fotosi ham shu ro'yxatda edi — keyinroq
+  [ADR-0021](#adr-0021--chek-fotosi-majburiy-emas) uni majburiylikdan chiqardi)
 - iOS kamera sinovi endi **bloklovchi emas** — ishlamasa ham platforma ishlaydi
 
 ### Oqibatlar
@@ -810,6 +814,179 @@ qiymatga ishonib bo'lmasa ham, qaysi tugma bosilgani tekshiruvda foydali va
 | Galereyani faqat iOS'da ochish | Klient aniqlash ishonchsiz; ikki xil xulq — ikki xil xato manbai |
 | Serverda EXIF bo'yicha rad etish | Telegram va siqish EXIF'ni baribir yo'q qiladi — halol fotolar rad etilardi |
 | Galereya fotosini «shubhali» deb belgilash | `photo_no_exif` allaqachon bor; ikkinchi bayroq yangi ma'lumot bermaydi |
+
+---
+
+## ADR-0021 — Chek fotosi majburiy emas
+
+**Sana:** 2026-08-05 · **Holat:** ✅ Qabul qilindi (egasining qarori) ·
+**Yumshatadi:** [ADR-0016](#adr-0016--usta-oz-hisobidan-olgan-qism-ham-qarzga-kiradi) (F5a)
+
+### Kontekst
+ADR-0016 ustaga o'z hisobidan olingan qismga narx kiritish imkonini berdi.
+Ochilgan teshik (F5a — kompaniya olgan qismga «o'z hisobimdan» belgisini
+qo'yish) **chek fotosi majburiyligi** bilan yopilgan edi: `self_funded` va
+narxi > 0 qator bo'lsa, chek yo'q hisobot **umuman yuborilmasdi**
+(`receipt_required`).
+
+Amalda bu to'siq noto'g'ri odamni ushlab qoldi. Toshkentda qism ko'pincha
+bozordan, mahalla do'konidan olinadi — u yerda chek berilmaydi. Natijada:
+
+- chek yo'q → qism qatorini o'chirish kerak → usta o'z pulini yo'qotadi, yoki
+- butun hisobot yuborilmay qoladi — ish bajarilgan, mashina ketgan, hujjat yo'q
+
+Firibgar esa bemalol istalgan chekning fotosini qo'yadi. Ya'ni to'siq halol
+ustani bloklardi, firibgarni esa yo'q.
+
+### Qaror
+`engine.validate` dagi `_receipt_issues` tekshiruvi **olib tashlanadi**. Chek
+maydoni shablonda qoladi va hintda so'raladi («chek qo'shing — tezroq
+tasdiqlanadi»), lekin **hech qanday holatda majburiy emas**.
+
+### Sabab
+- Talab qilib bo'lmaydigan narsani majburiy qilish — foydalanuvchini tizimdan
+  chetlab o'tishga majburlaydi (naqd kelishuv, hisobotsiz ish)
+- F5a ga qarshi haqiqiy to'siq baribir **admin ko'rigi** edi: chek majburiyligi
+  faqat *qulaylik* to'sig'i, ADR-0017 dagi kabi «ishonchga asoslangan»
+- Qarz hisobi tegilmaydi: R5 va P7 o'z holicha ishlaydi
+- Chek bor bo'lsa — kuchli dalil bo'lib qoladi, u hech qayerga ketmadi
+
+### Oqibatlar
+- ➕ Usta ishini har doim yubora oladi — «hisobotsiz ish» yo'qoladi
+- ➖ F5a ning yagona avtomatik to'sig'i yo'q: admin ko'rigining yuki ortdi
+- ⓘ `receipt_required` xato kaliti ikkala i18n'dan ham olib tashlandi
+- ⓘ `tests/test_payment.py` teskarisiga yozildi: endi **cheksiz yuborish
+  o'tishi** va qarz to'g'ri hisoblanishi tekshiriladi
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Chek yo'q bo'lsa bayroq qo'yish | Bayroqlar Faza 1'da o'chirilgan (ADR-0006 ruhi); admin baribir har hisobotni ko'radi |
+| Summa chegarasi (masalan > 500 000 bo'lsa chek majburiy) | Chegara sun'iy: bozorda 800 000 lik qismga ham chek yo'q. Faqat murakkablik qo'shadi |
+| Chekni qism qatori darajasida majburiy qilish | Xuddi shu muammo, faqat aniqroq joyda — usta baribir qatorni o'chirishga majbur |
+
+---
+
+## ADR-0022 — Forma qadamlari mustaqil: «saqla va chiq»
+
+**Sana:** 2026-08-05 · **Holat:** ✅ Qabul qilindi (egasining qarori)
+
+### Kontekst
+Mini App formasi sehrgar (wizard) edi: «Davom etish» tugmasi joriy bo'limni
+tekshirib **darhol keyingi qadamga** o'tkazardi. Hisobot bir o'tirishda
+to'ldiriladi degan taxminga asoslangan.
+
+Ustaning haqiqiy kuni bunday emas. Qadamlar **vaqt bo'yicha ajralgan**:
+
+| Qachon | Qaysi qadam |
+|---|---|
+| Mashina keldi, usta boshqa ish bilan band | 1 — raqamni yozib qo'yadi |
+| Bo'shagach diagnostika qiladi | 2 — foto, muammo tavsifi |
+| Ta'mirni bajaradi (soatlar) | 3 — ishlar va narx |
+| Ish tugadi, mashina ketmoqda | 4 — «keyin» fotolari, izoh |
+
+Har safar «Davom etish» uni bajarib bo'lmaydigan qadamga tashlardi. Usta
+ilovadan shunchaki chiqib ketardi — va qaytganda **yana 1-qadamdan**
+boshlanardi.
+
+Oxirgi qadamda esa ikkita tugma bor edi: «🚙 Mashina ketdi», so'ng «📤
+Yuborish». Usta uchun bu bitta hodisa — mashina ketdi, ish tugadi. Birinchisini
+bosib to'xtaganlar hisobotni qoralamada qoldirardi.
+
+### Qaror
+1. Har qadamda **bitta amal — «💾 Saqlash»**: tekshiriladi, serverga yoziladi,
+   ekran yopiladi. Keyingi qadamga **o'zi o'tmaydi**.
+2. Qoralama qayta ochilganda forma **birinchi to'ldirilmagan qadamdan**
+   boshlanadi (`firstIncompleteStep`).
+3. Qadam indikatori **bosiladigan** — tartibsiz to'ldirish uchun.
+4. Oxirgi qadamda **bitta tugma**: «🚙 Mashina ketdi — yuborish» =
+   `mark-left` + `submit`, tasdiq oynasi bilan.
+5. Bosh ekranda qoralama qatori **to'g'ridan-to'g'ri formaga** olib boradi.
+
+### Sabab
+- Ilovaning ritmi ustaning ritmiga moslashadi, aksincha emas
+- «Saqlandi» — tugallangan his; «keyingi qadam» — tugallanmagan majburiyat
+- Ikkita tugma o'rniga bitta: `left_at` va `submitted_at` baribir server
+  vaqti (R6), faqat endi ular deyarli bir xil bo'ladi — bu ma'lumotni
+  yo'qotmaydi, chunki ular boshqa narsani o'lchaydi
+- Yuborishda tasdiq oynasi paydo bo'ldi: bitta teginish endi qaytarib
+  bo'lmaydigan amal
+
+### Oqibatlar
+- ➕ Yarim to'ldirilgan qoralama endi normal holat, avariya emas
+- ➕ Qaytib kirish 3 teginish o'rniga 1 ta
+- ➖ Hammasini bir o'tirishda to'ldiradigan usta har qadamdan keyin qayta
+  kiradi. Qabul qilindi: indikator orqali oldinga yurish mumkin
+- ⓘ «Hujjatlashtirish kechikishi» ko'rsatkichi (7 − 6) endi ~0 bo'ladi
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| «Saqlash» + «Davom etish» — ikkita tugma | Ikkita yo'l — ikkita savol. Egasining talabi: qadamda **faqat saqlash** |
+| Avtosaqlash yetarli, tugma kerak emas | Avtosaqlash ko'rinmaydi; usta «yo'qolmadimikan?» deb qo'rqadi |
+| «Mashina ketdi» ni alohida qoldirib, yuborishni avtomatlashtirish | Yuborish — qaytarib bo'lmaydigan amal, u ataylab bosilishi kerak |
+
+---
+
+## ADR-0023 — Nizoda «yakuniy qaror» yo'q
+
+**Sana:** 2026-08-05 · **Holat:** ✅ Qabul qilindi (egasining qarori) ·
+**O'zgartiradi:** [ADR-0009](#adr-0009--narx-kelishuvi-usta--admin) ·
+**Bekor qiladi:** [A-19 / A-23](02-open-questions.md) javobini
+
+### Kontekst
+ADR-0009 kelishuvni ikki tomonlama qilib qo'ygan edi: admin kamaytiradi, usta
+rozi bo'ladi yoki nizo ochadi. Lekin nizodan chiqish **bir tomonlama** edi —
+`PRICE_DISPUTED` holatida admin izoh yozib «⚖️ Yakuniy qaror» tugmasini bosardi
+va **o'zining kamaytirilgan summasi** yakuniy bo'lib qolardi.
+
+Ya'ni kelishuv aslida kelishuv emasdi. Usta uchun «Rozi emasman» tugmasi
+amalda hech narsani o'zgartirmasdi: admin baribir o'zi xohlagan summani qo'ya
+olardi. Bu ADR-0009 ning o'z sababiga zid: *«Admin qarori yakuniy (usta
+tasdig'isiz)» — nizolarda dalil yo'q, adolatsiz his qilinadi.*
+
+### Qaror
+Nizoda adminning **ikkitagina** yo'li bor:
+
+| Yo'l | Endpoint | Natija |
+|---|---|---|
+| ✏️ Yangi narx berish | `POST /submissions/{id}/propose-price` | `PRICE_NEGOTIATION` — to'p ustada, 48 soatlik taymer yangilanadi |
+| ✅ Ustaning narxiga rozi bo'lish | `POST /submissions/{id}/accept-author-price` | `APPROVED`, `approved = proposed`, kamaytirish bekor |
+
+`approval.approve()` va `approval.reject()` endi `PRICE_DISPUTED` ni **qabul
+qilmaydi** (`InvalidStateTransition`). Klientda «⚖️ Yakuniy qaror» va nizodagi
+«❌ Rad etish» tugmalari yo'q.
+
+Savdolashish **ikki tomon kelishmaguncha** davom etadi. Nizo qotib qolsa —
+yagona chiqish `REOPENED`: hisobot ustaga qaytadi va u qaytadan to'ldiradi.
+
+### Sabab
+- Bir tomon yakunlay oladigan kelishuv — kelishuv emas, e'lon
+- «Rozi emasman» tugmasi haqiqiy vazn oladi: usta uni bosishi natijaga ta'sir
+  qiladi
+- R2 (admin oshira olmaydi) allaqachon bor edi; N3a uning juftligi — admin
+  **kamaytirishni ham majburlay olmaydi**
+- Amalda kelishuv baribir og'zaki bo'ladi. Ilova og'zaki kelishuvni **qayd
+  etadi**, uning o'rniga qaror qabul qilmaydi
+
+### Oqibatlar
+- ➕ Ustaning nizo huquqi haqiqiy — tizimga ishonch shundan
+- ➖ Hisobot nizoda **cheksiz** turishi mumkin: `PRICE_DISPUTED` da 48 soatlik
+  avtomatik rozilik ishlamaydi va taymer yo'q. Qabul qilindi — kuniga 3–5
+  hisobotda bu ko'zdan qochmaydi
+- ⓘ Admin nizo sababini hozircha faqat **bot bildirishnomasida** ko'radi
+  (`notify_price_disputed`) — Mini App'da kelishuv tarixi ko'rsatilmaydi.
+  Kerak bo'lsa alohida ish
+- ⓘ `ApprovalDecision` enum o'zgarmadi: rozilik `price_accepted` sifatida
+  yoziladi (migratsiya yo'q)
+
+### Rad etilgan variantlar
+| Variant | Nega rad etildi |
+|---|---|
+| Nizoda ham 48 soatlik taymer, sukut → adminning narxi | Bir tomonlama yakunlashning yashirin ko'rinishi — muammoni nomini o'zgartirib qaytaradi |
+| N marta nizodan keyin admin qarori yakuniy | Sun'iy chegara; usta «sanoqni» o'ynay boshlaydi |
+| Nizoni direktorga ko'tarish | ADR-0011 / A-15 ga zid — bitta bosqich, ikkinchi rahbar yo'q |
+| Nizoda avtomatik `REOPENED` | Bajarilgan ishni qaytadan yozdirish — ustani jazolash bo'lib chiqadi |
 
 ---
 

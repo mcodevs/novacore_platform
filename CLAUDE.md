@@ -33,6 +33,7 @@ Bular serverda tekshiriladi. Klientga hech qachon ishonilmaydi.
 | **R2** | `approved_amount ≤ proposed_amount` — admin narxni **faqat kamaytira oladi** (DB `CHECK`) |
 | **R2a** | `proposed_*` — **immutable**. Yuborilgandan keyin hech qachon ustidan yozilmaydi |
 | **R2b** | `approved < proposed` bo'lsa `price_change_reason` NOT NULL |
+| **R2c** | Nizoda (`PRICE_DISPUTED`) admin kelishuvni **bir tomonlama yopa olmaydi** (N3a, ADR-0023): faqat yangi narx yoki ustaning narxiga rozilik. `approve`/`reject` bu holatda `InvalidStateTransition` beradi |
 | **R3** | Tayanch narx (`work_catalog.reference_price`, `work_price_stats`) `reporter` roliga **API javobida ham** qaytarilmaydi — klientda yashirish yetarli emas |
 | **R4** | To'lov faqat `APPROVED` hisobotga. `paid_amount ≤ payable_amount` (DB `CHECK`). Qarzdan ortgani — **avans** (P7), xodim hisobida turadi va yangi qarzga avtomatik ishlatiladi |
 | **R5** | `payable_amount` = tasdiqlangan ish haqi + **`self_funded`** qismlar. Serverda `submission_lines`dan qayta hisoblanadi |
@@ -71,6 +72,10 @@ qo'shmang — har biri ADR bilan rad etilgan:
 | **Oy yopish / davr (`periods`) / `payouts`** | ADR-0015. To'lov oyga emas, **hisobotga** bog'langan — qarz daftari |
 | **Probeg hisobotda** (`odometer_*`) | ADR-0018. Har hisobotda spidometr fotosi — eng qimmat, eng foydasiz maydon edi. `vehicles.odometer_km` (Fleet'dan) qoladi |
 | **Savdolashish ko'rsatkichlari UI'da** | ADR-0019. «Tejaldi», «Kamaydi», narx statistikasi, hisobotdagi narx tarixi — olib tashlandi. Kelishuv qoladi, lekin **faqat sodir bo'ladigan joyda**: admin kamaytirish oynasi, ustaning roziman/nizo kartasi, statuslar va bildirishnomalar. Hisob-kitob serverda joyida |
+| **Chek fotosi majburiyligi** | ADR-0021. `receipt_required` tekshiruvi olib tashlandi: bozorda chek berilmaydi, to'siq firibgarni emas **halol ustani** bloklardi. Chek so'raladi, F5a ga qarshi yagona to'siq — admin ko'rigi |
+| **«Tavsiya (keyingi ish)» maydoni** | `car_repair` v2. Ixtiyoriy edi, to'ldirilmasdi, oxirgi qadamni uzaytirardi |
+| **Formada «Davom etish»** | ADR-0022. Qadam saqlangach keyingisiga **o'zi o'tmaydi** — usta ishga qaytadi. Qoralama birinchi to'ldirilmagan qadamdan ochiladi, indikator bosiladi. Oxirgi qadamda «Mashina ketdi» va «Yuborish» — **bitta tugma** |
+| **Nizoda «Yakuniy qaror»** | ADR-0023 (N3a). Admin kelishuvni **bir tomonlama yopa olmaydi**: yo yangi narx, yo ustaning narxiga rozilik (`accept-author-price`). `approve`/`reject` `PRICE_DISPUTED` ni **serverda** rad etadi |
 
 ## Stack
 
@@ -93,7 +98,7 @@ Kodni AI yozgani uchun domen testlarisiz ishonch yo'q. Eng kam qamrov:
 
 | Modul | Nima tekshiriladi |
 |---|---|
-| `pricing` | R2, R2a, R2b · 48 soat avtomatik rozilik · nizo oqimi · R1a (admin → avtomatik tasdiq, kelishuvsiz) |
+| `pricing` | R2, R2a, R2b · **R2c** (nizoda yakuniy qaror yo'q) · 48 soat avtomatik rozilik · nizo oqimi · R1a (admin → avtomatik tasdiq, kelishuvsiz) |
 | `payment` | R4/P2 · R5 (`payable_amount` hisobi) · FIFO taqsimot · qisman to'lov · **avans (P7)**: ortiqcha to'lov → avans → yangi qarzga avtomatik · `void` → qarz va avans qaytadi · daftar balansi |
 | `approval` | R1 · holat o'tishlari |
 | `template` | Majburiy maydonlar · foto min/max · versiyalash (eski hisobot buzilmasin) |

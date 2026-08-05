@@ -166,6 +166,7 @@ export function App() {
         <HomeScreen
           auth={auth}
           onOpen={(id) => push({ name: 'detail', id })}
+          onContinue={(id) => push({ name: 'form', id })}
           onCreate={(code) => void createReport(code)}
           onBuilder={() => push({ name: 'builder' })}
           onEmployees={() => push({ name: 'employees' })}

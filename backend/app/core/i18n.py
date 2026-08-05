@@ -260,10 +260,6 @@ T: dict[str, dict[str, str]] = {
         "uz": "📷 Saqlandi ({n}/{max}).",
         "ru": "📷 Сохранено ({n}/{max}).",
     },
-    "receipt_required": {
-        "uz": "O‘z hisobingizdan olingan {n} ta qism bor — chek fotosi majburiy.",
-        "ru": "Есть {n} запчастей за свой счёт — фото чека обязательно.",
-    },
     "photo_need_more": {
         "uz": "Kamida {min} ta foto kerak (hozir {n} ta).",
         "ru": "Нужно минимум {min} фото (сейчас {n}).",
@@ -566,11 +562,6 @@ T: dict[str, dict[str, str]] = {
     "price_disputed_ok": {
         "uz": "📨 Izohingiz adminga yuborildi. U qayta ko'rib chiqadi.",
         "ru": "📨 Ваш комментарий отправлен админу. Он пересмотрит.",
-    },
-    "btn_final_decision": {"uz": "⚖️ Yakuniy qaror", "ru": "⚖️ Окончательное решение"},
-    "ask_final_comment": {
-        "uz": "Yakuniy qaror izohi (majburiy):",
-        "ru": "Комментарий к окончательному решению (обязательно):",
     },
     # --- Bildirishnomalar ---
     "notify_new_submission": {

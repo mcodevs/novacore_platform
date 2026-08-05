@@ -1,4 +1,15 @@
-/** Forma ekrani: shablon bo'yicha qadam-baqadam + «Mashina ketdi» va «Yuborish».
+/** Forma ekrani: shablon bo'yicha qadam-baqadam.
+ *
+ *  ⭐ **Har qadam mustaqil** (2026-08-05). Ilgari «Davom etish» keyingi qadamga
+ *  darhol o'tkazardi. Lekin ustaning ishi vaqt bo'yicha ajralgan: mashina keldi
+ *  (raqam yoziladi) → biroz o'tib diagnostika (foto) → keyin ta'mir → oxirida
+ *  yakun. Har safar undan «hozir davom et» deb turish noto'g'ri edi.
+ *
+ *  Endi har qadamda bitta amal — «Saqlash»: qoralama saqlanadi va ekran
+ *  yopiladi. Qayta ochilganda forma **birinchi to'ldirilmagan qadamdan**
+ *  boshlanadi. Qadamlar orasida erkin yurish — tepadagi indikator orqali.
+ *
+ *  Oxirgi qadamda amal bitta: «Mashina ketdi — yuborish» (`mark-left` + `submit`).
  *
  *  Avtosaqlash: server (PATCH) + localStorage zaxira — tarmoq uzilsa ish yo'qolmasin.
  */
@@ -15,8 +26,10 @@ import type { MediaItem, Submission, TemplateSchema } from '../types';
 import { Card, Row, Skeleton } from '../ui';
 import {
   FormRenderer,
+  firstIncompleteStep,
   sectionTitle,
   sectionsOf,
+  stepOfField,
   validateSection,
 } from '../form-renderer/FormRenderer';
 
@@ -49,10 +62,14 @@ export function FormScreen({ submissionId, onDone, onCancel }: Props) {
 
       const cached = localStorage.getItem(LOCAL_KEY(submissionId));
       const local = cached ? (JSON.parse(cached) as Record<string, unknown>) : {};
-      setValues({ ...local, ...loaded.data });
+      const merged = { ...local, ...loaded.data };
+      setValues(merged);
 
       const tpl = await api.templateSchema(loaded.template_code, loaded.template_version);
-      if (alive) setSchema(tpl);
+      if (!alive) return;
+      setSchema(tpl);
+      // Qoralama qayta ochildi — qoldirilgan joydan davom etamiz
+      setStep(firstIncompleteStep(tpl, merged, loaded.lines, loaded.media));
     })().catch((error: ApiError) => setFailure(error.message));
     return () => {
       alive = false;
@@ -90,7 +107,9 @@ export function FormScreen({ submissionId, onDone, onCancel }: Props) {
     setSubmission(updated);
   }
 
-  function next() {
+  /** ⭐ Qadamni saqlash: tekshiriladi, serverga yoziladi, ekran yopiladi.
+   *  Keyingi qadamga **o'zi o'tmaydi** — usta ishga qaytadi. */
+  async function saveStep() {
     if (!schema || !submission) return;
     const found = validateSection(schema, section, values, submission.lines, media);
     setErrors(found);
@@ -98,26 +117,46 @@ export function FormScreen({ submissionId, onDone, onCancel }: Props) {
       haptic('error');
       return;
     }
-    api.patchSubmission(submissionId, values).catch(() => undefined);
-    if (!isLast) setStep(step + 1);
-  }
-
-  async function markLeft() {
     setBusy(true);
     try {
-      setSubmission(await api.markLeft(submissionId));
+      await api.patchSubmission(submissionId, values);
+      localStorage.removeItem(LOCAL_KEY(submissionId));
       haptic('success');
+      onDone(t('draft_saved'));
+    } catch (error) {
+      // Saqlanmadi — ekranni yopmaymiz, aks holda ish yo'qolgandek tuyuladi
+      // (localStorage'da qoladi, lekin usta buni bilmaydi).
+      haptic('error');
+      setFailure((error as ApiError).message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function submit() {
-    if (!submission) return;
+  /** ⭐ Oxirgi qadam — bitta amal: mashina ketdi (`left_at`, R6) + yuborish.
+   *
+   *  Ikkalasi bir tugmada, chunki ustaning nazarida bu bitta hodisa: mashina
+   *  ketdi = ish tugadi. Ilgari «Mashina ketdi» ni bosib to'xtab qolar, hisobot
+   *  esa qoralamada qolib ketardi.
+   */
+  async function finish() {
+    if (!submission || !schema) return;
+    const found = validateSection(schema, section, values, submission.lines, media);
+    setErrors(found);
+    if (Object.keys(found).some((key) => found[key])) {
+      haptic('error');
+      return;
+    }
+    const already = Boolean(submission.left_at);
+    if (!(await confirmAction(t(already ? 'submit_confirm' : 'left_and_submit_confirm')))) return;
+
     setBusy(true);
     setFailure('');
     try {
       await api.patchSubmission(submissionId, values);
+      // `left_at` allaqachon qo'yilgan bo'lishi mumkin: eski qoralama yoki
+      // yuborish xatosidan keyingi ikkinchi urinish. Qayta bosilmaydi.
+      if (!already) setSubmission(await api.markLeft(submissionId));
       const result = await api.submitSubmission(submissionId);
       localStorage.removeItem(LOCAL_KEY(submissionId));
       haptic('success');
@@ -125,8 +164,19 @@ export function FormScreen({ submissionId, onDone, onCancel }: Props) {
     } catch (error) {
       haptic('error');
       const api_error = error as ApiError;
-      setErrors(api_error.fields ?? {});
+      const fields = api_error.fields ?? {};
+      setErrors(fields);
       setFailure(api_error.message);
+      // Xato boshqa qadamdagi maydonda bo'lsa — o'sha qadamga olib boramiz,
+      // aks holda usta xatoni ko'rmaydi va nima yetmayotganini bilmaydi.
+      const culprit = Object.keys(fields).find((code) => !code.startsWith('_'));
+      if (culprit) {
+        const target = stepOfField(schema, culprit);
+        if (target !== step) {
+          setStep(target);
+          setFailure(t('incomplete_step', { n: target + 1 }));
+        }
+      }
     } finally {
       setBusy(false);
     }
@@ -142,13 +192,20 @@ export function FormScreen({ submissionId, onDone, onCancel }: Props) {
   if (failure && !submission) return <p className="error">{failure}</p>;
   if (!submission || !schema) return <Skeleton count={4} />;
 
-  const done = isLast;
-
   return (
     <>
+      {/*  Indikator — bosiladigan: qadamlar mustaqil bo'lgach oldinga yurishning
+          yagona yo'li shu. Tekshiruvsiz o'tadi, chunki usta ataylab tartibsiz
+          to'ldirishi mumkin (masalan qismni keyinroq eslaydi). */}
       <div className="stepper">
         {sections.map((code, index) => (
-          <span key={code ?? 'rest'} className={index <= step ? 'done' : ''} />
+          <button
+            key={code ?? 'rest'}
+            type="button"
+            className={index <= step ? 'done' : ''}
+            aria-label={`${t('step')} ${index + 1}`}
+            onClick={() => setStep(index)}
+          />
         ))}
       </div>
 
@@ -176,7 +233,7 @@ export function FormScreen({ submissionId, onDone, onCancel }: Props) {
         onLinesSave={saveLines}
       />
 
-      {done ? (
+      {isLast ? (
         <Card>
           <Row label={t('total_labor')} value={money(submission.proposed_labor_amount)} />
           {submission.left_at ? (
@@ -185,21 +242,18 @@ export function FormScreen({ submissionId, onDone, onCancel }: Props) {
               value={`${dateTime(submission.left_at)} · ${duration(submission.downtime_seconds)}`}
             />
           ) : null}
-          {!submission.left_at ? (
-            <button type="button" onClick={() => void markLeft()} disabled={busy}>
-              {t('car_left')}
-            </button>
-          ) : (
-            <button type="button" onClick={() => void submit()} disabled={busy}>
-              {t('submit')}
-            </button>
-          )}
-          {!submission.left_at ? <p className="hint">{t('submit_after_left')}</p> : null}
+          <button type="button" onClick={() => void finish()} disabled={busy}>
+            {t(submission.left_at ? 'submit' : 'left_and_submit')}
+          </button>
+          <p className="hint">{t('submit_hint')}</p>
         </Card>
       ) : (
-        <button type="button" onClick={next} disabled={busy}>
-          {t('next')}
-        </button>
+        <>
+          <button type="button" onClick={() => void saveStep()} disabled={busy}>
+            {t('save_step')}
+          </button>
+          <p className="hint">{t('save_step_hint')}</p>
+        </>
       )}
 
       {failure ? <p className="error">{failure}</p> : null}

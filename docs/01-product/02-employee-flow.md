@@ -47,21 +47,29 @@ Haydovchilar tizimda **rolga ega emas**. Mashinaning kelgani va ketgani —
 ```
 [ 🚗 Mashina keldi ]
         ↓  arrived_at = hozir  ·  mashina statusi: TA'MIRDA
-Qadam 1 — Mashina raqami
+Qadam 1 — Mashina raqami            → [ 💾 Saqlash ] → ilova yopiladi
+        ↓                              (usta ishiga qaytadi)
+Qadam 2 — Ta'mirgacha (foto, muammo) → [ 💾 Saqlash ] → ilova yopiladi
         ↓
-Qadam 2 — Ta'mirgacha (foto, muammo)
-        ↓
-Qadam 3 — Bajarilgan ishlar + o'z narxi
+Qadam 3 — Bajarilgan ishlar + narx   → [ 💾 Saqlash ] → ilova yopiladi
         ↓
 Qadam 4 — Ta'mirdan keyin (foto, izoh)
         ↓
-[ 🚙 Mashina ketdi ]
-        ↓  left_at = hozir  ·  mashina statusi: LINIYADA
-[ 📤 Hisobotni yuborish ]
+[ 🚙 Mashina ketdi — yuborish ]
+   left_at = hozir · mashina statusi: LINIYADA · so'ng darhol yuboriladi
 ```
 
-**Downtime = `left_at − arrived_at`.** Ikkita tugma — butun downtime analitikasi
-shundan chiqadi.
+⭐ **Qadamlar mustaqil** ([ADR-0022](../05-delivery/03-decisions.md#adr-0022--forma-qadamlari-mustaqil-saqla-va-chiq)):
+saqlangach forma **keyingi qadamga o'zi o'tmaydi**. Usta mashina kelganda
+raqamni yozib qo'yadi, diagnostikani bir soatdan keyin qiladi, ta'mirni
+kechqurun tugatadi — ilova uni har safar bajarib bo'lmaydigan qadamga
+tortmasligi kerak.
+
+Qoralama qayta ochilganda forma **birinchi to'ldirilmagan qadamdan** boshlanadi.
+Tartibsiz to'ldirish uchun tepadagi qadam indikatori bosiladi.
+
+**Downtime = `left_at − arrived_at`.** «Mashina keldi» va «Mashina ketdi —
+yuborish» — butun downtime analitikasi shu ikki teginishdan chiqadi.
 
 ### Qadam 1 — Mashinani aniqlash
 
@@ -134,23 +142,28 @@ To'liq mexanizm: [04-flows/04-price-negotiation.md](../04-flows/04-price-negotia
 "Ta'minotchi" rolidagi xodim o'z shablonida kiritadi (chek bilan) —
 [05-supplier-role.md](05-supplier-role.md).
 
-### Qadam 4 — Ta'mirdan keyingi holat
+### Qadam 4 — Ta'mirdan keyingi holat va yuborish
 
 | Maydon | Turi | Majburiy |
 |---|---|---|
 | Tuzatilgan joy fotosi | 📷 1–5 ta | ✅ |
 | Mashina umumiy ko'rinishi (keyin) | 📷 | ✅ |
-| Izoh | matn | ✅ |
-| Tavsiya (keyingi ish kerakmi) | matn | — |
+| Izoh | matn (kamida 3 belgi) | ✅ |
 
-### Qadam 5 — Yuborish
+Oxirgi qadamda «Saqlash» o'rniga **yakuniy tugma**:
+`[ 🚙 Mashina ketdi — yuborish ]`. U bitta amalda `left_at` ni qo'yadi va
+hisobotni yuboradi — usta uchun bu bitta hodisa. Bosishdan oldin tasdiq oynasi
+chiqadi, chunki yuborishni qaytarib bo'lmaydi.
+
+> ⚠️ «Tavsiya (keyingi ish)» maydoni yo'q — `car_repair` v2 da olib tashlandi
+> (2026-08-05): ixtiyoriy edi, to'ldirilmasdi, oxirgi qadamni uzaytirardi.
 
 Yuborilgandan keyin:
 - Status: `DRAFT` → `SUBMITTED`
 - **Usta endi tahrirlay olmaydi** (faqat admin `reopen` qilsa)
 - Adminga bildirishnoma (narx tarixi statistikasi bilan)
 
-### Qadam 6 — Narx kelishuvi (agar admin kamaytirsa)
+### Qadam 5 — Narx kelishuvi (agar admin kamaytirsa)
 
 ```
 ┌─────────────────────────────────────┐
@@ -174,7 +187,10 @@ Yuborilgandan keyin:
 ```
 
 - **Roziman** → `APPROVED`, to'lov varaqasiga 180 000 kiradi
-- **Rozi emasman** → admin qayta ko'radi; **oxirgi so'z adminda**
+- **Rozi emasman** → admin qayta ko'radi. ⭐ **Adminda «yakuniy qaror» yo'q**
+  ([ADR-0023](../05-delivery/03-decisions.md#adr-0023--nizoda-yakuniy-qaror-yoq)):
+  u yo **yangi narx** beradi (sikl qaytadan), yo **sizning narxingizga rozi
+  bo'ladi**. Ikki tomon kelishmaguncha savdolashish davom etadi
 - Har ikkala qadam `audit_log`da qoladi — nizo bo'lmaydi
 
 ## 4. Qoralama (draft) mexanikasi
@@ -221,7 +237,8 @@ Batafsil: [03-integrations/02-telegram-bot-miniapp.md](../03-integrations/02-tel
 | Usta xato raqam kiritdi | `SUBMITTED`gacha o'zi tuzatadi; keyin — `reopen` orqali |
 | Internet yo'q | Qoralama lokal saqlanadi, foto navbatga, tarmoq kelganda yuboriladi |
 | Usta narxni juda kam so'radi (xato) | Admin oshira olmaydi (R2) → `REOPENED`, usta o'zi tuzatadi |
-| Usta narxga rozi bo'lmadi | Admin qayta ko'radi, **yakuniy qaror adminda** |
+| Usta narxga rozi bo'lmadi | Admin yo yangi narx beradi, yo ustaning narxiga rozi bo'ladi — **bir tomonlama yakunlash yo'q** (N3a) |
+| Nizo qotib qoldi | Yagona chiqish — `REOPENED`: hisobot ustaga qaytadi va u qaytadan to'ldiradi |
 
 ---
 

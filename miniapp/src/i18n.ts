@@ -307,6 +307,13 @@ export const T: Dict = {
   works: { uz: 'Bajarilgan ishlar', ru: 'Выполненные работы' },
   parts: { uz: 'Ishlatilgan qismlar', ru: 'Использованные запчасти' },
   my_price: { uz: 'Mening narxim', ru: 'Моя цена' },
+  // ⚠️ Raqamli placeholder («250 000») to'ldirilgan qiymatdek ko'rinardi va
+  // usta narxni yozmasdan o'tib ketardi (2026-08-05). Endi — matnli ko'rsatma.
+  price_placeholder: { uz: 'Summani yozing', ru: 'Впишите сумму' },
+  line_name_placeholder: {
+    uz: 'Nomini yozing yoki ro‘yxatdan tanlang',
+    ru: 'Впишите название или выберите из списка',
+  },
   price_hint_own: {
     uz: 'Narxni o‘zingiz belgilaysiz — admin ko‘rib chiqadi',
     ru: 'Цену указываете вы — админ рассмотрит',
@@ -316,13 +323,11 @@ export const T: Dict = {
     ru: 'ⓘ Цену указываете только для запчастей, купленных за свой счёт',
   },
   self_funded: { uz: 'O‘z hisobimdan oldim', ru: 'Купил за свой счёт' },
+  // ADR-0021: chek majburiy emas — talab qilib bo'lmaydigan narsani va'da
+  // qilmaymiz, lekin uni so'rashda davom etamiz.
   self_funded_hint: {
-    uz: 'Narx kiritiladi va sizga qaytariladi. Chek fotosi majburiy.',
-    ru: 'Укажете цену, деньги вернут. Фото чека обязательно.',
-  },
-  receipt_required: {
-    uz: 'O‘z hisobingizdan olingan qism bor — chek fotosi majburiy',
-    ru: 'Есть запчасть за свой счёт — фото чека обязательно',
+    uz: 'Narx kiritiladi va sizga qaytariladi. Chek bo‘lsa — qo‘shing.',
+    ru: 'Укажете цену, деньги вернут. Есть чек — приложите.',
   },
   add_work: { uz: '➕ Ish qo‘shish', ru: '➕ Добавить работу' },
   add_part: { uz: '➕ Qism qo‘shish', ru: '➕ Добавить запчасть' },
@@ -330,10 +335,34 @@ export const T: Dict = {
   total_own_parts: { uz: 'O‘z hisobimdan', ru: 'За свой счёт' },
   car_left: { uz: '🚙 Mashina ketdi', ru: '🚙 Машина уехала' },
   submit: { uz: '📤 Yuborish', ru: '📤 Отправить' },
-  submit_after_left: {
-    uz: 'Avval «Mashina ketdi» tugmasini bosing',
-    ru: 'Сначала нажмите «Машина уехала»',
+  // ⭐ Bitta tugma (2026-08-05): «Mashina ketdi» va «Yuborish» ikki alohida
+  // tugma edi — usta birinchisini bosib to'xtab qolardi, holbuki mashina
+  // ketgani hisobot tayyor degani.
+  left_and_submit: { uz: '🚙 Mashina ketdi — yuborish', ru: '🚙 Машина уехала — отправить' },
+  left_and_submit_confirm: {
+    uz: 'Ketish vaqti qayd etilib, hisobot adminga yuborilsinmi?',
+    ru: 'Зафиксировать время выезда и отправить отчёт админу?',
   },
+  submit_confirm: {
+    uz: 'Hisobot adminga yuborilsinmi?',
+    ru: 'Отправить отчёт админу?',
+  },
+  submit_hint: {
+    uz: 'Yuborilgach tahrirlab bo‘lmaydi — admin ko‘rib chiqadi.',
+    ru: 'После отправки редактировать нельзя — отчёт уйдёт на проверку.',
+  },
+  // Har qadam mustaqil (2026-08-05): saqlangach ekran yopiladi, keyingi
+  // qadamga o'zi o'tmaydi — usta ish bilan band bo'lishi mumkin.
+  save_step: { uz: '💾 Saqlash', ru: '💾 Сохранить' },
+  save_step_hint: {
+    uz: 'Qoralama saqlanadi va ilova yopiladi — keyin qolgan joyidan davom etasiz',
+    ru: 'Черновик сохранится и форма закроется — продолжите с того места, где остановились',
+  },
+  incomplete_step: {
+    uz: '{n}-qadamda to‘ldirilmagan maydon bor',
+    ru: 'На шаге {n} есть незаполненное поле',
+  },
+  min_chars: { uz: 'Kamida {n} ta belgi yozing', ru: 'Напишите минимум {n} символа' },
   draft_saved: { uz: 'Qoralama saqlandi', ru: 'Черновик сохранён' },
   delete_draft_confirm: {
     uz: 'Qoralama o‘chirilsinmi?',
@@ -375,7 +404,18 @@ export const T: Dict = {
   },
   send_proposal: { uz: '📨 Taklifni yuborish', ru: '📨 Отправить предложение' },
   quick_choice: { uz: 'Tez tanlov', ru: 'Быстрый выбор' },
-  final_decision: { uz: '⚖️ Yakuniy qaror', ru: '⚖️ Окончательное решение' },
+  // ⭐ ADR-0023 — «Yakuniy qaror» olib tashlandi. Nizoda adminning ikkita
+  // yo'li bor, ikkalasi ham kelishuvni davom ettiradi yoki ustaga beriladi.
+  accept_author_price: { uz: '✅ Usta narxiga roziman', ru: '✅ Согласен с ценой мастера' },
+  accept_author_price_confirm: {
+    uz: 'Usta so‘ragan summa yakuniy bo‘lsinmi? Kamaytirish bekor qilinadi.',
+    ru: 'Утвердить сумму, которую просил мастер? Снижение отменится.',
+  },
+  propose_new_price: { uz: '✏️ Yangi narx berish', ru: '✏️ Предложить новую цену' },
+  dispute_admin_hint: {
+    uz: 'Usta rozi emas. Yo yangi narx bering, yo uning narxiga rozi bo‘ling — kelishuvni bir tomonlama yopib bo‘lmaydi.',
+    ru: 'Мастер не согласен. Предложите новую цену или согласитесь с его — закрыть спор в одностороннем порядке нельзя.',
+  },
 
   // Kelishuv (usta)
   admin_proposed: { uz: 'Admin taklifi', ru: 'Предложение админа' },

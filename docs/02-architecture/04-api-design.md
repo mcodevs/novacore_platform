@@ -60,8 +60,8 @@ Batafsil: [06-security.md](06-security.md)
 | `PUT` | `/submissions/{id}/lines` | Qatorlarni to'liq almashtirish |
 | `POST` | `/submissions/{id}/mark-left` | ⭐ "Mashina ketdi" → `left_at` server vaqti |
 | `POST` | `/submissions/{id}/submit` | Yuborish. ⭐ Muallif `admin` bo'lsa → darhol `APPROVED` (R1a) |
-| `POST` | `/submissions/{id}/approve` | `{ comment? }` — narx o'zgarishsiz |
-| `POST` | `/submissions/{id}/reject` | `{ comment }` — majburiy |
+| `POST` | `/submissions/{id}/approve` | `{ comment? }` — narx o'zgarishsiz. Faqat `SUBMITTED` / `IN_REVIEW`: **nizoda ishlamaydi** (N3a) |
+| `POST` | `/submissions/{id}/reject` | `{ comment }` — majburiy. Nizoda ishlamaydi |
 | `POST` | `/submissions/{id}/reopen` | `{ comment }` — muallifga qaytarish |
 | `DELETE` | `/submissions/{id}` | Faqat `DRAFT`, faqat muallif |
 | `GET` | `/submissions/linkable` | `submission_picker` nomzodlari: `?template_code=&vehicle_id=&exclude_id=`. **Summasiz** javob; `reporter` uchun `vehicle_id` majburiy |
@@ -74,6 +74,7 @@ Batafsil: [06-security.md](06-security.md)
 | `POST` | `/submissions/{id}/propose-price` | `{ lines: [{line_id, amount}], comment }` — **comment majburiy** |
 | `POST` | `/submissions/{id}/accept-price` | Muallif rozilik beradi |
 | `POST` | `/submissions/{id}/dispute-price` | `{ comment }` — majburiy |
+| `POST` | `/submissions/{id}/accept-author-price` | ⭐ **Admin ustaning narxiga rozi** — `approved = proposed`, kamaytirish bekor. Nizodan chiqishning ikkinchi yo'li; «yakuniy qaror» endpointi **yo'q** (N3a, ADR-0023) |
 | `GET` | `/submissions/{id}/price-history` | Kelishuvning to'liq izi |
 | `GET` | `/me/price-stats` | ⭐ Xodimning **o'z** narx statistikasi |
 | `GET` | `/work-catalog/{id}/price-stats` | Ish turi bo'yicha statistika (**admin**) |

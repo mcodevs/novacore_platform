@@ -12,6 +12,10 @@ import { Card, Hero, ReportRow, Row, Skeleton, Tile } from '../ui';
 interface Props {
   auth: AuthResponse;
   onOpen(id: number): void;
+  /** ⭐ Qoralama — to'g'ridan-to'g'ri formaga. Qadamlar mustaqil bo'lgach
+   *  (2026-08-05) usta bitta hisobotga 3–4 marta qaytadi: oradagi «kartochka →
+   *  ✏️ tugma» bosqichi har safar ortiqcha ikki teginish edi. */
+  onContinue(id: number): void;
   onCreate(templateCode: string): void;
   onBuilder(): void;
   onEmployees(): void;
@@ -22,6 +26,7 @@ interface Props {
 export function HomeScreen({
   auth,
   onOpen,
+  onContinue,
   onCreate,
   onBuilder,
   onEmployees,
@@ -213,7 +218,11 @@ export function HomeScreen({
                   amount={shortMoney(item.labor_amount ?? item.proposed_labor_amount)}
                   status={displayStatus(item)}
                   meta={item.vehicle?.plate_display ?? '—'}
-                  onClick={() => onOpen(item.id)}
+                  //  `reopened` kartochkaga boradi — u yerda adminning qaytarish
+                  //  sababi yozilgan, uni o'qimasdan tahrirlashning ma'nosi yo'q.
+                  onClick={() =>
+                    item.status === 'draft' ? onContinue(item.id) : onOpen(item.id)
+                  }
                 />
               ))
             )}
